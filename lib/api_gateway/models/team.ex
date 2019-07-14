@@ -8,7 +8,7 @@ defmodule ApiGateway.Models.Team do
     field :description, :string
 
     has_many :members, ApiGateway.Models.TeamMember
-    has_many :projects, ApiGateway.Models.Projects
+    has_many :projects, ApiGateway.Models.Project
     belongs_to :workspace, ApiGateway.Models.Workspace
 
     timestamps()
@@ -34,5 +34,6 @@ defmodule ApiGateway.Models.Team do
   def changeset_update(%ApiGateway.Models.Team{} = team, attrs \\ %{}) do
     team
     |> cast(attrs, @permitted_fields)
+    |> foreign_key_constraint(:workspace_id)
   end
 end

@@ -73,6 +73,7 @@ defmodule ApiGateway.Models.User do
     |> cast_embed(:child, with: &time_zone_changeset/2)
     |> validate_format(:email, Utils.Regex.get_email_regex())
     |> validate_inclusion(:workspace_role, ApiGateway.Models.Workspace.get_workspace_roles())
+    |> foreign_key_constraint(:workspace_id)
   end
 
   def time_zone_changeset(schema, attrs \\ %{}) do

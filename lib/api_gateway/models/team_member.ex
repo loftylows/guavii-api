@@ -33,8 +33,8 @@ defmodule ApiGateway.Models.TeamMember do
     @team_member_roles
   end
 
-  def changeset_create(%ApiGateway.Models.TeamMember{} = team, attrs \\ %{}) do
-    team
+  def changeset_create(%ApiGateway.Models.TeamMember{} = team_member, attrs \\ %{}) do
+    team_member
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields_create)
     |> validate_inclusion(:role, get_team_member_roles())
@@ -42,8 +42,11 @@ defmodule ApiGateway.Models.TeamMember do
     |> foreign_key_constraint(:user_id)
   end
 
-  def changeset_update(%ApiGateway.Models.TeamMember{} = team, attrs \\ %{}) do
-    team
+  def changeset_update(%ApiGateway.Models.TeamMember{} = team_member, attrs \\ %{}) do
+    team_member
     |> cast(attrs, @permitted_fields)
+    |> validate_inclusion(:role, get_team_member_roles())
+    |> foreign_key_constraint(:team_id)
+    |> foreign_key_constraint(:user_id)
   end
 end
