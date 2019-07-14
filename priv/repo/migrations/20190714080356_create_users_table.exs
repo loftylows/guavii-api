@@ -22,8 +22,9 @@ defmodule ApiGateway.Repo.Migrations.CreateUsersTable do
       add :workspace_id, references("workspaces", on_delete: :delete_all), null: false
 
       timestamps()
-
-      unique_index("users", [:email, :workspace_id], name: :unique_workspace_email_index)
     end
+
+    unique_index("users", [:email, :workspace_id], name: :unique_workspace_email_index)
+    create index("users", [:email])
   end
 end
