@@ -11,6 +11,11 @@ config :api_gateway,
   ecto_repos: [ApiGateway.Repo],
   generators: [binary_id: true]
 
+# Configures the repo
+config :api_gateway, ApiGateway.Repo,
+  migration_primary_key: [name: :id, type: :binary_id],
+  migration_timestamps: [type: :utc_datetime]
+
 # Configures the endpoint
 config :api_gateway, ApiGatewayWeb.Endpoint,
   url: [host: "localhost"],

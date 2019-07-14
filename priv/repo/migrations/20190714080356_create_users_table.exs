@@ -19,9 +19,9 @@ defmodule ApiGateway.Repo.Migrations.CreateUsersTable do
 
       add :time_zone, :map
 
-      add :workspace_id, references("workspaces", :on_delete :delete_all), null: false
+      add :workspace_id, references("workspaces", on_delete: :delete_all), null: false
 
-      timestamps(type: :utc_datetime)
+      timestamps()
 
       unique_index("users", [:email, :workspace_id], name: :unique_workspace_email_index)
     end

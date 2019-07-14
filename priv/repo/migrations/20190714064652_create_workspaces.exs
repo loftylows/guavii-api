@@ -8,10 +8,11 @@ defmodule ApiGateway.Repo.Migrations.CreateWorkspaces do
       add :description, :text
       add :storage_cap, :integer, null: false
 
-      timestamps(type: :utc_datetime)
+      timestamps()
 
       unique_index("workspaces", [:workspace_subdomain])
-      create constraint("workspaces", :storage_cap_must_be_positive, check: "storage_cap >= 0")
     end
+
+    create constraint("workspaces", :storage_cap_must_be_positive, check: "storage_cap >= 0")
   end
 end

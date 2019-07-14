@@ -3,10 +3,10 @@ defmodule ApiGateway.Repo.Migrations.CreateKanbanCardActiveLabelsTable do
 
   def change do
     create table(:kanban_card_active_labels) do
-      add :kanban_card_id, references("kanban_cards", :on_delete :delete_all), null: false
-      add :kanban_label_id, references("kanban_labels", :on_delete :delete_all), null: false
+      add :kanban_card_id, references("kanban_cards", on_delete: :delete_all), null: false
+      add :kanban_label_id, references("kanban_labels", on_delete: :delete_all), null: false
 
-      timestamps(type: :utc_datetime)
+      timestamps()
     end
   end
 end

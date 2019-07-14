@@ -3,14 +3,14 @@ defmodule ApiGateway.Repo.Migrations.CreateDocumentsTable do
 
   def change do
     create table(:documents) do
-      add :title, :string, null: false
-      add :content, :text
-      add :is_pinned, :boolean
-      add :last_update, :map
+      add(:title, :string, null: false)
+      add(:content, :text)
+      add(:is_pinned, :boolean)
+      add(:last_update, :map)
 
-      add :project_id, references("projects", :on_delete :delete_all), null: false
+      add(:project_id, references("projects", on_delete: :delete_all), null: false)
 
-      timestamps(type: :utc_datetime)
+      timestamps()
     end
   end
 end

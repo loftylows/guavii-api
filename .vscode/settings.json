@@ -5,6 +5,7 @@
     "ecto",
     "nilify",
     "repo",
-    "utc"
+    "utc",
+    "uuid"
   ]
 }
