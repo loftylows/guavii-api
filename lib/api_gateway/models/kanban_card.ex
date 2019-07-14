@@ -7,7 +7,7 @@ defmodule ApiGateway.Models.KanbanCard do
     field :title, :string
     field :description, :string
     field :completed, :boolean
-    field :attachments, :string
+    field :attachments, {:array, :string}
     field :due_date_range, ApiGateway.CustomEctoTypes.EctoDateRange
 
     has_many :todo_lists, ApiGateway.Models.KanbanCardTodoList

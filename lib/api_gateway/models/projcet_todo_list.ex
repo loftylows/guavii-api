@@ -8,7 +8,7 @@ defmodule ApiGateway.Models.ProjectTodoList do
 
     has_many :lists, ApiGateway.Models.SubList
 
-    belongs_to :project, ApiGateway.Models.User
+    belongs_to :project, ApiGateway.Models.Project
 
     timestamps()
   end

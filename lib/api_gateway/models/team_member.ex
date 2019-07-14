@@ -13,13 +13,12 @@ defmodule ApiGateway.Models.TeamMember do
   end
 
   @permitted_fields [
-    :title,
-    :description,
+    :role,
     :team_id,
     :user_id
   ]
   @required_fields_create [
-    :title,
+    :role,
     :team_id,
     :user_id
   ]

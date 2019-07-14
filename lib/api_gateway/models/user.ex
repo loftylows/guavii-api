@@ -11,10 +11,8 @@ defmodule ApiGateway.Models.User do
     field :phone_number, :string
     field :birthday, :utc_datetime
     field :location, :string
-
     field :profile_pic_url, :string
     field :last_Login, :utc_datetime
-
     field :workspace_role, :string
     field :billing_status, :string
     field :sessionId, :string

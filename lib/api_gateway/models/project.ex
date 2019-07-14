@@ -52,12 +52,18 @@ defmodule ApiGateway.Models.Project do
     "PRIVATE"
   ]
 
+  @project_privacy_policy_default "PRIVATE"
+
   def get_project_status do
     @project_status
   end
 
   def get_project_privacy_policy do
     @project_privacy_policy
+  end
+
+  def get_project_privacy_policy_default do
+    @project_privacy_policy_default
   end
 
   def get_project_type do
