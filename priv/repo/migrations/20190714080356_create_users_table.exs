@@ -24,7 +24,7 @@ defmodule ApiGateway.Repo.Migrations.CreateUsersTable do
       timestamps()
     end
 
-    unique_index("users", [:email, :workspace_id], name: :unique_workspace_email_index)
+    create unique_index("users", [:email, :workspace_id], name: :unique_workspace_email_index)
     create index("users", [:email])
   end
 end

@@ -8,8 +8,8 @@ defmodule ApiGatewayWeb.Router do
   scope "/" do
     pipe_through :api
 
-    forward("/api", Absinthe.Plug, schema: ApiGatewayWeb.Schema.Schema)
+    forward("/api", Absinthe.Plug, schema: ApiGatewayWeb.Gql.Schema.Schema)
 
-    forward "/graphiql", Absinthe.Plug.GraphiQL, schema: ApiGatewayWeb.Schema.Schema
+    forward "/graphiql", Absinthe.Plug.GraphiQL, schema: ApiGatewayWeb.Gql.Schema.Schema
   end
 end

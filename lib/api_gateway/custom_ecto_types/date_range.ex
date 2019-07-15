@@ -6,7 +6,7 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
   defstruct [:start, :end]
 
   # Provide custom casting rules.
-  # Cast strings into the URI struct to be used at runtime
+  # Cast strings into the DateRangeDateRange struct to be used at runtime
   def cast(%{start: startDate, end: endDate}) when is_binary(startDate) and is_binary(endDate) do
     case {Date.from_iso8601(startDate), Date.from_iso8601(endDate)} do
       {{:ok, _}, {:ok, _}} ->
@@ -34,7 +34,7 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
 
   # When loading data from the database, we are guaranteed to
   # receive a map (as databases are strict) and we will
-  # just put the data back into an URI struct to be stored
+  # just put the data back into an DateRangeDateRange struct to be stored
   # in the loaded schema struct.
   def load(data) when is_map(data) do
     data =
@@ -45,7 +45,7 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
     {:ok, struct!(ApiGateway.CustomStructs.DateRange, data)}
   end
 
-  # When dumping data to the database, we *expect* an URI struct
+  # When dumping data to the database, we *expect* an DateRange struct
   # but any value could be inserted into the schema struct at runtime,
   # so we need to guard against them.
   def dump(%ApiGateway.CustomStructs.DateRange{start: startDate, end: endDate} = date_range)
