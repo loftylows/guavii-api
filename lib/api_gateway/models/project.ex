@@ -15,7 +15,7 @@ defmodule ApiGateway.Models.Project do
     has_one :list, ApiGateway.Models.ProjectTodoList
     has_many :documents, ApiGateway.Models.Document
     belongs_to :workspace, ApiGateway.Models.Workspace
-    belongs_to :team, ApiGateway.Models.Team
+    belongs_to :owner, ApiGateway.Models.Team, foreign_key: :team_id
     belongs_to :created_by, ApiGateway.Models.User, foreign_key: :created_by_id
 
     timestamps()

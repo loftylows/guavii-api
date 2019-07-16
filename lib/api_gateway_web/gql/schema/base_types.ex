@@ -1,51 +1,618 @@
 defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   use Absinthe.Schema.Notation
+  use Absinthe.Relay.Schema.Notation, :modern
 
+  ####################
+  # Custom scalars #
+  ####################
   scalar :iso_date_time, description: "ISO 8601 date-time string" do
     parse(&DateTime.from_iso8601(&1.value))
     serialize(&DateTime.to_iso8601(&1))
   end
 
   scalar :email, description: "Email address" do
-    parse(&check_email(&1))
+    parse(&ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs.check_email(&1))
     serialize(& &1)
   end
 
+  ####################
+  # Interfaces #
+  ####################
   interface :node do
     field :id, non_null(:id)
+  end
+
+  ####################
+  # Enums #
+  ####################
+  enum :workspace_member_role do
+    value(:primary_owner, as: "primary_owner")
+    value(:owner, as: "owner")
+    value(:admin, as: "admin")
+    value(:member, as: "member")
+  end
+
+  enum :user_billing_status do
+    value(:active, as: "active")
+    value(:deactivated, as: "deactivated")
+  end
+
+  enum :team_member_role do
+    value(:admin, as: "admin")
+    value(:member, as: "member")
+  end
+
+  enum :project_type do
+    value(:board, as: "board")
+    value(:list, as: "list")
+  end
+
+  enum :project_status do
+    value(:active, as: "active")
+    value(:archived, as: "archived")
+  end
+
+  enum :project_privacy_policy do
+    value(:public, as: "lists")
+    value(:private, as: "private")
+  end
+
+  ####################
+  # Unions #
+  ####################
+  # TODO: fix this definition by providing a proper resolve function
+  union :project_focus_item do
+    description("The type of project. Either a board or a list")
+
+    types([:kanban_board, :project_todo_list])
+
+    resolve_type(fn
+      %{name: "lanes"}, _ -> :kanban_board
+      %{name: "ProjectTodoList"}, _ -> :project_todo_list
+    end)
+  end
+
+  ####################
+  # Non-node objects #
+  ####################
+  object :time_zone do
+    field :offset, non_null(:string)
+    field :billing_status, non_null(:string)
+  end
+
+  object :document_last_update do
+    field :date, non_null(:iso_date_time)
+    field :user, non_null(:user)
+  end
+
+  object :date_range do
+    field :start, :iso_date_time
+    field :end, :iso_date_time
+  end
+
+  ####################
+  # Input objects #
+  ####################
+  input_object :date_range_input do
+    field :start, :iso_date_time
+    field :end, :iso_date_time
+  end
+
+  input_object :user_where_unique_input do
+    field :id, non_null(:string)
+  end
+
+  input_object :user_where_input do
+    field :id_in, list_of(:string)
+    field :full_name_contains, :string
+    field :billing_status, :user_billing_status
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+    field :created_between_inclusive, :date_range_input
+    field :last_login, :iso_date_time
+    field :last_login_gte, :iso_date_time
+    field :last_login_lte, :iso_date_time
+    field :last_login_between_inclusive, :date_range_input
+  end
+
+  input_object :workspace_where_unique_input do
+    field :id, :string
+    field :workspace_subdomain, :string
+  end
+
+  input_object :workspace_where_input do
+    field :id_in, list_of(:string)
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+    field :created_between_inclusive, :date_range_input
+  end
+
+  ####################
+  # Connections #
+  ####################
+  connection(node_type: :workspace)
+
+  connection(node_type: :user)
+
+  connection(node_type: :team_member)
+
+  connection(node_type: :team)
+
+  connection(node_type: :project)
+
+  connection(node_type: :document)
+
+  connection(node_type: :sub_list)
+
+  connection(node_type: :sub_list_item)
+
+  connection(node_type: :sub_list_item_comment)
+
+  connection(node_type: :kanban_lane)
+
+  connection(node_type: :kanban_label)
+
+  connection(node_type: :kanban_card)
+
+  connection(node_type: :kanban_card_comment)
+
+  connection(node_type: :kanban_card_todo_list)
+
+  connection(node_type: :kanban_card_todo)
+
+  ####################
+  # Nodes #
+  ####################
+  object :account_invitation do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :email, non_null(:string)
+    field :invitation_token_hashed, non_null(:string)
+    field :accepted, non_null(:boolean)
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :workspace_invitation do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :email, non_null(:string)
+    field :invitation_token_hashed, non_null(:string)
+    field :accepted, non_null(:boolean)
+
+    field :workspace, non_null(:workspace)
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :forgot_password_invitation do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :token_hashed, non_null(:string)
+    field :accepted, non_null(:boolean)
+    field :userId, non_null(:string)
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :find_my_workspaces_invitation do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :email, non_null(:string)
+    field :token_hashed, non_null(:string)
+
     field :created_at, non_null(:iso_date_time)
     field :updated_at, non_null(:iso_date_time)
   end
 
   object :workspace do
-    interface(:node)
+    # interface(:node)
 
     field :id, non_null(:id)
     field :title, non_null(:string)
     field :workspace_domain, non_null(:string)
     field :description, :string
-    field :members, :user |> list_of() |> non_null()
-    field :teams, :team |> list_of() |> non_null()
-    field :projects, :project |> list_of() |> non_null()
     field :storage_cap, non_null(:integer)
     field :current_storage_amount, non_null(:integer)
+
+    # TODO: Add resolver
+    connection field :members, node_type: :user do
+      arg(:user_where_input, :user_where_input)
+
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    # TODO: Add args/resolver
+    connection field :teams, node_type: :team do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    # TODO: Add args/resolver
+    connection field :projects, node_type: :project do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
     field :created_at, non_null(:iso_date_time)
     field :updated_at, non_null(:iso_date_time)
   end
 
-  ####################
-  # Helper functions #
-  ####################
-  defp check_email(item) do
-    value = item.value()
-    if !is_binary(value), do: {:error, "invalid email address"}
+  object :user do
+    # interface(:node)
 
-    case Regex.match?(Utils.Regex.get_email_regex(), value) do
-      true ->
-        {:ok, value}
+    field :id, non_null(:id)
+    field :full_name, non_null(:string)
+    field :email, non_null(:email)
+    field :profile_description, :string
+    field :profile_role, :string
+    field :phone_number, :string
+    field :birthday, :iso_date_time
+    field :location, :string
+    field :time_zone, :time_zone
+    field :profile_pic_url, :string
+    field :last_login, :iso_date_time
+    field :workspace_role, non_null(:workspace_member_role)
+    field :billing_status, non_null(:user_billing_status)
 
-      false ->
-        {:error, "invalid email address"}
+    field :workspace, non_null(:workspace)
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :team_member do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :role, non_null(:team_member_role)
+
+    field :user, non_null(:user)
+    field :team, non_null(:team)
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :team do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+    field :description, non_null(:string)
+
+    field :workspace, non_null(:workspace)
+
+    # TODO: Add args/resolver
+    connection field :members, node_type: :team_member do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
     end
+
+    # TODO: Add args/resolver
+    connection field :projects, node_type: :project do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :project do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+    field :description, non_null(:string)
+    field :privacy_policy, non_null(:project_privacy_policy)
+    field :project_focus_item, non_null(:project_focus_item)
+    field :project_type, non_null(:project_type)
+    field :status, non_null(:project_status)
+
+    field :owner, non_null(:team)
+    field :workspace, non_null(:workspace)
+    field :created_by, non_null(:user)
+
+    # TODO: Add args/resolver
+    connection field :members, node_type: :user do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    # TODO: Add args/resolver
+    connection field :documents, node_type: :document do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :document do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+    field :content, non_null(:string)
+    field :is_pinned, non_null(:boolean)
+    field :last_update, :document_last_update
+
+    field :project, non_null(:project)
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :project_todo_list do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :project, non_null(:string)
+
+    # TODO: Add args/resolver
+    connection field :lists, node_type: :sub_list do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :sub_list do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+
+    field :project_todo_list, non_null(:project_todo_list)
+
+    # TODO: Add args/resolver
+    connection field :lists_items, node_type: :sub_list_item do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :sub_list_item do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+    field :description, :string
+    field :completed, :boolean
+    field :attachments, list_of(:string)
+    field :due_date_range, :date_range
+
+    field :assigned_to, :user
+    field :sub_list, non_null(:sub_list)
+
+    # TODO: Add args/resolver
+    connection field :comments, node_type: :sub_list_item_comment do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :sub_list_item_comment do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :content, non_null(:string)
+    field :edited, non_null(:boolean)
+
+    field :by, :user
+    field :sub_list_item, non_null(:sub_list_item)
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :kanban_board do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :project, non_null(:project)
+
+    # TODO: Add args/resolver
+    connection field :lanes, node_type: :kanban_lane do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    # TODO: Add args/resolver
+    connection field :labels, node_type: :kanban_label do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :kanban_label do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+    field :color, non_null(:string)
+
+    field :kanban_board, non_null(:kanban_board)
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :kanban_lane do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+    field :lane_color, non_null(:string)
+
+    field :kanban_board, non_null(:kanban_board)
+
+    # TODO: Add args/resolver
+    connection field :cards, node_type: :kanban_card do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :kanban_card do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+    field :description, :string
+    field :completed, non_null(:string)
+    field :due_date_range, :date_range
+    field :attachments, list_of(:string)
+
+    field :kanban_lane, non_null(:kanban_lane)
+    field :project, non_null(:project)
+    field :assigned_to, :user
+
+    # TODO: Add args/resolver
+    connection field :todo_lists, node_type: :kanban_card_todo_list do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    # TODO: Add args/resolver
+    connection field :active_labels, node_type: :kanban_label do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    # TODO: Add args/resolver
+    connection field :comments, node_type: :kanban_card_comment do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :kanban_card_comment do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :content, non_null(:string)
+    field :edited, non_null(:boolean)
+
+    field :kanban_card, non_null(:kanban_card)
+    field :by, :user
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :kanban_card_todo_list do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+
+    field :kanban_card, non_null(:kanban_card)
+
+    # TODO: Add args/resolver
+    connection field :todos, node_type: :kanban_card_todo do
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :kanban_card_todo do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    field :title, non_null(:string)
+    field :completed, non_null(:boolean)
+    field :due_date, :iso_date_time
+
+    field :todo_list, non_null(:kanban_card_todo_list)
+    field :card, non_null(:kanban_card)
+    field :project, non_null(:project)
+    field :assigned_to, :user
+
+    field :created_at, non_null(:iso_date_time)
+    field :updated_at, non_null(:iso_date_time)
   end
 end

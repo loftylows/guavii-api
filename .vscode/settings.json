@@ -3,8 +3,11 @@
     "all",
     "datetime",
     "ecto",
+    "funcs",
+    "helper",
     "nilify",
     "repo",
+    "scalar",
     "utc",
     "uuid"
   ]

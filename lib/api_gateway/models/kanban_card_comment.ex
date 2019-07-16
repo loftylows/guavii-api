@@ -5,6 +5,7 @@ defmodule ApiGateway.Models.KanbanCardComment do
 
   schema "kanban_card_comments" do
     field :content, :string
+    field :edited, :string
 
     belongs_to :kanban_card, ApiGateway.Models.KanbanCard
     belongs_to :by, ApiGateway.Models.User, foreign_key: :user_id
@@ -14,6 +15,7 @@ defmodule ApiGateway.Models.KanbanCardComment do
 
   @permitted_fields [
     :content,
+    :edited,
     :kanban_card_id,
     :user_id
   ]

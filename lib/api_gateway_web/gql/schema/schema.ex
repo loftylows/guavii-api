@@ -1,5 +1,8 @@
 defmodule ApiGatewayWeb.Gql.Schema.Schema do
   use Absinthe.Schema
+  use Absinthe.Relay.Schema, :modern
+
+  import_types(ApiGatewayWeb.Gql.Schema.BaseTypes)
 
   # Example data
   @items %{

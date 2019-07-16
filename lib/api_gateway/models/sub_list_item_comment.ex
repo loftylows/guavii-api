@@ -5,6 +5,7 @@ defmodule ApiGateway.Models.SubListItemComment do
 
   schema "sub_list_items" do
     field :content, :string
+    field :edited, :boolean
 
     belongs_to :sub_list_item, ApiGateway.Models.SubListItem
     belongs_to :by, ApiGateway.Models.User, foreign_key: :user_id
@@ -15,7 +16,8 @@ defmodule ApiGateway.Models.SubListItemComment do
   @permitted_fields [
     :content,
     :sub_list_item_id,
-    :user_id
+    :user_id,
+    :edited
   ]
   @required_fields_create [
     :content,

@@ -44,7 +44,8 @@ defmodule ApiGateway.MixProject do
       {:absinthe, "~> 1.4.2"},
       {:absinthe_plug, "~> 1.4"},
       {:absinthe_phoenix, "~> 1.4.0"},
-      {:poison, "~> 2.1.0"}
+      {:poison, "~> 2.1.0"},
+      {:absinthe_relay, "~> 1.4.0-rc or ~> 1.4"}
     ]
   end
 
