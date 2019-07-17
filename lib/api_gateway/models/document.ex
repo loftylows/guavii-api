@@ -1,7 +1,11 @@
 defmodule ApiGateway.Models.Document do
+  require Ecto.Query
   use Ecto.Schema
   use ApiGateway.Models.SchemaBase
   import Ecto.Changeset
+
+  alias ApiGateway.Repo
+  alias ApiGateway.Ecto.CommonFilterHelpers
 
   schema "projects" do
     field :title, :string
@@ -58,5 +62,53 @@ defmodule ApiGateway.Models.Document do
     schema
     |> cast(attrs, @last_update_permitted_fields)
     |> validate_required(@last_update_permitted_fields)
+  end
+
+  ####################
+  # Query helpers #
+  ####################
+  def maybe_title_contains_filter(query, field \\ "")
+
+  def maybe_title_contains_filter(query, field) when is_binary(field) do
+    query |> Ecto.Query.where([p], like(p.title, ^"%#{String.replace(field, "%", "\\%")}%"))
+  end
+
+  def maybe_title_contains_filter(query, _) do
+    query
+  end
+
+  @doc "project_id must be a valid 'uuid' or an error will be raised"
+  def maybe_project_id_assoc_filter(query, project_id) when is_nil(project_id) do
+    query
+  end
+
+  def maybe_project_id_assoc_filter(query, project_id) do
+    query
+    |> Ecto.Query.join(:inner, [d], p in ApiGateway.Models.Project,
+      on: d.project_id == ^project_id
+    )
+    |> Ecto.Query.select([p, d], d)
+  end
+
+  def add_query_filters(query, filters) when is_map(filters) do
+    query
+    |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
+    |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
+    |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
+    |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
+    |> maybe_title_contains_filter(filters[:title_contains])
+    |> maybe_project_id_assoc_filter(filters[:project_id])
+  end
+
+  ####################
+  # Queries #
+  ####################
+  @doc "document_id must be a valid 'uuid' or an error will be raised"
+  def get_document(document_id), do: Repo.get(ApiGateway.Models.Document, document_id)
+
+  def get_documents(filters \\ %{}) do
+    IO.inspect(filters)
+
+    ApiGateway.Models.Document |> add_query_filters(filters) |> Repo.all()
   end
 end

@@ -1,7 +1,11 @@
 defmodule ApiGateway.Models.Project do
+  require Ecto.Query
   use Ecto.Schema
   use ApiGateway.Models.SchemaBase
   import Ecto.Changeset
+
+  alias ApiGateway.Repo
+  alias ApiGateway.Ecto.CommonFilterHelpers
 
   schema "projects" do
     field :title, :string
@@ -91,5 +95,39 @@ defmodule ApiGateway.Models.Project do
     |> foreign_key_constraint(:workspace_id)
     |> foreign_key_constraint(:team_id)
     |> foreign_key_constraint(:created_by_id)
+  end
+
+  ####################
+  # Query helpers #
+  ####################
+  def maybe_title_contains_filter(query, field \\ "")
+
+  def maybe_title_contains_filter(query, field) when is_binary(field) do
+    query |> Ecto.Query.where([p], like(p.title, ^"%#{String.replace(field, "%", "\\%")}%"))
+  end
+
+  def maybe_title_contains_filter(query, _) do
+    query
+  end
+
+  def add_query_filters(query, filters) when is_map(filters) do
+    query
+    |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
+    |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
+    |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
+    |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
+    |> maybe_title_contains_filter(filters[:title_contains])
+  end
+
+  ####################
+  # Queries #
+  ####################
+  @doc "project_id must be a valid 'uuid' or an error will raise"
+  def get_project(project_id), do: Repo.get(ApiGateway.Models.Project, project_id)
+
+  def get_projects(filters \\ %{}) do
+    IO.inspect(filters)
+
+    ApiGateway.Models.Project |> add_query_filters(filters) |> Repo.all()
   end
 end

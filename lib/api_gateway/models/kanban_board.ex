@@ -4,8 +4,6 @@ defmodule ApiGateway.Models.KanbanBoard do
   import Ecto.Changeset
 
   schema "kanban_boards" do
-    field :name, :string
-
     has_many :lanes, ApiGateway.Models.KanbanLane
     has_many :labels, ApiGateway.Models.KanbanLabel
     belongs_to :project, ApiGateway.Models.Project
@@ -14,11 +12,9 @@ defmodule ApiGateway.Models.KanbanBoard do
   end
 
   @permitted_fields [
-    :name,
     :project_id
   ]
   @required_fields_create [
-    :name,
     :project_id
   ]
 

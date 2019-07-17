@@ -3,6 +3,9 @@ defmodule ApiGateway.Models.Workspace do
   use ApiGateway.Models.SchemaBase
   import Ecto.Changeset
 
+  alias ApiGateway.Repo
+  alias ApiGateway.Ecto.CommonFilterHelpers
+
   schema "workspaces" do
     field :title, :string
     field :workspace_subdomain, :string
@@ -48,5 +51,29 @@ defmodule ApiGateway.Models.Workspace do
   def changeset_update(%ApiGateway.Models.Workspace{} = workspace, attrs \\ %{}) do
     workspace
     |> cast(attrs, @permitted_fields)
+  end
+
+  ####################
+  # Query helpers #
+  ####################
+
+  def add_query_filters(query, filters) when is_map(filters) do
+    query
+    |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
+    |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
+    |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
+    |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
+  end
+
+  ####################
+  # Queries #
+  ####################
+  @doc "workspace_id must be a valid 'uuid' or an error will raise"
+  def get_workspace(workspace_id), do: Repo.get(ApiGateway.Models.Workspace, workspace_id)
+
+  def get_workspaces(filters \\ %{}) do
+    IO.inspect(filters)
+
+    ApiGateway.Models.Workspace |> add_query_filters(filters) |> Repo.all()
   end
 end

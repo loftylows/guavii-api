@@ -1,17 +1,32 @@
 defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
+  import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
 
   ####################
   # Custom scalars #
   ####################
   scalar :iso_date_time, description: "ISO 8601 date-time string" do
-    parse(&DateTime.from_iso8601(&1.value))
+    parse(fn val ->
+      case DateTime.from_iso8601(val.value) do
+        {:ok, date, _} ->
+          {:ok, date}
+
+        _ ->
+          :error
+      end
+    end)
+
     serialize(&DateTime.to_iso8601(&1))
   end
 
   scalar :email, description: "Email address" do
     parse(&ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs.check_email(&1))
+    serialize(& &1)
+  end
+
+  scalar :uuid, description: "UUID string" do
+    parse(&Ecto.UUID.cast(&1.value))
     serialize(& &1)
   end
 
@@ -67,8 +82,8 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     types([:kanban_board, :project_todo_list])
 
     resolve_type(fn
-      %{name: "lanes"}, _ -> :kanban_board
-      %{name: "ProjectTodoList"}, _ -> :project_todo_list
+      %{lanes: _}, _ -> :kanban_board
+      %{lists: _}, _ -> :project_todo_list
     end)
   end
 
@@ -98,69 +113,379 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :end, :iso_date_time
   end
 
+  ########## input filters ##########
   input_object :user_where_unique_input do
     field :id, non_null(:string)
   end
 
   input_object :user_where_input do
-    field :id_in, list_of(:string)
+    field :id_in, list_of(:uuid)
     field :full_name_contains, :string
     field :billing_status, :user_billing_status
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
-    field :created_between_inclusive, :date_range_input
     field :last_login, :iso_date_time
     field :last_login_gte, :iso_date_time
     field :last_login_lte, :iso_date_time
-    field :last_login_between_inclusive, :date_range_input
   end
 
+  @desc "Must provide either an ID or a workspace subdomain"
   input_object :workspace_where_unique_input do
-    field :id, :string
+    field :id, :uuid
     field :workspace_subdomain, :string
   end
 
   input_object :workspace_where_input do
-    field :id_in, list_of(:string)
+    field :id_in, list_of(:uuid)
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
-    field :created_between_inclusive, :date_range_input
+  end
+
+  input_object :team_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :team_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :project_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :project_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :uuid
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :team_member_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :team_member_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :team_id_in, list_of(:uuid)
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :document_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :document_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :project_id, :uuid
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :sub_list_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :sub_list_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :sub_list_item_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :sub_list_item_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :completed, :boolean
+    field :project_id, :uuid
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :sub_list_item_comment_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :sub_list_item_comment_where_input do
+    field :id_in, list_of(:uuid)
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :kanban_lane_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :kanban_lane_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :kanban_label_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :kanban_label_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :color, :string
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :kanban_card_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :kanban_card_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :active_label_id_in, list_of(:uuid)
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :kanban_card_comment_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :kanban_card_comment_where_input do
+    field :id_in, list_of(:uuid)
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :kanban_card_todo_list_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :kanban_card_todo_list_where_input do
+    field :id_in, list_of(:uuid)
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+  end
+
+  input_object :kanban_card_todo_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :kanban_card_todo_where_input do
+    field :id_in, list_of(:uuid)
+    field :title_contains, :string
+    field :completed, :boolean
+    field :project_id, :uuid
+    field :created_at, :iso_date_time
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
   end
 
   ####################
   # Connections #
   ####################
-  connection(node_type: :workspace)
+  connection node_type: :workspace do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
 
-  connection(node_type: :user)
+    edge do
+    end
+  end
 
-  connection(node_type: :team_member)
+  connection node_type: :user do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
 
-  connection(node_type: :team)
+    edge do
+    end
+  end
 
-  connection(node_type: :project)
+  connection node_type: :team_member do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
 
-  connection(node_type: :document)
+    edge do
+    end
+  end
 
-  connection(node_type: :sub_list)
+  connection node_type: :team do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
 
-  connection(node_type: :sub_list_item)
+    edge do
+    end
+  end
 
-  connection(node_type: :sub_list_item_comment)
+  connection node_type: :project do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
 
-  connection(node_type: :kanban_lane)
+    edge do
+    end
+  end
 
-  connection(node_type: :kanban_label)
+  connection node_type: :document do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
 
-  connection(node_type: :kanban_card)
+    edge do
+    end
+  end
 
-  connection(node_type: :kanban_card_comment)
+  connection node_type: :sub_list do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
 
-  connection(node_type: :kanban_card_todo_list)
+    edge do
+    end
+  end
 
-  connection(node_type: :kanban_card_todo)
+  connection node_type: :sub_list_item do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
+  connection node_type: :sub_list_item_comment do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
+  connection node_type: :kanban_lane do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
+  connection node_type: :kanban_label do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
+  connection node_type: :kanban_card do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
+  connection node_type: :kanban_card_comment do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
+  connection node_type: :kanban_card_todo_list do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
+  connection node_type: :kanban_card_todo do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
 
   ####################
   # Nodes #
@@ -226,7 +551,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     # TODO: Add resolver
     connection field :members, node_type: :user do
-      arg(:user_where_input, :user_where_input)
+      arg(:where, :user_where_input)
 
       resolve(fn
         _pagination_args, %{source: _workspace} ->
@@ -235,8 +560,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :teams, node_type: :team do
+      arg(:where, :team_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -244,8 +571,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :projects, node_type: :project do
+      arg(:where, :project_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -302,8 +631,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :workspace, non_null(:workspace)
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :members, node_type: :team_member do
+      arg(:where, :team_member_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -311,8 +642,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :projects, node_type: :project do
+      arg(:where, :project_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -339,8 +672,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :workspace, non_null(:workspace)
     field :created_by, non_null(:user)
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :members, node_type: :user do
+      arg(:where, :user_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -348,8 +683,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :documents, node_type: :document do
+      arg(:where, :document_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -382,8 +719,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :id, non_null(:id)
     field :project, non_null(:string)
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :lists, node_type: :sub_list do
+      arg(:where, :sub_list_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -403,8 +742,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :project_todo_list, non_null(:project_todo_list)
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :lists_items, node_type: :sub_list_item do
+      arg(:where, :sub_list_item_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -423,14 +764,17 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :title, non_null(:string)
     field :description, :string
     field :completed, :boolean
-    field :attachments, list_of(:string)
+    field :attachments, non_null_list(:string)
     field :due_date_range, :date_range
 
     field :assigned_to, :user
     field :sub_list, non_null(:sub_list)
+    field :project, :project
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :comments, node_type: :sub_list_item_comment do
+      arg(:where, :sub_list_item_comment_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -462,8 +806,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :id, non_null(:id)
     field :project, non_null(:project)
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :lanes, node_type: :kanban_lane do
+      arg(:where, :kanban_lane_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -471,8 +817,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :labels, node_type: :kanban_label do
+      arg(:where, :kanban_label_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -506,8 +854,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :kanban_board, non_null(:kanban_board)
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :cards, node_type: :kanban_card do
+      arg(:where, :kanban_card_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -527,14 +877,16 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :description, :string
     field :completed, non_null(:string)
     field :due_date_range, :date_range
-    field :attachments, list_of(:string)
+    field :attachments, non_null_list(:string)
 
     field :kanban_lane, non_null(:kanban_lane)
     field :project, non_null(:project)
     field :assigned_to, :user
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :todo_lists, node_type: :kanban_card_todo_list do
+      arg(:where, :kanban_card_todo_list_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -542,8 +894,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :active_labels, node_type: :kanban_label do
+      arg(:where, :kanban_label_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -551,8 +905,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :comments, node_type: :kanban_card_comment do
+      arg(:where, :kanban_card_comment_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil
@@ -586,8 +942,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :kanban_card, non_null(:kanban_card)
 
-    # TODO: Add args/resolver
+    # TODO: Add resolver
     connection field :todos, node_type: :kanban_card_todo do
+      arg(:where, :kanban_card_todo_where_input)
+
       resolve(fn
         _pagination_args, %{source: _workspace} ->
           nil

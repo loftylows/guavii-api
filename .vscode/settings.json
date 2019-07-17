@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "all",
+    "cast",
     "datetime",
     "ecto",
     "funcs",
@@ -8,7 +9,9 @@
     "nilify",
     "repo",
     "scalar",
+    "to",
     "utc",
-    "uuid"
+    "uuid",
+    "vals"
   ]
 }

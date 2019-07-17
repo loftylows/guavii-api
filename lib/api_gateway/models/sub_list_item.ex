@@ -14,6 +14,7 @@ defmodule ApiGateway.Models.SubListItem do
 
     belongs_to :sub_list, ApiGateway.Models.SubList
     belongs_to :assigned_to, ApiGateway.Models.User, foreign_key: :user_id
+    belongs_to :project, ApiGateway.Models.Project
 
     timestamps()
   end
@@ -23,11 +24,15 @@ defmodule ApiGateway.Models.SubListItem do
     :description,
     :completed,
     :attachments,
-    :due_date_range
+    :due_date_range,
+    :user_id,
+    :sub_list_id,
+    :project_id
   ]
   @required_fields_create [
     :title,
-    :sub_list_id
+    :sub_list_id,
+    :project_id
   ]
 
   def changeset_create(%ApiGateway.Models.SubListItem{} = sub_list_item, attrs \\ %{}) do
@@ -36,6 +41,7 @@ defmodule ApiGateway.Models.SubListItem do
     |> validate_required(@required_fields_create)
     |> foreign_key_constraint(:sub_list_id)
     |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:project_id)
   end
 
   def changeset_update(%ApiGateway.Models.SubListItem{} = sub_list_item, attrs \\ %{}) do
@@ -43,5 +49,6 @@ defmodule ApiGateway.Models.SubListItem do
     |> cast(attrs, @permitted_fields)
     |> foreign_key_constraint(:sub_list_id)
     |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:project_id)
   end
 end

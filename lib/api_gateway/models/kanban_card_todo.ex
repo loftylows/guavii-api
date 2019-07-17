@@ -30,7 +30,6 @@ defmodule ApiGateway.Models.KanbanCardTodo do
   @required_fields_create [
     :title,
     :kanban_card_todo_list_id,
-    :user_id,
     :card_id,
     :project_id
   ]

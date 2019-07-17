@@ -4,7 +4,7 @@ defmodule ApiGateway.Models.ProjectTodoList do
   import Ecto.Changeset
 
   schema "project_todo_lists" do
-    field :name, :string
+    field :title, :string
 
     has_many :lists, ApiGateway.Models.SubList
 
@@ -14,11 +14,11 @@ defmodule ApiGateway.Models.ProjectTodoList do
   end
 
   @permitted_fields [
-    :name,
+    :title,
     :project_id
   ]
   @required_fields_create [
-    :name,
+    :title,
     :project_id
   ]
 

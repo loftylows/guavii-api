@@ -21,8 +21,7 @@ defmodule ApiGateway.Models.SubListItemComment do
   ]
   @required_fields_create [
     :content,
-    :sub_list_item_id,
-    :user_id
+    :sub_list_item_id
   ]
 
   def changeset_create(

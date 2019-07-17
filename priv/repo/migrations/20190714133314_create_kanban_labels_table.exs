@@ -10,5 +10,7 @@ defmodule ApiGateway.Repo.Migrations.CreateKanbanLabelsTable do
 
       timestamps()
     end
+
+    create index("kanban_labels", [:color])
   end
 end

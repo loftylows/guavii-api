@@ -9,7 +9,9 @@ defmodule ApiGateway.Repo.Migrations.CreateSubListsItemsTable do
       add(:attachments, {:array, :string})
       add(:due_date_range, :map)
 
-      add(:workspace_id, references("workspaces", on_delete: :delete_all), null: false)
+      add(:user_id, references("users", on_delete: :nilify_all))
+      add(:sub_list_id, references("sub_lists", on_delete: :delete_all), null: false)
+      add(:project_id, references("projects", on_delete: :delete_all), null: false)
 
       timestamps()
     end
