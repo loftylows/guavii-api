@@ -11,9 +11,10 @@ defmodule ApiGateway.Application do
       # Start the Ecto repository
       ApiGateway.Repo,
       # Start the endpoint when the application starts
-      ApiGatewayWeb.Endpoint
+      ApiGatewayWeb.Endpoint,
       # Starts a worker by calling: ApiGateway.Worker.start_link(arg)
       # {ApiGateway.Worker, arg},
+      {Absinthe.Subscription, [ApiGatewayWeb.Endpoint]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -30,7 +30,7 @@ defmodule ApiGateway.Models.Document do
     :last_update,
     :project_id
   ]
-  @required_fields_create [
+  @required_fields [
     :title,
     :content,
     :last_update,
@@ -46,7 +46,7 @@ defmodule ApiGateway.Models.Document do
     document
     |> cast(attrs, @permitted_fields)
     |> cast_embed(:last_update, with: &last_update_changeset/2)
-    |> validate_required(@required_fields_create)
+    |> validate_required(@required_fields)
     |> foreign_key_constraint(:project_id)
   end
 
@@ -54,7 +54,7 @@ defmodule ApiGateway.Models.Document do
     document
     |> cast(attrs, @permitted_fields)
     |> cast_embed(:last_update, with: &last_update_changeset/2)
-    |> validate_required(@required_fields_create)
+    |> validate_required(@required_fields)
     |> foreign_key_constraint(:project_id)
   end
 
@@ -67,16 +67,6 @@ defmodule ApiGateway.Models.Document do
   ####################
   # Query helpers #
   ####################
-  def maybe_title_contains_filter(query, field \\ "")
-
-  def maybe_title_contains_filter(query, field) when is_binary(field) do
-    query |> Ecto.Query.where([p], like(p.title, ^"%#{String.replace(field, "%", "\\%")}%"))
-  end
-
-  def maybe_title_contains_filter(query, _) do
-    query
-  end
-
   @doc "project_id must be a valid 'uuid' or an error will be raised"
   def maybe_project_id_assoc_filter(query, project_id) when is_nil(project_id) do
     query
@@ -84,10 +74,10 @@ defmodule ApiGateway.Models.Document do
 
   def maybe_project_id_assoc_filter(query, project_id) do
     query
-    |> Ecto.Query.join(:inner, [d], p in ApiGateway.Models.Project,
-      on: d.project_id == ^project_id
+    |> Ecto.Query.join(:inner, [document], project in ApiGateway.Models.Project,
+      on: document.project_id == ^project_id
     )
-    |> Ecto.Query.select([p, d], d)
+    |> Ecto.Query.select([document, project], document)
   end
 
   def add_query_filters(query, filters) when is_map(filters) do
@@ -96,19 +86,48 @@ defmodule ApiGateway.Models.Document do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
-    |> maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> maybe_project_id_assoc_filter(filters[:project_id])
   end
 
   ####################
-  # Queries #
+  # CRUD funcs #
   ####################
-  @doc "document_id must be a valid 'uuid' or an error will be raised"
-  def get_document(document_id), do: Repo.get(ApiGateway.Models.Document, document_id)
+  @doc "id must be a valid 'uuid' or an error will be raised"
+  def get_document(id), do: Repo.get(ApiGateway.Models.Document, id)
 
   def get_documents(filters \\ %{}) do
     IO.inspect(filters)
 
     ApiGateway.Models.Document |> add_query_filters(filters) |> Repo.all()
+  end
+
+  def create_document(data) when is_map(data) do
+    %ApiGateway.Models.Document{}
+    |> changeset_create(data)
+    |> Repo.insert()
+  end
+
+  def update_document(%{id: id, data: data}) do
+    case get_document(id) do
+      nil ->
+        {:error, "Not found"}
+
+      document ->
+        document
+        |> changeset_update(data)
+        |> Repo.update()
+    end
+  end
+
+  @doc "id must be a valid 'uuid' or an error will raise"
+  def delete_document(id) do
+    case Repo.get(ApiGateway.Models.Document, id) do
+      nil ->
+        {:error, "Not found"}
+
+      document ->
+        Repo.delete(document)
+    end
   end
 end

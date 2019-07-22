@@ -5,9 +5,7 @@ defmodule ApiGateway.Repo.Migrations.CreateSubListsTable do
     create table(:sub_lists) do
       add(:title, :string)
 
-      add(:project_todo_list_id, references("project_todo_lists", on_delete: :delete_all),
-        null: false
-      )
+      add(:project_todo_id, references("project_todos", on_delete: :delete_all), null: false)
 
       timestamps()
     end

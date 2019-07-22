@@ -11,6 +11,13 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.Workspace.get_workspace/3)
     end
 
+    @desc "Get all workspaces, optionally filtering"
+    field :workspaces, non_null_list(:workspace) do
+      arg(:where, :workspace_where_input)
+
+      resolve(&Resolvers.Workspace.get_workspaces/3)
+    end
+
     @desc "Get a user using criteria"
     field :user, :user do
       arg(:where, non_null(:user_where_unique_input))
@@ -65,6 +72,62 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       arg(:where, non_null(:kanban_card_where_unique_input))
 
       resolve(&Resolvers.KanbanCard.get_kanban_card/3)
+    end
+
+    ####################
+    # Other queries #
+    ####################
+    @desc "Check whether the provided email is unused in the workspace"
+    field :check_email_unused_in_workspace, non_null(:boolean) do
+      arg(:input, non_null(:check_email_unused_in_workspace_input))
+
+      resolve(&Resolvers.User.check_user_email_unused_in_workspace/3)
+    end
+
+    @desc "Check logged into workspace having provided subdomain"
+    field :check_logged_into_workspace, non_null(:boolean) do
+      arg(:input, non_null(:check_logged_into_workspace_input))
+
+      # TODO: implement resolver
+      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
+    end
+
+    @desc "Check workspace subdomain available"
+    field :check_workspace_subdomain_available, non_null(:boolean) do
+      arg(:input, non_null(:check_workspace_subdomain_available_input))
+
+      resolve(&Resolvers.Workspace.check_workspace_subdomain_available/3)
+    end
+
+    @desc """
+    Check whether a provided app invitation token is valid.
+    May be invalid if already used, past the expiration date or not genuine.
+    """
+    field :check_user_invite_token_valid, non_null(:boolean) do
+      arg(:input, non_null(:check_user_invite_token_valid_input))
+
+      # TODO: implement resolver
+      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
+    end
+
+    @desc "Find current logged in user"
+    field :current_user, :user do
+      # TODO: implement resolver
+      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
+    end
+
+    @desc "Find all workspaces connected to an email address"
+    field :find_my_workspaces, non_null_list(:workspace) do
+      arg(:input, non_null(:find_my_workspaces_input))
+
+      # TODO: implement resolver
+      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
+    end
+
+    @desc "Find all workspaces connected to an email address"
+    field :session_workspaces, non_null_list(:workspace) do
+      # TODO: implement resolver
+      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
     end
   end
 end

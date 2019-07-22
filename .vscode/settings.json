@@ -2,11 +2,13 @@
   "cSpell.words": [
     "all",
     "cast",
+    "dataloader",
     "datetime",
     "ecto",
     "funcs",
     "helper",
     "nilify",
+    "queryable",
     "repo",
     "scalar",
     "to",

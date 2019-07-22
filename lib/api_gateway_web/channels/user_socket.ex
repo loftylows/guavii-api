@@ -1,5 +1,6 @@
 defmodule ApiGatewayWeb.UserSocket do
   use Phoenix.Socket
+  use Absinthe.Phoenix.Socket, schema: ApiGatewayWeb.Gql.Schema.Schema
 
   ## Channels
   # channel "room:*", ApiGatewayWeb.RoomChannel

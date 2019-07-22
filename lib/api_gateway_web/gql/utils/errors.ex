@@ -5,18 +5,54 @@ defmodule ApiGatewayWeb.Gql.Utils.Errors do
   @internal_error "INTERNAL_SERVER_ERROR"
 
   @doc """
-  Provides an error with the provided message and optionally provided invalid args list
+  Provides an error with the given message and optionally provided details messages list
   """
   def user_input_error(msg, invalid_args \\ [])
 
   def user_input_error(msg, invalid_args)
-      when is_binary(msg) and length(invalid_args) === 0 do
+      when is_binary(msg) and is_list(invalid_args) and length(invalid_args) === 0 do
     {:error, message: msg, code: @user_input_error}
   end
 
-  def user_input_error(msg, invalid_args)
+  def user_input_error(msg, error_detail_messages)
+      when is_binary(msg) and is_list(error_detail_messages) and length(error_detail_messages) > 0 do
+    errors =
+      Enum.map(error_detail_messages, fn details ->
+        %{
+          message: msg,
+          code: @user_input_error,
+          details: details
+        }
+      end)
+
+    {:error, errors}
+  end
+
+  @doc """
+  Turns Ecto changeset errors into a gql error with a list of validation errors
+  """
+  def user_input_error_from_changeset(msg, invalid_args \\ [])
+
+  def user_input_error_from_changeset(msg, invalid_args)
+      when is_binary(msg) and is_list(invalid_args) and length(invalid_args) === 0 do
+    {:error, message: msg, code: @user_input_error}
+  end
+
+  def user_input_error_from_changeset(msg, invalid_args)
       when is_binary(msg) and is_list(invalid_args) and length(invalid_args) > 0 do
-    {:error, message: msg, code: @user_input_error, details: %{invalid_args: invalid_args}}
+    errors =
+      Enum.map(invalid_args, fn {field, message} ->
+        {msg_String, _} = message
+
+        %{
+          message: msg,
+          code: @user_input_error,
+          field: field,
+          field_details: msg_String
+        }
+      end)
+
+    {:error, errors}
   end
 
   def authentication_error(msg \\ "Authentication required") when is_binary(msg) do

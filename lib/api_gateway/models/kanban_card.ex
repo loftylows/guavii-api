@@ -37,7 +37,7 @@ defmodule ApiGateway.Models.KanbanCard do
     :project_id,
     :user_id
   ]
-  @required_fields_create [
+  @required_fields [
     :title,
     :kanban_lane_id,
     :project_id
@@ -46,7 +46,7 @@ defmodule ApiGateway.Models.KanbanCard do
   def changeset_create(%ApiGateway.Models.KanbanCard{} = kanban_card, attrs \\ %{}) do
     kanban_card
     |> cast(attrs, @permitted_fields)
-    |> validate_required(@required_fields_create)
+    |> validate_required(@required_fields)
     |> foreign_key_constraint(:kanban_lane_id)
     |> foreign_key_constraint(:project_id)
     |> foreign_key_constraint(:user_id)
@@ -55,6 +55,7 @@ defmodule ApiGateway.Models.KanbanCard do
   def changeset_update(%ApiGateway.Models.KanbanCard{} = kanban_card, attrs \\ %{}) do
     kanban_card
     |> cast(attrs, @permitted_fields)
+    |> validate_required(@required_fields)
     |> foreign_key_constraint(:kanban_lane_id)
     |> foreign_key_constraint(:project_id)
     |> foreign_key_constraint(:user_id)
@@ -63,27 +64,30 @@ defmodule ApiGateway.Models.KanbanCard do
   ####################
   # Query helpers #
   ####################
-  def maybe_title_contains_filter(query, field \\ "")
-
-  def maybe_title_contains_filter(query, field) when is_binary(field) do
-    query |> Ecto.Query.where([p], like(p.title, ^"%#{String.replace(field, "%", "\\%")}%"))
-  end
-
-  def maybe_title_contains_filter(query, _) do
+  @doc "kanban_lane_id must be a valid 'uuid' or an error will be raised"
+  def maybe_kanban_lane_id_assoc_filter(query, kanban_lane_id) when is_nil(kanban_lane_id) do
     query
   end
 
-  @doc "project_id must be a valid 'uuid' or an error will be raised"
-  def maybe_project_id_assoc_filter(query, project_id) when is_nil(project_id) do
+  def maybe_kanban_lane_id_assoc_filter(query, kanban_lane_id) do
     query
-  end
-
-  def maybe_project_id_assoc_filter(query, project_id) do
-    query
-    |> Ecto.Query.join(:inner, [k], p in ApiGateway.Models.Project,
-      on: k.project_id == ^project_id
+    |> Ecto.Query.join(:inner, [kanban_card_todo], kanban_lane in ApiGateway.Models.KanbanLane,
+      on: kanban_card_todo.kanban_lane_id == ^kanban_lane_id
     )
-    |> Ecto.Query.select([p, k], k)
+    |> Ecto.Query.select([kanban_card_todo, kanban_lane], kanban_card_todo)
+  end
+
+  @doc "assigned_to_id must be a valid 'uuid' or an error will be raised"
+  def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) when is_nil(assigned_to_id) do
+    query
+  end
+
+  def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
+    query
+    |> Ecto.Query.join(:inner, [kanban_card], user in ApiGateway.Models.User,
+      on: kanban_card.user_id == ^assigned_to_id
+    )
+    |> Ecto.Query.select([kanban_card, user], kanban_card)
   end
 
   def add_query_filters(query, filters) when is_map(filters) do
@@ -92,8 +96,11 @@ defmodule ApiGateway.Models.KanbanCard do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
-    |> maybe_title_contains_filter(filters[:title_contains])
-    |> maybe_project_id_assoc_filter(filters[:project_id])
+    |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_completed_filter(filters[:completed])
+    |> CommonFilterHelpers.maybe_project_id_assoc_filter(filters[:project_id])
+    |> maybe_kanban_lane_id_assoc_filter(filters[:kanban_lane_id])
+    |> maybe_assigned_to_id_assoc_filter(filters[:assigned_to])
   end
 
   ####################
@@ -106,5 +113,34 @@ defmodule ApiGateway.Models.KanbanCard do
     IO.inspect(filters)
 
     ApiGateway.Models.KanbanCard |> add_query_filters(filters) |> Repo.all()
+  end
+
+  def create_kanban_card(data) when is_map(data) do
+    %ApiGateway.Models.KanbanCard{}
+    |> changeset_create(data)
+    |> Repo.insert()
+  end
+
+  def update_kanban_card(%{id: id, data: data}) do
+    case get_kanban_card(id) do
+      nil ->
+        {:error, "Not found"}
+
+      kanban_card ->
+        kanban_card
+        |> changeset_update(data)
+        |> Repo.update()
+    end
+  end
+
+  @doc "id must be a valid 'uuid' or an error will raise"
+  def delete_kanban_card(id) do
+    case Repo.get(ApiGateway.Models.KanbanCard, id) do
+      nil ->
+        {:error, "Not found"}
+
+      kanban_card ->
+        Repo.delete(kanban_card)
+    end
   end
 end

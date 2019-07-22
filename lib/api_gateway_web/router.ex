@@ -10,6 +10,8 @@ defmodule ApiGatewayWeb.Router do
 
     forward("/api", Absinthe.Plug, schema: ApiGatewayWeb.Gql.Schema.Schema)
 
-    forward "/graphiql", Absinthe.Plug.GraphiQL, schema: ApiGatewayWeb.Gql.Schema.Schema
+    forward "/graphiql", Absinthe.Plug.GraphiQL,
+      schema: ApiGatewayWeb.Gql.Schema.Schema,
+      socket: ApiGatewayWeb.UserSocket
   end
 end

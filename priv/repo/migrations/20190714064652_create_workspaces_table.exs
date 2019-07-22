@@ -1,4 +1,4 @@
-defmodule ApiGateway.Repo.Migrations.CreateWorkspaces do
+defmodule ApiGateway.Repo.Migrations.CreateWorkspacesTable do
   use Ecto.Migration
 
   def change do
@@ -6,7 +6,7 @@ defmodule ApiGateway.Repo.Migrations.CreateWorkspaces do
       add :title, :string, null: false
       add :workspace_subdomain, :string, null: false
       add :description, :text
-      add :storage_cap, :integer, null: false
+      add :storage_cap, :integer, null: false, default: 5
 
       timestamps()
     end

@@ -2,6 +2,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
   import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
+  import Absinthe.Resolution.Helpers, only: [dataloader: 1]
 
   ####################
   # Custom scalars #
@@ -68,7 +69,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   end
 
   enum :project_privacy_policy do
-    value(:public, as: "lists")
+    value(:public, as: "public")
     value(:private, as: "private")
   end
 
@@ -109,8 +110,31 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   # Input objects #
   ####################
   input_object :date_range_input do
-    field :start, :iso_date_time
-    field :end, :iso_date_time
+    field :start, non_null(:iso_date_time)
+    field :end, non_null(:iso_date_time)
+  end
+
+  input_object :check_email_unused_in_workspace_input do
+    field :email, non_null(:email)
+    field :workspace_id, non_null(:uuid)
+  end
+
+  input_object :check_logged_into_workspace_input do
+    field :subdomain, non_null(:string)
+  end
+
+  input_object :check_workspace_subdomain_available_input do
+    field :subdomain, non_null(:string)
+  end
+
+  input_object :check_user_invite_token_valid_input do
+    field :token, non_null(:string)
+    field :email, non_null(:email)
+  end
+
+  input_object :find_my_workspaces_input do
+    field :token, non_null(:string)
+    field :email_connected_to_invitation, non_null(:email)
   end
 
   ########## input filters ##########
@@ -120,8 +144,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
   input_object :user_where_input do
     field :id_in, list_of(:uuid)
+    field :email_in, list_of(:email)
     field :full_name_contains, :string
     field :billing_status, :user_billing_status
+    field :workspace_id, :uuid
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
@@ -138,6 +164,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
   input_object :workspace_where_input do
     field :id_in, list_of(:uuid)
+    field :workspace_subdomain_in, list_of(:string)
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
@@ -498,7 +525,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :invitation_token_hashed, non_null(:string)
     field :accepted, non_null(:boolean)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -512,7 +539,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :workspace, non_null(:workspace)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -524,7 +551,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :accepted, non_null(:boolean)
     field :userId, non_null(:string)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -535,7 +562,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :email, non_null(:string)
     field :token_hashed, non_null(:string)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -544,7 +571,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :id, non_null(:id)
     field :title, non_null(:string)
-    field :workspace_domain, non_null(:string)
+    field :workspace_subdomain, non_null(:string)
     field :description, :string
     field :storage_cap, non_null(:integer)
     field :current_storage_amount, non_null(:integer)
@@ -582,7 +609,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -603,9 +630,20 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :workspace_role, non_null(:workspace_member_role)
     field :billing_status, non_null(:user_billing_status)
 
-    field :workspace, non_null(:workspace)
+    field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
 
-    field :created_at, non_null(:iso_date_time)
+    # TODO: Add resolver
+    connection field :teams, node_type: :team do
+      arg(:where, :team_where_input)
+
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -615,10 +653,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :id, non_null(:id)
     field :role, non_null(:team_member_role)
 
-    field :user, non_null(:user)
-    field :team, non_null(:team)
+    field :user, non_null(:user), resolve: dataloader(ApiGateway.Dataloader)
+    field :team, non_null(:team), resolve: dataloader(ApiGateway.Dataloader)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -627,9 +665,13 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :id, non_null(:id)
     field :title, non_null(:string)
-    field :description, non_null(:string)
+    field :description, :string
 
-    field :workspace, non_null(:workspace)
+    # field :workspace, non_null(:workspace) do
+    # resolve(&ApiGatewayWeb.Gql.Resolvers.Team.get_team_workspace/3)
+    # end
+
+    field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :members, node_type: :team_member do
@@ -653,7 +695,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -668,9 +710,9 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :project_type, non_null(:project_type)
     field :status, non_null(:project_status)
 
-    field :owner, non_null(:team)
-    field :workspace, non_null(:workspace)
-    field :created_by, non_null(:user)
+    field :owner, non_null(:team), resolve: dataloader(ApiGateway.Dataloader)
+    field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
+    field :created_by, non_null(:user), resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :members, node_type: :user do
@@ -694,7 +736,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -707,9 +749,20 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :is_pinned, non_null(:boolean)
     field :last_update, :document_last_update
 
-    field :project, non_null(:project)
+    field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
 
-    field :created_at, non_null(:iso_date_time)
+    # TODO: Add resolver
+    connection field :active_users, node_type: :user do
+      arg(:where, :user_where_input)
+
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -717,7 +770,8 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     # interface(:node)
 
     field :id, non_null(:id)
-    field :project, non_null(:string)
+
+    field :project, non_null(:string), resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :lists, node_type: :sub_list do
@@ -730,7 +784,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -740,7 +794,8 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :id, non_null(:id)
     field :title, non_null(:string)
 
-    field :project_todo_list, non_null(:project_todo_list)
+    field :project_todo_list, non_null(:project_todo_list),
+      resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :lists_items, node_type: :sub_list_item do
@@ -753,7 +808,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -767,9 +822,9 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :attachments, non_null_list(:string)
     field :due_date_range, :date_range
 
-    field :assigned_to, :user
-    field :sub_list, non_null(:sub_list)
-    field :project, :project
+    field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)
+    field :sub_list, non_null(:sub_list), resolve: dataloader(ApiGateway.Dataloader)
+    field :project, :project, resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :comments, node_type: :sub_list_item_comment do
@@ -782,7 +837,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -793,10 +848,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :content, non_null(:string)
     field :edited, non_null(:boolean)
 
-    field :by, :user
-    field :sub_list_item, non_null(:sub_list_item)
+    field :by, :user, resolve: dataloader(ApiGateway.Dataloader)
+    field :sub_list_item, non_null(:sub_list_item), resolve: dataloader(ApiGateway.Dataloader)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -804,7 +859,8 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     # interface(:node)
 
     field :id, non_null(:id)
-    field :project, non_null(:project)
+
+    field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :lanes, node_type: :kanban_lane do
@@ -828,7 +884,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -839,9 +895,9 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :title, non_null(:string)
     field :color, non_null(:string)
 
-    field :kanban_board, non_null(:kanban_board)
+    field :kanban_board, non_null(:kanban_board), resolve: dataloader(ApiGateway.Dataloader)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -852,7 +908,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :title, non_null(:string)
     field :lane_color, non_null(:string)
 
-    field :kanban_board, non_null(:kanban_board)
+    field :kanban_board, non_null(:kanban_board), resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :cards, node_type: :kanban_card do
@@ -865,7 +921,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -879,9 +935,9 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :due_date_range, :date_range
     field :attachments, non_null_list(:string)
 
-    field :kanban_lane, non_null(:kanban_lane)
-    field :project, non_null(:project)
-    field :assigned_to, :user
+    field :kanban_lane, non_null(:kanban_lane), resolve: dataloader(ApiGateway.Dataloader)
+    field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
+    field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :todo_lists, node_type: :kanban_card_todo_list do
@@ -916,7 +972,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -927,10 +983,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :content, non_null(:string)
     field :edited, non_null(:boolean)
 
-    field :kanban_card, non_null(:kanban_card)
-    field :by, :user
+    field :kanban_card, non_null(:kanban_card), resolve: dataloader(ApiGateway.Dataloader)
+    field :by, :user, resolve: dataloader(ApiGateway.Dataloader)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -940,7 +996,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :id, non_null(:id)
     field :title, non_null(:string)
 
-    field :kanban_card, non_null(:kanban_card)
+    field :kanban_card, non_null(:kanban_card), resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :todos, node_type: :kanban_card_todo do
@@ -953,7 +1009,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end)
     end
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 
@@ -965,12 +1021,12 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :completed, non_null(:boolean)
     field :due_date, :iso_date_time
 
-    field :todo_list, non_null(:kanban_card_todo_list)
-    field :card, non_null(:kanban_card)
-    field :project, non_null(:project)
-    field :assigned_to, :user
+    field :todo_list, non_null(:kanban_card_todo_list), resolve: dataloader(ApiGateway.Dataloader)
+    field :card, non_null(:kanban_card), resolve: dataloader(ApiGateway.Dataloader)
+    field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
+    field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)
 
-    field :created_at, non_null(:iso_date_time)
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
     field :updated_at, non_null(:iso_date_time)
   end
 end

@@ -10,11 +10,11 @@ defmodule ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs do
         {:ok, value}
 
       false ->
-        {:error, "invalid email address"}
+        :error
     end
   end
 
-  def check_email(_), do: {:error, "invalid email address"}
+  def check_email(_), do: :error
 
   @doc "Non null list of the type provided with non null values"
   def non_null_list(term) when is_atom(term) do

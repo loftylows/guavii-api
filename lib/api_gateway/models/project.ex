@@ -35,7 +35,7 @@ defmodule ApiGateway.Models.Project do
     :team_id,
     :created_by_id
   ]
-  @required_fields_create [
+  @required_fields [
     :title,
     :project_type,
     :workspace_id,
@@ -74,21 +74,10 @@ defmodule ApiGateway.Models.Project do
     @project_type
   end
 
-  def changeset_create(%ApiGateway.Models.Project{} = project, attrs \\ %{}) do
+  def changeset(%ApiGateway.Models.Project{} = project, attrs \\ %{}) do
     project
     |> cast(attrs, @permitted_fields)
-    |> validate_required(@required_fields_create)
-    |> validate_inclusion(:privacy_policy, get_project_privacy_policy())
-    |> validate_inclusion(:project_type, get_project_type())
-    |> validate_inclusion(:status, get_project_status())
-    |> foreign_key_constraint(:workspace_id)
-    |> foreign_key_constraint(:team_id)
-    |> foreign_key_constraint(:created_by_id)
-  end
-
-  def changeset_update(%ApiGateway.Models.Project{} = project, attrs \\ %{}) do
-    project
-    |> cast(attrs, @permitted_fields)
+    |> validate_required(@required_fields)
     |> validate_inclusion(:privacy_policy, get_project_privacy_policy())
     |> validate_inclusion(:project_type, get_project_type())
     |> validate_inclusion(:status, get_project_status())
@@ -100,14 +89,75 @@ defmodule ApiGateway.Models.Project do
   ####################
   # Query helpers #
   ####################
-  def maybe_title_contains_filter(query, field \\ "")
+  def maybe_project_type_filter(query, project_type \\ nil)
 
-  def maybe_title_contains_filter(query, field) when is_binary(field) do
-    query |> Ecto.Query.where([p], like(p.title, ^"%#{String.replace(field, "%", "\\%")}%"))
+  def maybe_project_type_filter(query, project_type) when is_nil(project_type) do
+    query
   end
 
-  def maybe_title_contains_filter(query, _) do
+  def maybe_project_type_filter(query, project_type) do
+    query |> Ecto.Query.where([project], project.project_type == ^project_type)
+  end
+
+  def maybe_project_status_filter(query, project_status \\ nil)
+
+  def maybe_project_status_filter(query, project_status) when is_nil(project_status) do
     query
+  end
+
+  def maybe_project_status_filter(query, project_status) do
+    query |> Ecto.Query.where([project], project.project_status == ^project_status)
+  end
+
+  def maybe_project_privacy_policy_filter(query, project_privacy_policy \\ nil)
+
+  def maybe_project_privacy_policy_filter(query, project_privacy_policy)
+      when is_nil(project_privacy_policy) do
+    query
+  end
+
+  def maybe_project_privacy_policy_filter(query, project_privacy_policy) do
+    query
+    |> Ecto.Query.where([project], project.project_privacy_policy == ^project_privacy_policy)
+  end
+
+  @doc "workspace_id must be a valid 'uuid' or an error will be raised"
+  def maybe_workspace_id_assoc_filter(query, workspace_id) when is_nil(workspace_id) do
+    query
+  end
+
+  def maybe_workspace_id_assoc_filter(query, workspace_id) do
+    query
+    |> Ecto.Query.join(:inner, [project], workspace in ApiGateway.Models.Workspace,
+      on: project.workspace_id == ^workspace_id
+    )
+    |> Ecto.Query.select([project, workspace], project)
+  end
+
+  @doc "owner_id must be a valid 'uuid' or an error will be raised"
+  def maybe_owner_id_assoc_filter(query, owner_id) when is_nil(owner_id) do
+    query
+  end
+
+  def maybe_owner_id_assoc_filter(query, owner_id) do
+    query
+    |> Ecto.Query.join(:inner, [project], team in ApiGateway.Models.Team,
+      on: project.team_id == ^owner_id
+    )
+    |> Ecto.Query.select([project, team], project)
+  end
+
+  @doc "created_by_id must be a valid 'uuid' or an error will be raised"
+  def maybe_created_by_id_assoc_filter(query, created_by_id) when is_nil(created_by_id) do
+    query
+  end
+
+  def maybe_created_by_id_assoc_filter(query, created_by_id) do
+    query
+    |> Ecto.Query.join(:inner, [project], user in ApiGateway.Models.User,
+      on: project.user_id == ^created_by_id
+    )
+    |> Ecto.Query.select([project, user], project)
   end
 
   def add_query_filters(query, filters) when is_map(filters) do
@@ -116,11 +166,17 @@ defmodule ApiGateway.Models.Project do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
-    |> maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
+    |> maybe_project_type_filter(filters[:project_type])
+    |> maybe_project_status_filter(filters[:project_status])
+    |> maybe_project_privacy_policy_filter(filters[:project_privacy_policy])
+    |> maybe_workspace_id_assoc_filter(filters[:workspace_id])
+    |> maybe_owner_id_assoc_filter(filters[:owner_id])
+    |> maybe_created_by_id_assoc_filter(filters[:created_by_id])
   end
 
   ####################
-  # Queries #
+  # CRUD funcs #
   ####################
   @doc "project_id must be a valid 'uuid' or an error will raise"
   def get_project(project_id), do: Repo.get(ApiGateway.Models.Project, project_id)
@@ -129,5 +185,34 @@ defmodule ApiGateway.Models.Project do
     IO.inspect(filters)
 
     ApiGateway.Models.Project |> add_query_filters(filters) |> Repo.all()
+  end
+
+  def create_project(data) when is_map(data) do
+    %ApiGateway.Models.Project{}
+    |> changeset(data)
+    |> Repo.insert()
+  end
+
+  def update_project(%{id: id, data: data}) do
+    case get_project(id) do
+      nil ->
+        {:error, "Not found"}
+
+      project ->
+        project
+        |> changeset(data)
+        |> Repo.update()
+    end
+  end
+
+  @doc "id must be a valid 'uuid' or an error will raise"
+  def delete_project(id) do
+    case get_project(id) do
+      nil ->
+        {:error, "Not found"}
+
+      project ->
+        Repo.delete(project)
+    end
   end
 end
