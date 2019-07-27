@@ -6,6 +6,8 @@ defmodule ApiGateway.Models.ProjectTodo do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Ecto.OrderedListHelpers
+  alias __MODULE__
 
   schema "project_todos" do
     field :title, :string
@@ -13,6 +15,7 @@ defmodule ApiGateway.Models.ProjectTodo do
     field :completed, :boolean
     field :attachments, {:array, :string}
     field :due_date_range, ApiGateway.CustomEctoTypes.EctoDateRange
+    field :list_order_rank, :float
 
     has_many :lists, ApiGateway.Models.SubList
 
@@ -29,27 +32,47 @@ defmodule ApiGateway.Models.ProjectTodo do
     :description,
     :attachments,
     :due_date_range,
+    :list_order_rank,
     :project_todo_list_id,
     :user_id,
     :project_id
   ]
   @required_fields [
     :title,
+    :list_order_rank,
     :project_todo_list_id,
     :project_id
   ]
 
-  def changeset_create(%ApiGateway.Models.ProjectTodo{} = project_todo, attrs \\ %{}) do
+  @permitted_fields_update [
+    :title,
+    :completed,
+    :description,
+    :attachments,
+    :due_date_range,
+    :user_id,
+    :project_id
+  ]
+  @required_fields_update [
+    :title,
+    :project_id
+  ]
+
+  def changeset(%ProjectTodo{} = project_todo, attrs \\ %{}) do
     project_todo
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:project_todo_id)
   end
 
-  def changeset_update(%ApiGateway.Models.ProjectTodo{} = project_todo, attrs \\ %{}) do
+  def changeset_update(%ProjectTodo{} = project_todo, attrs \\ %{}) do
     project_todo
-    |> cast(attrs, @permitted_fields)
-    |> validate_required(@required_fields)
+    |> cast(attrs, @permitted_fields_update)
+    |> validate_required(@required_fields_update)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:project_todo_id)
   end
 
@@ -93,6 +116,7 @@ defmodule ApiGateway.Models.ProjectTodo do
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_completed_filter(filters[:completed])
     |> CommonFilterHelpers.maybe_project_id_assoc_filter(filters[:project_id])
     |> maybe_project_todo_list_id_assoc_filter(filters[:project_todo_list_id])
     |> maybe_assigned_to_id_assoc_filter(filters[:assigned_to])
@@ -102,17 +126,17 @@ defmodule ApiGateway.Models.ProjectTodo do
   # CRUD funcs #
   ####################
   @doc "id must be a valid 'uuid' or an error will be raised"
-  def get_project_todo(id), do: Repo.get(ApiGateway.Models.ProjectTodo, id)
+  def get_project_todo(id), do: Repo.get(ProjectTodo, id)
 
   def get_project_todos(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.ProjectTodo |> add_query_filters(filters) |> Repo.all()
+    ProjectTodo |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_project_todo(data) when is_map(data) do
-    %ApiGateway.Models.ProjectTodo{}
-    |> changeset_create(data)
+    %ProjectTodo{}
+    |> changeset(data)
     |> Repo.insert()
   end
 
@@ -128,14 +152,54 @@ defmodule ApiGateway.Models.ProjectTodo do
     end
   end
 
+  def update_with_position(%{id: id, data: data, prev: prev, next: next}) do
+    case get_project_todo(id) do
+      nil ->
+        {:error, "Not found"}
+
+      item ->
+        _update_with_position(item, prev, next, data)
+    end
+  end
+
   @doc "id must be a valid 'uuid' or an error will raise"
   def delete_project_todo(id) do
-    case Repo.get(ApiGateway.Models.ProjectTodo, id) do
+    case Repo.get(ProjectTodo, id) do
       nil ->
         {:error, "Not found"}
 
       project_todo ->
         Repo.delete(project_todo)
+    end
+  end
+
+  ####################
+  # Private helpers #
+  ####################
+  defp _update_with_position(%__MODULE__{} = item, prev, next, data) do
+    full_data =
+      data
+      |> Map.put(:list_order_rank, OrderedListHelpers.get_insert_rank(prev, next))
+
+    item =
+      item
+      |> changeset(full_data)
+      |> Repo.update()
+
+    case OrderedListHelpers.gap_acceptable?(prev, next) do
+      true ->
+        {:ok, item}
+
+      false ->
+        # TODO: possibly run this inside of another process so as not to slow the request down
+        OrderedListHelpers.DB.normalize_list_order(
+          "project_todos",
+          "list_order_rank",
+          "project_todo_list_id",
+          item.project_todo_list_id
+        )
+
+        {ApiGateway.Repo.get(__MODULE__, item.id), :list_order_normalized}
     end
   end
 end

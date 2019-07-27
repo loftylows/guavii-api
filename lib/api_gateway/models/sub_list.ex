@@ -6,11 +6,14 @@ defmodule ApiGateway.Models.SubList do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Ecto.OrderedListHelpers
+  alias __MODULE__
 
   schema "sub_lists" do
     field :title, :string
+    field :list_order_rank, :float
 
-    has_many :lists_items, ApiGateway.Models.SubListItem
+    has_many :todos, ApiGateway.Models.SubListItem
 
     belongs_to :project_todo, ApiGateway.Models.ProjectTodo
 
@@ -19,24 +22,37 @@ defmodule ApiGateway.Models.SubList do
 
   @permitted_fields [
     :title,
+    :list_order_rank,
     :project_todo_id
   ]
   @required_fields [
     :title,
+    :list_order_rank,
     :project_todo_id
   ]
 
-  def changeset_create(%ApiGateway.Models.SubList{} = sub_list, attrs \\ %{}) do
+  @permitted_fields_update [
+    :title
+  ]
+  @required_fields_update [
+    :title
+  ]
+
+  def changeset(%SubList{} = sub_list, attrs \\ %{}) do
     sub_list
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:project_todo_id)
   end
 
-  def changeset_update(%ApiGateway.Models.SubList{} = sub_list, attrs \\ %{}) do
+  def changeset_update(%SubList{} = sub_list, attrs \\ %{}) do
     sub_list
-    |> cast(attrs, @permitted_fields)
-    |> validate_required(@required_fields)
+    |> cast(attrs, @permitted_fields_update)
+    |> validate_required(@required_fields_update)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:project_todo_id)
   end
 
@@ -71,17 +87,17 @@ defmodule ApiGateway.Models.SubList do
   # CRUD funcs #
   ####################
   @doc "id must be a valid 'uuid' or an error will be raised"
-  def get_sub_list(id), do: Repo.get(ApiGateway.Models.SubList, id)
+  def get_sub_list(id), do: Repo.get(SubList, id)
 
   def get_sub_lists(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.SubList |> add_query_filters(filters) |> Repo.all()
+    SubList |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_sub_list(data) when is_map(data) do
-    %ApiGateway.Models.SubList{}
-    |> changeset_create(data)
+    %SubList{}
+    |> changeset(data)
     |> Repo.insert()
   end
 
@@ -97,14 +113,54 @@ defmodule ApiGateway.Models.SubList do
     end
   end
 
+  def update_with_position(%{id: id, data: data, prev: prev, next: next}) do
+    case get_sub_list(id) do
+      nil ->
+        {:error, "Not found"}
+
+      item ->
+        _update_with_position(item, prev, next, data)
+    end
+  end
+
   @doc "id must be a valid 'uuid' or an error will raise"
   def delete_sub_list(id) do
-    case Repo.get(ApiGateway.Models.SubList, id) do
+    case Repo.get(SubList, id) do
       nil ->
         {:error, "Not found"}
 
       sub_list ->
         Repo.delete(sub_list)
+    end
+  end
+
+  ####################
+  # Private helpers #
+  ####################
+  defp _update_with_position(%__MODULE__{} = item, prev, next, data) do
+    full_data =
+      data
+      |> Map.put(:list_order_rank, OrderedListHelpers.get_insert_rank(prev, next))
+
+    item =
+      item
+      |> changeset(full_data)
+      |> Repo.update()
+
+    case OrderedListHelpers.gap_acceptable?(prev, next) do
+      true ->
+        {:ok, item}
+
+      false ->
+        # TODO: possibly run this inside of another process so as not to slow the request down
+        OrderedListHelpers.DB.normalize_list_order(
+          "sub_lists",
+          "list_order_rank",
+          "project_todo_id",
+          item.project_todo_id
+        )
+
+        {ApiGateway.Repo.get(__MODULE__, item.id), :list_order_normalized}
     end
   end
 end

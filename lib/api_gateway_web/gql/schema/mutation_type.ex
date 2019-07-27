@@ -74,7 +74,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
 
     @desc "Create a team using provided data"
     field :create_project, :project do
-      arg(:data, non_null(:team_create_input))
+      arg(:data, non_null(:project_create_input))
 
       resolve(&Resolvers.Project.create_project/3)
     end

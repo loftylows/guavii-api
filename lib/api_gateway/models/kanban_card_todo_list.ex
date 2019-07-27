@@ -6,9 +6,12 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Ecto.OrderedListHelpers
+  alias __MODULE__
 
   schema "kanban_card_todo_lists" do
     field :title, :string
+    field :list_order_rank, :float
 
     has_many :todos, ApiGateway.Models.KanbanCardTodo
     belongs_to :kanban_card, ApiGateway.Models.KanbanCard
@@ -18,30 +21,41 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
 
   @permitted_fields [
     :title,
+    :list_order_rank,
     :kanban_card_id
   ]
   @required_fields [
     :title,
+    :list_order_rank,
     :kanban_card_id
   ]
 
-  def changeset_create(
-        %ApiGateway.Models.KanbanCardTodoList{} = kanban_card_todo_list,
+  @permitted_fields_update [
+    :title
+  ]
+  @required_fields_update [
+    :title
+  ]
+
+  def changeset(
+        %KanbanCardTodoList{} = kanban_card_todo_list,
         attrs \\ %{}
       ) do
     kanban_card_todo_list
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_card_id)
   end
 
   def changeset_update(
-        %ApiGateway.Models.KanbanCardTodoList{} = kanban_card_todo_list,
+        %KanbanCardTodoList{} = kanban_card_todo_list,
         attrs \\ %{}
       ) do
     kanban_card_todo_list
-    |> cast(attrs, @permitted_fields)
-    |> validate_required(@required_fields)
+    |> cast(attrs, @permitted_fields_update)
+    |> validate_required(@required_fields_update)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_card_id)
   end
 
@@ -79,17 +93,17 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
   ####################
   @doc "kanban_card_todo_list_id must be a valid 'uuid' or an error will be raised"
   def get_kanban_card_todo_list(kanban_card_todo_list_id),
-    do: Repo.get(ApiGateway.Models.KanbanCardTodoList, kanban_card_todo_list_id)
+    do: Repo.get(KanbanCardTodoList, kanban_card_todo_list_id)
 
   def get_kanban_card_todo_lists(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.KanbanCardTodoList |> add_query_filters(filters) |> Repo.all()
+    KanbanCardTodoList |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_kanban_card_todo_list(data) when is_map(data) do
-    %ApiGateway.Models.KanbanCardTodoList{}
-    |> changeset_create(data)
+    %KanbanCardTodoList{}
+    |> changeset(data)
     |> Repo.insert()
   end
 
@@ -105,6 +119,16 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
     end
   end
 
+  def update_with_position(%{id: id, data: data, prev: prev, next: next}) do
+    case get_kanban_card_todo_list(id) do
+      nil ->
+        {:error, "Not found"}
+
+      item ->
+        _update_with_position(item, prev, next, data)
+    end
+  end
+
   @doc "id must be a valid 'uuid' or an error will raise"
   def delete_kanban_card_todo_list(id) do
     case Repo.get(ApiGateway.Models.KanbanCardTodoList, id) do
@@ -113,6 +137,36 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
 
       kanban_card_todo_list ->
         Repo.delete(kanban_card_todo_list)
+    end
+  end
+
+  ####################
+  # Private helpers #
+  ####################
+  defp _update_with_position(%__MODULE__{} = item, prev, next, data) do
+    full_data =
+      data
+      |> Map.put(:list_order_rank, OrderedListHelpers.get_insert_rank(prev, next))
+
+    item =
+      item
+      |> changeset(full_data)
+      |> Repo.update()
+
+    case OrderedListHelpers.gap_acceptable?(prev, next) do
+      true ->
+        {:ok, item}
+
+      false ->
+        # TODO: possibly run this inside of another process so as not to slow the request down
+        OrderedListHelpers.DB.normalize_list_order(
+          "kanban_card_todo_lists",
+          "list_order_rank",
+          "kanban_card_id",
+          item.kanban_card_id
+        )
+
+        {ApiGateway.Repo.get(__MODULE__, item.id), :list_order_normalized}
     end
   end
 end

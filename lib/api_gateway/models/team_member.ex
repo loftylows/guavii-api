@@ -99,7 +99,6 @@ defmodule ApiGateway.Models.TeamMember do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
-    |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> maybe_role_filter(filters[:role])
     |> maybe_team_id_assoc_filter(filters[:team_id])
     |> maybe_user_id_assoc_filter(filters[:user_id])

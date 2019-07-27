@@ -6,6 +6,8 @@ defmodule ApiGateway.Models.KanbanCard do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Ecto.OrderedListHelpers
+  alias __MODULE__
 
   schema "kanban_cards" do
     field :title, :string
@@ -13,6 +15,7 @@ defmodule ApiGateway.Models.KanbanCard do
     field :completed, :boolean
     field :attachments, {:array, :string}
     field :due_date_range, ApiGateway.CustomEctoTypes.EctoDateRange
+    field :list_order_rank, :float
 
     has_many :todo_lists, ApiGateway.Models.KanbanCardTodoList
     has_many :comments, ApiGateway.Models.KanbanCardComment
@@ -32,6 +35,7 @@ defmodule ApiGateway.Models.KanbanCard do
     :description,
     :completed,
     :attachments,
+    :list_order_rank,
     :due_date_range,
     :kanban_lane_id,
     :project_id,
@@ -39,23 +43,42 @@ defmodule ApiGateway.Models.KanbanCard do
   ]
   @required_fields [
     :title,
+    :list_order_rank,
     :kanban_lane_id,
     :project_id
   ]
 
-  def changeset_create(%ApiGateway.Models.KanbanCard{} = kanban_card, attrs \\ %{}) do
+  @permitted_fields_update [
+    :title,
+    :description,
+    :completed,
+    :attachments,
+    :due_date_range,
+    :project_id,
+    :user_id
+  ]
+  @required_fields_update [
+    :title,
+    :project_id
+  ]
+
+  def changeset(%KanbanCard{} = kanban_card, attrs \\ %{}) do
     kanban_card
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_lane_id)
     |> foreign_key_constraint(:project_id)
     |> foreign_key_constraint(:user_id)
   end
 
-  def changeset_update(%ApiGateway.Models.KanbanCard{} = kanban_card, attrs \\ %{}) do
+  def changeset_update(%KanbanCard{} = kanban_card, attrs \\ %{}) do
     kanban_card
-    |> cast(attrs, @permitted_fields)
-    |> validate_required(@required_fields)
+    |> cast(attrs, @permitted_fields_update)
+    |> validate_required(@required_fields_update)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_lane_id)
     |> foreign_key_constraint(:project_id)
     |> foreign_key_constraint(:user_id)
@@ -107,17 +130,17 @@ defmodule ApiGateway.Models.KanbanCard do
   # Queries #
   ####################
   @doc "kanban_card_id must be a valid 'uuid' or an error will raise"
-  def get_kanban_card(kanban_card_id), do: Repo.get(ApiGateway.Models.KanbanCard, kanban_card_id)
+  def get_kanban_card(kanban_card_id), do: Repo.get(KanbanCard, kanban_card_id)
 
   def get_kanban_cards(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.KanbanCard |> add_query_filters(filters) |> Repo.all()
+    KanbanCard |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_kanban_card(data) when is_map(data) do
-    %ApiGateway.Models.KanbanCard{}
-    |> changeset_create(data)
+    %KanbanCard{}
+    |> changeset(data)
     |> Repo.insert()
   end
 
@@ -133,14 +156,54 @@ defmodule ApiGateway.Models.KanbanCard do
     end
   end
 
+  def update_with_position(%{id: id, data: data, prev: prev, next: next}) do
+    case get_kanban_card(id) do
+      nil ->
+        {:error, "Not found"}
+
+      item ->
+        _update_with_position(item, prev, next, data)
+    end
+  end
+
   @doc "id must be a valid 'uuid' or an error will raise"
   def delete_kanban_card(id) do
-    case Repo.get(ApiGateway.Models.KanbanCard, id) do
+    case Repo.get(KanbanCard, id) do
       nil ->
         {:error, "Not found"}
 
       kanban_card ->
         Repo.delete(kanban_card)
+    end
+  end
+
+  ####################
+  # Private helpers #
+  ####################
+  defp _update_with_position(%KanbanCard{} = item, prev, next, data) do
+    full_data =
+      data
+      |> Map.put(:list_order_rank, OrderedListHelpers.get_insert_rank(prev, next))
+
+    item =
+      item
+      |> changeset(full_data)
+      |> Repo.update()
+
+    case OrderedListHelpers.gap_acceptable?(prev, next) do
+      true ->
+        {:ok, item}
+
+      false ->
+        # TODO: possibly run this inside of another process so as not to slow the request down
+        OrderedListHelpers.DB.normalize_list_order(
+          "kanban_cards",
+          "list_order_rank",
+          "kanban_lane_id",
+          item.kanban_lane_id
+        )
+
+        {ApiGateway.Repo.get(__MODULE__, item.id), :list_order_normalized}
     end
   end
 end

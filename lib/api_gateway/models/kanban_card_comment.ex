@@ -101,7 +101,7 @@ defmodule ApiGateway.Models.KanbanCardComment do
     |> maybe_edited_filter(filters[:edited])
     |> maybe_content_contains_filter(filters[:content_contains])
     |> maybe_kanban_card_id_assoc_filter(filters[:kanban_card_id])
-    |> maybe_user_id_assoc_filter(filters[:user_id])
+    |> maybe_user_id_assoc_filter(filters[:by_id])
   end
 
   ####################

@@ -80,11 +80,11 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   union :project_focus_item do
     description("The type of project. Either a board or a list")
 
-    types([:kanban_board, :project_todo_list])
+    types([:kanban_board, :project_lists_board])
 
     resolve_type(fn
       %{lanes: _}, _ -> :kanban_board
-      %{lists: _}, _ -> :project_todo_list
+      %{lists: _}, _ -> :project_lists_board
     end)
   end
 
@@ -104,231 +104,6 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   object :date_range do
     field :start, :iso_date_time
     field :end, :iso_date_time
-  end
-
-  ####################
-  # Input objects #
-  ####################
-  input_object :date_range_input do
-    field :start, non_null(:iso_date_time)
-    field :end, non_null(:iso_date_time)
-  end
-
-  input_object :check_email_unused_in_workspace_input do
-    field :email, non_null(:email)
-    field :workspace_id, non_null(:uuid)
-  end
-
-  input_object :check_logged_into_workspace_input do
-    field :subdomain, non_null(:string)
-  end
-
-  input_object :check_workspace_subdomain_available_input do
-    field :subdomain, non_null(:string)
-  end
-
-  input_object :check_user_invite_token_valid_input do
-    field :token, non_null(:string)
-    field :email, non_null(:email)
-  end
-
-  input_object :find_my_workspaces_input do
-    field :token, non_null(:string)
-    field :email_connected_to_invitation, non_null(:email)
-  end
-
-  ########## input filters ##########
-  input_object :user_where_unique_input do
-    field :id, non_null(:string)
-  end
-
-  input_object :user_where_input do
-    field :id_in, list_of(:uuid)
-    field :email_in, list_of(:email)
-    field :full_name_contains, :string
-    field :billing_status, :user_billing_status
-    field :workspace_id, :uuid
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-    field :last_login, :iso_date_time
-    field :last_login_gte, :iso_date_time
-    field :last_login_lte, :iso_date_time
-  end
-
-  @desc "Must provide either an ID or a workspace subdomain"
-  input_object :workspace_where_unique_input do
-    field :id, :uuid
-    field :workspace_subdomain, :string
-  end
-
-  input_object :workspace_where_input do
-    field :id_in, list_of(:uuid)
-    field :workspace_subdomain_in, list_of(:string)
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :team_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :team_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :project_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :project_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :uuid
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :team_member_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :team_member_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :team_id_in, list_of(:uuid)
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :document_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :document_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :project_id, :uuid
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :sub_list_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :sub_list_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :sub_list_item_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :sub_list_item_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :completed, :boolean
-    field :project_id, :uuid
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :sub_list_item_comment_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :sub_list_item_comment_where_input do
-    field :id_in, list_of(:uuid)
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :kanban_lane_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :kanban_lane_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :kanban_label_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :kanban_label_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :color, :string
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :kanban_card_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :kanban_card_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :active_label_id_in, list_of(:uuid)
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :kanban_card_comment_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :kanban_card_comment_where_input do
-    field :id_in, list_of(:uuid)
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :kanban_card_todo_list_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :kanban_card_todo_list_where_input do
-    field :id_in, list_of(:uuid)
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
-  end
-
-  input_object :kanban_card_todo_where_unique_input do
-    field :id, non_null(:uuid)
-  end
-
-  input_object :kanban_card_todo_where_input do
-    field :id_in, list_of(:uuid)
-    field :title_contains, :string
-    field :completed, :boolean
-    field :project_id, :uuid
-    field :created_at, :iso_date_time
-    field :created_at_gte, :iso_date_time
-    field :created_at_lte, :iso_date_time
   end
 
   ####################
@@ -394,7 +169,31 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     end
   end
 
+  connection node_type: :project_todo do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
   connection node_type: :document do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
+  connection node_type: :project_todo_list do
     field :count, non_null(:integer) do
       resolve(fn
         _, %{source: conn} ->
@@ -766,12 +565,64 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :updated_at, non_null(:iso_date_time)
   end
 
+  object :project_lists_board do
+    field :id, non_null(:id)
+
+    field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
+
+    # TODO: Add resolver
+    connection field :lists, node_type: :project_todo_list do
+      arg(:where, :project_todo_list_where_input)
+
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
+    field :updated_at, non_null(:iso_date_time)
+  end
+
   object :project_todo_list do
     # interface(:node)
 
     field :id, non_null(:id)
+    field :title, non_null(:string)
 
-    field :project, non_null(:string), resolve: dataloader(ApiGateway.Dataloader)
+    field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
+
+    # TODO: Add resolver
+    connection field :todos, node_type: :project_todo do
+      arg(:where, :sub_list_where_input)
+
+      resolve(fn
+        _pagination_args, %{source: _workspace} ->
+          nil
+          # ... return {:ok, a_connection}
+      end)
+    end
+
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
+    field :updated_at, non_null(:iso_date_time)
+  end
+
+  object :project_todo do
+    # interface(:node)
+
+    field :id, non_null(:id)
+    add(:title, non_null(:string))
+    add(:description, :text)
+    add(:completed, non_null(:boolean))
+    add(:attachments, non_null_list(:string))
+    add(:due_date_range, :due_date_range)
+
+    field :project_todo_list, non_null(:project_todo_list),
+      resolve: dataloader(ApiGateway.Dataloader)
+
+    field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
+    field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :lists, node_type: :sub_list do
@@ -794,8 +645,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :id, non_null(:id)
     field :title, non_null(:string)
 
-    field :project_todo_list, non_null(:project_todo_list),
-      resolve: dataloader(ApiGateway.Dataloader)
+    field :project_todo, non_null(:project_todo), resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
     connection field :lists_items, node_type: :sub_list_item do
@@ -820,7 +670,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :description, :string
     field :completed, :boolean
     field :attachments, non_null_list(:string)
-    field :due_date_range, :date_range
+    field :due_date, :iso_date_time
 
     field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)
     field :sub_list, non_null(:sub_list), resolve: dataloader(ApiGateway.Dataloader)

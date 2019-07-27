@@ -6,10 +6,13 @@ defmodule ApiGateway.Models.KanbanLane do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Ecto.OrderedListHelpers
+  alias __MODULE__
 
   schema "kanban_lanes" do
     field :title, :string
     field :lane_color, :string
+    field :list_order_rank, :float
 
     has_many :cards, ApiGateway.Models.KanbanCard
     belongs_to :kanban_board, ApiGateway.Models.KanbanBoard
@@ -20,25 +23,40 @@ defmodule ApiGateway.Models.KanbanLane do
   @permitted_fields [
     :title,
     :lane_color,
+    :list_order_rank,
     :kanban_board_id
   ]
   @required_fields [
     :title,
     :lane_color,
+    :list_order_rank,
     :kanban_board_id
   ]
 
-  def changeset_create(%ApiGateway.Models.KanbanLane{} = kanban_lane, attrs \\ %{}) do
+  @permitted_fields_update [
+    :title,
+    :lane_color
+  ]
+  @required_fields_update [
+    :title,
+    :lane_color
+  ]
+
+  def changeset(%__MODULE__{} = kanban_lane, attrs \\ %{}) do
     kanban_lane
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_board_id)
   end
 
-  def changeset_update(%ApiGateway.Models.KanbanLane{} = kanban_lane, attrs \\ %{}) do
+  def changeset_update(%__MODULE__{} = kanban_lane, attrs \\ %{}) do
     kanban_lane
-    |> cast(attrs, @permitted_fields)
-    |> validate_required(@required_fields)
+    |> cast(attrs, @permitted_fields_update)
+    |> validate_required(@required_fields_update)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_board_id)
   end
 
@@ -83,17 +101,17 @@ defmodule ApiGateway.Models.KanbanLane do
   # CRUD funcs #
   ####################
   @doc "id must be a valid 'uuid' or an error will be raised"
-  def get_kanban_lane(id), do: Repo.get(ApiGateway.Models.KanbanLane, id)
+  def get_kanban_lane(id), do: Repo.get(KanbanLane, id)
 
   def get_kanban_lanes(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.KanbanLane |> add_query_filters(filters) |> Repo.all()
+    KanbanLane |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_kanban_lane(data) when is_map(data) do
-    %ApiGateway.Models.KanbanLane{}
-    |> changeset_create(data)
+    %KanbanLane{}
+    |> changeset(data)
     |> Repo.insert()
   end
 
@@ -109,14 +127,54 @@ defmodule ApiGateway.Models.KanbanLane do
     end
   end
 
+  def update_with_position(%{id: id, data: data, prev: prev, next: next}) do
+    case get_kanban_lane(id) do
+      nil ->
+        {:error, "Not found"}
+
+      item ->
+        _update_with_position(item, prev, next, data)
+    end
+  end
+
   @doc "id must be a valid 'uuid' or an error will raise"
   def delete_kanban_lane(id) do
-    case Repo.get(ApiGateway.Models.KanbanLane, id) do
+    case Repo.get(KanbanLane, id) do
       nil ->
         {:error, "Not found"}
 
       kanban_lane ->
         Repo.delete(kanban_lane)
+    end
+  end
+
+  ####################
+  # Private helpers #
+  ####################
+  defp _update_with_position(%KanbanLane{} = item, prev, next, data) do
+    full_data =
+      data
+      |> Map.put(:list_order_rank, OrderedListHelpers.get_insert_rank(prev, next))
+
+    item =
+      item
+      |> changeset(full_data)
+      |> Repo.update()
+
+    case OrderedListHelpers.gap_acceptable?(prev, next) do
+      true ->
+        {:ok, item}
+
+      false ->
+        # TODO: possibly run this inside of another process so as not to slow the request down
+        OrderedListHelpers.DB.normalize_list_order(
+          "kanban_lanes",
+          "list_order_rank",
+          "kanban_board_id",
+          item.kanban_board_id
+        )
+
+        {ApiGateway.Repo.get(__MODULE__, item.id), :list_order_normalized}
     end
   end
 end

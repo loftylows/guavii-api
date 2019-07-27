@@ -15,8 +15,8 @@ defmodule ApiGateway.Models.Project do
     field :status, :string
 
     many_to_many :members, ApiGateway.Models.User, join_through: "projects_members"
-    has_one :board, ApiGateway.Models.KanbanBoard
-    has_one :list, ApiGateway.Models.ProjectTodoList
+    has_one :kanban_board, ApiGateway.Models.KanbanBoard
+    has_one :lists_board, ApiGateway.Models.ProjectListsBoard
     has_many :documents, ApiGateway.Models.Document
     belongs_to :workspace, ApiGateway.Models.Workspace
     belongs_to :owner, ApiGateway.Models.Team, foreign_key: :team_id
@@ -44,7 +44,7 @@ defmodule ApiGateway.Models.Project do
   ]
 
   @project_type [
-    "BOARD",
+    "KANBAN",
     "LIST"
   ]
   @project_status [
@@ -187,7 +187,56 @@ defmodule ApiGateway.Models.Project do
     ApiGateway.Models.Project |> add_query_filters(filters) |> Repo.all()
   end
 
-  def create_project(data) when is_map(data) do
+  def create_project(%{project_type: "KANBAN"} = data) do
+    project_result =
+      %ApiGateway.Models.Project{}
+      |> changeset(data)
+      |> Repo.insert()
+
+    case project_result do
+      {:ok, project} ->
+        case ApiGateway.Models.KanbanBoard.create_kanban_board(%{project_id: project.id}) do
+          {:ok, _} ->
+            {:ok, project}
+
+          {:error, _} = errors ->
+            ApiGateway.Models.Project.delete_project(project.id)
+
+            errors
+        end
+
+      {:error, _} = result ->
+        result
+    end
+  end
+
+  def create_project(%{project_type: "LIST"} = data) do
+    project_result =
+      %ApiGateway.Models.Project{}
+      |> changeset(data)
+      |> Repo.insert()
+
+    case project_result do
+      {:ok, project} ->
+        case ApiGateway.Models.ProjectListsBoard.create_project_lists_board(%{
+               project_id: project.id
+             }) do
+          {:ok, _} ->
+            {:ok, project}
+
+          {:error, _} = errors ->
+            ApiGateway.Models.Project.delete_project(project.id)
+
+            errors
+        end
+
+      {:error, _} = result ->
+        result
+    end
+  end
+
+  # TODO: finish this function
+  def create_project(%{project_type: "list"} = data) do
     %ApiGateway.Models.Project{}
     |> changeset(data)
     |> Repo.insert()

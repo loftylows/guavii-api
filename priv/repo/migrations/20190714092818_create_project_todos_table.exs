@@ -8,6 +8,7 @@ defmodule ApiGateway.Repo.Migrations.CreateProjectTodosTable do
       add(:completed, :boolean, default: false)
       add(:attachments, {:array, :string})
       add(:due_date_range, :map)
+      add :list_order_rank, :float, null: false
 
       add(:project_todo_list_id, references("project_todo_lists", on_delete: :delete_all),
         null: false
@@ -18,5 +19,7 @@ defmodule ApiGateway.Repo.Migrations.CreateProjectTodosTable do
 
       timestamps()
     end
+
+    create unique_index("project_todos", [:list_order_rank])
   end
 end
