@@ -6,7 +6,7 @@ defmodule ApiGateway.Repo.Migrations.CreateKanbanCardsTable do
       add(:title, :string, null: false)
       add(:description, :text)
       add(:completed, :boolean, default: false)
-      add(:attachments, {:array, :string})
+      add(:attachments, {:array, :string}, default: [])
       add(:due_date_range, :map)
       add :list_order_rank, :float, null: false
 

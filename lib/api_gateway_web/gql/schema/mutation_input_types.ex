@@ -137,7 +137,6 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :title, non_null(:string)
     field :description, :string
     field :completed, :boolean
-    field :attachments, :string |> non_null() |> list_of()
     field :due_date, :iso_date_time
 
     field :sub_list_id, non_null(:uuid)
@@ -149,7 +148,6 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :title, :string
     field :description, :string
     field :completed, :boolean
-    field :attachments, :string |> non_null() |> list_of()
     field :due_date, :iso_date_time
 
     field :sub_list_id, :uuid
@@ -233,7 +231,6 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :title, non_null(:string)
     field :description, :string
     field :completed, :boolean
-    field :attachments, :string |> non_null() |> list_of()
     field :due_date, :iso_date_time
 
     field :kanban_card_todo_list_id, non_null(:uuid)
@@ -245,7 +242,6 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
   input_object :kanban_card_todo_update_input do
     field :title, :string
     field :completed, :boolean
-    field :attachments, :string |> non_null() |> list_of()
     field :due_date, :iso_date_time
 
     field :kanban_card_todo_list_id, :uuid

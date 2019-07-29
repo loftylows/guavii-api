@@ -669,7 +669,6 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :title, non_null(:string)
     field :description, :string
     field :completed, :boolean
-    field :attachments, non_null_list(:string)
     field :due_date, :iso_date_time
 
     field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)

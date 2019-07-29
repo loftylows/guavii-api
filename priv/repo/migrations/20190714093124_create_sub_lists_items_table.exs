@@ -5,7 +5,6 @@ defmodule ApiGateway.Repo.Migrations.CreateSubListsItemsTable do
     create table(:sub_list_items) do
       add(:title, :string, null: false)
       add(:completed, :boolean, null: false, default: false)
-      add(:attachments, {:array, :string})
       add :due_date, :utc_datetime
 
       add(:user_id, references("users", on_delete: :nilify_all))

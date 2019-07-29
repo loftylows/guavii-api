@@ -13,7 +13,6 @@ defmodule ApiGateway.Models.SubListItem do
   schema "sub_list_items" do
     field :title, :string
     field :completed, :boolean
-    field :attachments, {:array, :string}
     field :due_date, :utc_datetime
     field :list_order_rank, :float
 
@@ -29,7 +28,6 @@ defmodule ApiGateway.Models.SubListItem do
   @permitted_fields [
     :title,
     :completed,
-    :attachments,
     :due_date,
     :list_order_rank,
     :user_id,
@@ -47,7 +45,6 @@ defmodule ApiGateway.Models.SubListItem do
     :title,
     :description,
     :completed,
-    :attachments,
     :due_date,
     :user_id,
     :sub_list_id,
