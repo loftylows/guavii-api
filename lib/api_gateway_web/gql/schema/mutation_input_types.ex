@@ -1,6 +1,11 @@
 defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
   use Absinthe.Schema.Notation
 
+  input_object :list_item_position_input do
+    field :prev_item_rank, :float
+    field :next_item_rank, :float
+  end
+
   input_object :time_zone_input do
     field :name, non_null(:string)
     field :offset, non_null(:string)
@@ -60,7 +65,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
   input_object :project_create_input do
     field :title, non_null(:string)
     field :description, :string
-    field :privacy_policy, non_null(:project_privacy_policy)
+    field :privacy_policy, :project_privacy_policy
     field :project_type, non_null(:project_type)
     field :team_id, non_null(:uuid)
   end
@@ -71,5 +76,181 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :privacy_policy, :project_privacy_policy
     field :project_type, :project_type
     field :status, :project_status
+  end
+
+  input_object :document_create_input do
+    field :title, non_null(:string)
+    field :content, :string
+    field :is_pinned, :boolean
+    field :project_id, non_null(:uuid)
+  end
+
+  input_object :document_update_input do
+    field :title, :string
+    field :content, :string
+    field :is_pinned, :boolean
+  end
+
+  input_object :project_todo_list_create_input do
+    field :title, non_null(:string)
+    field :project_id, non_null(:uuid)
+    field :project_lists_board_id, non_null(:uuid)
+  end
+
+  input_object :project_todo_list_update_input do
+    field :title, :string
+  end
+
+  input_object :project_todo_create_input do
+    field :title, non_null(:string)
+    field :description, :string
+    field :completed, :boolean
+    field :attachments, list_of(:string)
+    field :due_date_range, :date_range_input
+
+    field :project_todo_list_id, non_null(:uuid)
+    field :project_id, non_null(:uuid)
+    field :user_id, :uuid
+  end
+
+  input_object :project_todo_update_input do
+    field :title, :string
+    field :description, :string
+    field :completed, :boolean
+    field :attachments, list_of(:string)
+    field :due_date_range, :date_range_input
+
+    field :project_todo_list_id, :uuid
+    field :user_id, :uuid
+  end
+
+  input_object :sub_list_create_input do
+    field :title, non_null(:string)
+    field :project_todo_id, non_null(:uuid)
+  end
+
+  input_object :sub_list_update_input do
+    field :title, :string
+  end
+
+  input_object :sub_list_item_create_input do
+    field :title, non_null(:string)
+    field :description, :string
+    field :completed, :boolean
+    field :attachments, :string |> non_null() |> list_of()
+    field :due_date, :iso_date_time
+
+    field :sub_list_id, non_null(:uuid)
+    field :project_id, non_null(:uuid)
+    field :user_id, :uuid
+  end
+
+  input_object :sub_list_item_update_input do
+    field :title, :string
+    field :description, :string
+    field :completed, :boolean
+    field :attachments, :string |> non_null() |> list_of()
+    field :due_date, :iso_date_time
+
+    field :sub_list_id, :uuid
+    field :project_id, :uuid
+    field :user_id, :uuid
+  end
+
+  input_object :sub_list_item_comment_create_input do
+    field :content, non_null(:string)
+    field :sub_list_item_id, non_null(:uuid)
+  end
+
+  input_object :sub_list_item_comment_update_input do
+    field :content, :string
+  end
+
+  input_object :kanban_label_create_input do
+    field :title, non_null(:string)
+    field :color, non_null(:string)
+    field :kanban_board_id, non_null(:uuid)
+  end
+
+  input_object :kanban_label_update_input do
+    field :title, :string
+    field :color, :string
+  end
+
+  input_object :kanban_lane_create_input do
+    field :title, non_null(:string)
+    field :lane_color, non_null(:string)
+    field :kanban_board_id, non_null(:uuid)
+  end
+
+  input_object :kanban_lane_update_input do
+    field :title, :string
+    field :lane_color, :string
+  end
+
+  input_object :kanban_card_create_input do
+    field :title, non_null(:string)
+    field :description, :string
+    field :completed, :boolean
+    field :attachments, list_of(:string)
+    field :due_date_range, :date_range_input
+
+    field :kanban_lane_id, non_null(:uuid)
+    field :project_id, non_null(:uuid)
+    field :user_id, :uuid
+  end
+
+  input_object :kanban_card_update_input do
+    field :title, :string
+    field :description, :string
+    field :completed, :boolean
+    field :attachments, list_of(:string)
+    field :due_date_range, :date_range_input
+
+    field :kanban_lane_id, :uuid
+    field :user_id, :uuid
+  end
+
+  input_object :kanban_card_comment_create_input do
+    field :content, non_null(:string)
+    field :kanban_card_id, non_null(:uuid)
+  end
+
+  input_object :kanban_card_comment_update_input do
+    field :content, :string
+  end
+
+  input_object :kanban_card_todo_list_create_input do
+    field :title, non_null(:string)
+    field :kanban_card_id, non_null(:uuid)
+  end
+
+  input_object :kanban_card_todo_list_update_input do
+    field :title, :string
+  end
+
+  input_object :kanban_card_todo_create_input do
+    field :title, non_null(:string)
+    field :description, :string
+    field :completed, :boolean
+    field :attachments, :string |> non_null() |> list_of()
+    field :due_date, :iso_date_time
+
+    field :kanban_card_todo_list_id, non_null(:uuid)
+    field :card_id, non_null(:uuid)
+    field :project_id, non_null(:uuid)
+    field :user_id, :uuid
+  end
+
+  input_object :kanban_card_todo_update_input do
+    field :title, :string
+    field :completed, :boolean
+    field :attachments, :string |> non_null() |> list_of()
+    field :due_date, :iso_date_time
+
+    field :kanban_card_todo_list_id, :uuid
+    field :card_id, :uuid
+    field :project_id, :uuid
+    field :user_id, :uuid
   end
 end

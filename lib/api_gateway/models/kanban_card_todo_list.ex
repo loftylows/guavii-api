@@ -1,4 +1,5 @@
 defmodule ApiGateway.Models.KanbanCardTodoList do
+  require Logger
   require Ecto.Query
   use Ecto.Schema
   use ApiGateway.Models.SchemaBase
@@ -44,6 +45,7 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
     kanban_card_todo_list
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
     |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_card_id)
   end
@@ -55,6 +57,7 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
     kanban_card_todo_list
     |> cast(attrs, @permitted_fields_update)
     |> validate_required(@required_fields_update)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
     |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_card_id)
   end
@@ -153,20 +156,53 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
       |> changeset(full_data)
       |> Repo.update()
 
-    case OrderedListHelpers.gap_acceptable?(prev, next) do
-      true ->
+    case {prev, next} do
+      # only item
+      {nil, nil} ->
         {:ok, item}
 
-      false ->
-        # TODO: possibly run this inside of another process so as not to slow the request down
-        OrderedListHelpers.DB.normalize_list_order(
-          "kanban_card_todo_lists",
-          "list_order_rank",
-          "kanban_card_id",
-          item.kanban_card_id
-        )
+      # last item
+      {_prev, nil} ->
+        {:ok, item}
 
-        {ApiGateway.Repo.get(__MODULE__, item.id), :list_order_normalized}
+      # first or between
+      {_, _} ->
+        case OrderedListHelpers.gap_acceptable?(prev, next) do
+          true ->
+            {:ok, item}
+
+          false ->
+            normalization_result =
+              OrderedListHelpers.DB.normalize_list_order(
+                "kanban_card_todo_lists",
+                "list_order_rank",
+                "kanban_card_id",
+                item.kanban_card_id
+              )
+
+            normalized_list_id = item.kanban_card_id
+
+            case normalization_result do
+              {:ok, _} ->
+                case ApiGateway.Repo.get(__MODULE__, item.id) do
+                  nil ->
+                    {{:list_order_normalized, normalized_list_id}, {:error, "Not found"}}
+
+                  item ->
+                    {{:list_order_normalized, normalized_list_id}, {:ok, item}}
+                end
+
+              {:error, _exception} ->
+                Logger.debug(fn ->
+                  {
+                    "Ordered list rank normalization error",
+                    [module: "#{__MODULE__}"]
+                  }
+                end)
+
+                {:ok, item}
+            end
+        end
     end
   end
 end

@@ -12,7 +12,7 @@ defmodule ApiGateway.Repo.Migrations.CreateKanbanCardTodosTable do
         null: false
 
       add :user_id, references("users", on_delete: :nilify_all)
-      add :kanban_card_id, references("kanban_cards", on_delete: :delete_all), null: false
+      add :card_id, references("kanban_cards", on_delete: :delete_all), null: false
       add :project_id, references("projects", on_delete: :delete_all), null: false
 
       timestamps()

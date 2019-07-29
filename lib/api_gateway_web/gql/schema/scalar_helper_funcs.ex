@@ -17,7 +17,13 @@ defmodule ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs do
   def check_email(_), do: :error
 
   @doc "Non null list of the type provided with non null values"
-  def non_null_list(term) when is_atom(term) do
+  def non_null_list(term, options \\ [non_null_members: true])
+
+  def non_null_list(term, non_null_members: true) when is_atom(term) do
     term |> non_null() |> list_of |> non_null()
+  end
+
+  def non_null_list(term, _) when is_atom(term) do
+    term |> list_of |> non_null()
   end
 end

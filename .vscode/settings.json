@@ -7,6 +7,7 @@
     "ecto",
     "funcs",
     "helper",
+    "ilike",
     "nilify",
     "queryable",
     "repo",

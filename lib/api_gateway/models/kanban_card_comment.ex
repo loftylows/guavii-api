@@ -129,9 +129,17 @@ defmodule ApiGateway.Models.KanbanCardComment do
         {:error, "Not found"}
 
       kanban_card_comment ->
-        kanban_card_comment
-        |> changeset_update(data)
-        |> Repo.update()
+        case data[:content] && !kanban_card_comment.edited do
+          true ->
+            kanban_card_comment
+            |> changeset_update(Map.put(data, :edited, true))
+            |> Repo.update()
+
+          false ->
+            kanban_card_comment
+            |> changeset_update(data)
+            |> Repo.update()
+        end
     end
   end
 

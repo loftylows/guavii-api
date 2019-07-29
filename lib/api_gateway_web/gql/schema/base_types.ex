@@ -49,28 +49,28 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   end
 
   enum :user_billing_status do
-    value(:active, as: "active")
-    value(:deactivated, as: "deactivated")
+    value(:active, as: "ACTIVE")
+    value(:deactivated, as: "DEACTIVATED")
   end
 
   enum :team_member_role do
-    value(:admin, as: "admin")
-    value(:member, as: "member")
+    value(:admin, as: "ADMIN")
+    value(:member, as: "MEMBER")
   end
 
   enum :project_type do
-    value(:board, as: "board")
-    value(:list, as: "list")
+    value(:board, as: "BOARD")
+    value(:list, as: "LIST")
   end
 
   enum :project_status do
-    value(:active, as: "active")
-    value(:archived, as: "archived")
+    value(:active, as: "ACTIVE")
+    value(:archived, as: "ARCHIVED")
   end
 
   enum :project_privacy_policy do
-    value(:public, as: "public")
-    value(:private, as: "private")
+    value(:public, as: "PUBLIC")
+    value(:private, as: "PRIVATE")
   end
 
   ####################

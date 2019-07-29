@@ -77,6 +77,7 @@ defmodule ApiGateway.Models.Workspace do
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
+    |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])

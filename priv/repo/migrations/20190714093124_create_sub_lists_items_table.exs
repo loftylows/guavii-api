@@ -4,7 +4,6 @@ defmodule ApiGateway.Repo.Migrations.CreateSubListsItemsTable do
   def change do
     create table(:sub_list_items) do
       add(:title, :string, null: false)
-      add(:description, :text)
       add(:completed, :boolean, null: false, default: false)
       add(:attachments, {:array, :string})
       add :due_date, :utc_datetime

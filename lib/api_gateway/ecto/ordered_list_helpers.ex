@@ -30,6 +30,16 @@ defmodule ApiGateway.Ecto.OrderedListHelpers do
     gap > 0 and gap > 0.0000000005
   end
 
+  def gap_acceptable?(nil, next) when is_float(next) do
+    gap = next - 0
+
+    gap > 0 and gap > 0.0000000005
+  end
+
+  def gap_acceptable?(_, _) do
+    true
+  end
+
   defmodule DB do
     # TODO: Fix this query to only include the items with the particular relation that we want.
     # row number should not have to count other items too that do not have this relation because this
@@ -52,11 +62,11 @@ defmodule ApiGateway.Ecto.OrderedListHelpers do
       """
 
       case Ecto.Adapters.SQL.query(ApiGateway.Repo, query, []) do
-        {:ok, _} ->
-          :ok
+        {:ok, changes} ->
+          {:ok, changes}
 
-        {:error, _} ->
-          :error
+        {:error, exception} ->
+          {:error, exception}
       end
     end
 
@@ -69,7 +79,7 @@ defmodule ApiGateway.Ecto.OrderedListHelpers do
 
       case ApiGateway.Repo.one(query) do
         nil -> (1.0 + :rand.uniform(1000)) / 1
-        value -> value + (1.0 + :rand.uniform(1000)) / 1
+        value -> (value || 0.0) + (1.0 + :rand.uniform(1000)) / 1
       end
     end
   end

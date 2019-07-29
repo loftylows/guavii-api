@@ -1,4 +1,5 @@
 defmodule ApiGateway.Models.SubList do
+  require Logger
   require Ecto.Query
   use Ecto.Schema
   use ApiGateway.Models.SchemaBase
@@ -147,20 +148,53 @@ defmodule ApiGateway.Models.SubList do
       |> changeset(full_data)
       |> Repo.update()
 
-    case OrderedListHelpers.gap_acceptable?(prev, next) do
-      true ->
+    case {prev, next} do
+      # only item
+      {nil, nil} ->
         {:ok, item}
 
-      false ->
-        # TODO: possibly run this inside of another process so as not to slow the request down
-        OrderedListHelpers.DB.normalize_list_order(
-          "sub_lists",
-          "list_order_rank",
-          "project_todo_id",
-          item.project_todo_id
-        )
+      # last item
+      {_prev, nil} ->
+        {:ok, item}
 
-        {ApiGateway.Repo.get(__MODULE__, item.id), :list_order_normalized}
+      # first or between
+      {_, _} ->
+        case OrderedListHelpers.gap_acceptable?(prev, next) do
+          true ->
+            {:ok, item}
+
+          false ->
+            normalization_result =
+              OrderedListHelpers.DB.normalize_list_order(
+                "sub_lists",
+                "list_order_rank",
+                "project_todo_id",
+                item.project_todo_id
+              )
+
+            normalized_list_id = item.project_todo_id
+
+            case normalization_result do
+              {:ok, _} ->
+                case ApiGateway.Repo.get(__MODULE__, item.id) do
+                  nil ->
+                    {{:list_order_normalized, normalized_list_id}, {:error, "Not found"}}
+
+                  item ->
+                    {{:list_order_normalized, normalized_list_id}, {:ok, item}}
+                end
+
+              {:error, _exception} ->
+                Logger.debug(fn ->
+                  {
+                    "Ordered list rank normalization error",
+                    [module: "#{__MODULE__}"]
+                  }
+                end)
+
+                {:ok, item}
+            end
+        end
     end
   end
 end

@@ -1,4 +1,5 @@
 defmodule ApiGateway.Models.SubListItem do
+  require Logger
   require Ecto.Query
   use Ecto.Schema
   use ApiGateway.Models.SchemaBase
@@ -6,13 +7,15 @@ defmodule ApiGateway.Models.SubListItem do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Ecto.OrderedListHelpers
+  alias __MODULE__
 
   schema "sub_list_items" do
     field :title, :string
-    field :description, :string
     field :completed, :boolean
     field :attachments, {:array, :string}
     field :due_date, :utc_datetime
+    field :list_order_rank, :float
 
     has_many :comments, ApiGateway.Models.SubListItemComment
 
@@ -25,6 +28,23 @@ defmodule ApiGateway.Models.SubListItem do
 
   @permitted_fields [
     :title,
+    :completed,
+    :attachments,
+    :due_date,
+    :list_order_rank,
+    :user_id,
+    :sub_list_id,
+    :project_id
+  ]
+  @required_fields [
+    :title,
+    :list_order_rank,
+    :sub_list_id,
+    :project_id
+  ]
+
+  @permitted_fields_update [
+    :title,
     :description,
     :completed,
     :attachments,
@@ -33,25 +53,29 @@ defmodule ApiGateway.Models.SubListItem do
     :sub_list_id,
     :project_id
   ]
-  @required_fields [
+  @required_fields_update [
     :title,
     :sub_list_id,
     :project_id
   ]
 
-  def changeset_create(%ApiGateway.Models.SubListItem{} = sub_list_item, attrs \\ %{}) do
+  def changeset(%SubListItem{} = sub_list_item, attrs \\ %{}) do
     sub_list_item
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:sub_list_id)
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:project_id)
   end
 
-  def changeset_update(%ApiGateway.Models.SubListItem{} = sub_list_item, attrs \\ %{}) do
+  def changeset_update(%SubListItem{} = sub_list_item, attrs \\ %{}) do
     sub_list_item
-    |> cast(attrs, @permitted_fields)
-    |> validate_required(@required_fields)
+    |> cast(attrs, @permitted_fields_update)
+    |> validate_required(@required_fields_update)
+    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:sub_list_id)
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:project_id)
@@ -119,17 +143,24 @@ defmodule ApiGateway.Models.SubListItem do
   # CRUD funcs #
   ####################
   @doc "id must be a valid 'uuid' or an error will be raised"
-  def get_sub_list_item(id), do: Repo.get(ApiGateway.Models.SubListItem, id)
+  def get_sub_list_item(id), do: Repo.get(SubListItem, id)
 
   def get_sub_list_items(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.SubListItem |> add_query_filters(filters) |> Repo.all()
+    SubListItem |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_sub_list_item(data) when is_map(data) do
-    %ApiGateway.Models.SubListItem{}
-    |> changeset_create(data)
+    insert_rank =
+      OrderedListHelpers.DB.get_new_item_insert_rank(
+        SubListItem,
+        data[:sub_list_id],
+        "list_order_rank"
+      )
+
+    %SubListItem{}
+    |> changeset(Map.put(data, :list_order_rank, insert_rank))
     |> Repo.insert()
   end
 
@@ -145,14 +176,87 @@ defmodule ApiGateway.Models.SubListItem do
     end
   end
 
+  def update_with_position(%{id: id, data: data, prev: prev, next: next}) do
+    case get_sub_list_item(id) do
+      nil ->
+        {:error, "Not found"}
+
+      item ->
+        _update_with_position(item, prev, next, data)
+    end
+  end
+
   @doc "id must be a valid 'uuid' or an error will raise"
   def delete_sub_list_item(id) do
-    case Repo.get(ApiGateway.Models.SubListItem, id) do
+    case Repo.get(SubListItem, id) do
       nil ->
         {:error, "Not found"}
 
       sub_list_item ->
         Repo.delete(sub_list_item)
+    end
+  end
+
+  ####################
+  # Private helpers #
+  ####################
+  defp _update_with_position(%__MODULE__{} = item, prev, next, data) do
+    full_data =
+      data
+      |> Map.put(:list_order_rank, OrderedListHelpers.get_insert_rank(prev, next))
+
+    item =
+      item
+      |> changeset(full_data)
+      |> Repo.update()
+
+    case {prev, next} do
+      # only item
+      {nil, nil} ->
+        {:ok, item}
+
+      # last item
+      {_prev, nil} ->
+        {:ok, item}
+
+      # first or between
+      {_, _} ->
+        case OrderedListHelpers.gap_acceptable?(prev, next) do
+          true ->
+            {:ok, item}
+
+          false ->
+            normalization_result =
+              OrderedListHelpers.DB.normalize_list_order(
+                "sub_list_items",
+                "list_order_rank",
+                "sub_list_id",
+                item.sub_list_id
+              )
+
+            normalized_list_id = item.sub_list_id
+
+            case normalization_result do
+              {:ok, _} ->
+                case ApiGateway.Repo.get(__MODULE__, item.id) do
+                  nil ->
+                    {{:list_order_normalized, normalized_list_id}, {:error, "Not found"}}
+
+                  item ->
+                    {{:list_order_normalized, normalized_list_id}, {:ok, item}}
+                end
+
+              {:error, _exception} ->
+                Logger.debug(fn ->
+                  {
+                    "Ordered list rank normalization error",
+                    [module: "#{__MODULE__}"]
+                  }
+                end)
+
+                {:ok, item}
+            end
+        end
     end
   end
 end

@@ -13,8 +13,8 @@ config :api_gateway, ApiGatewayWeb.Endpoint,
   url: [host: "example.com", port: 80],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
-# Do not print debug messages in production
-config :logger, level: :info
+# Do not print debug messages in production and purge them from code at compile time
+config :logger, level: :info, compile_time_purge_level: info
 
 # ## SSL Support
 #

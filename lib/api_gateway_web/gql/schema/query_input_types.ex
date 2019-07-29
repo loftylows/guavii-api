@@ -1,11 +1,6 @@
 defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
   use Absinthe.Schema.Notation
 
-  input_object :date_range_input do
-    field :start, non_null(:iso_date_time)
-    field :end, non_null(:iso_date_time)
-  end
-
   input_object :check_email_unused_in_workspace_input do
     field :email, non_null(:email)
     field :workspace_id, non_null(:uuid)
@@ -56,6 +51,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
 
   input_object :workspace_where_input do
     field :id_in, list_of(:uuid)
+    field :title_contains, :string
     field :workspace_subdomain_in, list_of(:string)
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time

@@ -44,7 +44,7 @@ defmodule ApiGateway.Models.Project do
   ]
 
   @project_type [
-    "KANBAN",
+    "BOARD",
     "LIST"
   ]
   @project_status [
@@ -187,7 +187,7 @@ defmodule ApiGateway.Models.Project do
     ApiGateway.Models.Project |> add_query_filters(filters) |> Repo.all()
   end
 
-  def create_project(%{project_type: "KANBAN"} = data) do
+  def create_project(%{project_type: "BOARD"} = data) do
     project_result =
       %ApiGateway.Models.Project{}
       |> changeset(data)

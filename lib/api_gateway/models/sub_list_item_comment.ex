@@ -140,9 +140,17 @@ defmodule ApiGateway.Models.SubListItemComment do
         {:error, "Not found"}
 
       sub_list_item_comment ->
-        sub_list_item_comment
-        |> changeset_update(data)
-        |> Repo.update()
+        case data[:content] && !sub_list_item_comment.edited do
+          true ->
+            sub_list_item_comment
+            |> changeset_update(Map.put(data, :edited, true))
+            |> Repo.update()
+
+          false ->
+            sub_list_item_comment
+            |> changeset_update(data)
+            |> Repo.update()
+        end
     end
   end
 

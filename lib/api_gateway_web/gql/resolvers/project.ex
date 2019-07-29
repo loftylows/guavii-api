@@ -11,20 +11,10 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Project do
     {:ok, ApiGateway.Models.Project.get_projects()}
   end
 
-  def create_project(_, %{data: %{project_type: "board"} = data}, _) do
+  def create_project(_, %{data: data}, _) do
     case ApiGateway.Models.Project.create_project(data) do
       {:ok, project} ->
-        case ApiGateway.Models.KanbanBoard.create_kanban_board(%{project_id: project.id}) do
-          {:ok, _} ->
-            {:ok, project}
-
-          {:error, errors} ->
-            IO.inspect(errors)
-
-            ApiGateway.Models.Project.delete_project(project.id)
-
-            ApiGatewayWeb.Gql.Utils.Errors.internal_error()
-        end
+        {:ok, project}
 
       {:error, %{errors: errors}} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset(

@@ -83,7 +83,7 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
   def maybe_title_contains_filter(query, field \\ nil)
 
   def maybe_title_contains_filter(query, field) when is_binary(field) do
-    query |> Ecto.Query.where([p], like(p.title, ^"%#{String.replace(field, "%", "\\%")}%"))
+    query |> Ecto.Query.where([p], ilike(p.title, ^"%#{String.replace(field, "%", "\\%")}%"))
   end
 
   def maybe_title_contains_filter(query, _) do
