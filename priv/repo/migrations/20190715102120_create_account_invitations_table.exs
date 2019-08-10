@@ -5,7 +5,7 @@ defmodule ApiGateway.Repo.Migrations.CreateAccountInvitationsTable do
     create table(:account_invitations) do
       add :email, :string, null: false
       add :invitation_token_hashed, :string, null: false
-      add :accepted, :boolean, null: false
+      add :accepted, :boolean, null: false, default: false
 
       timestamps()
     end

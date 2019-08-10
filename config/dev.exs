@@ -55,3 +55,25 @@ config :phoenix, :stacktrace_depth, 20
 
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
+
+config :bamboo, :json_library, Jason
+
+config :api_gateway,
+  environment: :dev,
+  transactional_email_api_token: System.get_env("TRANSACTIONAL_EMAIL_API_TOKEN"),
+  password_hash_pepper: System.get_env("PASSWORD_HASH_PEPPER"),
+  email_invite_token_hash_pepper: System.get_env("EMAIL_INVITE_TOKEN_HASH_PEPPER"),
+  session_secret: System.get_env("SESSION_SECRET"),
+  jwt_private_key: System.get_env("JWT_PRIVATE_KEY"),
+  jwt_public_key: System.get_env("JWT_PUBLIC_KEY"),
+  jwt_issuer: System.get_env("JWT_ISSUER"),
+  jwt_audience: System.get_env("JWT_AUDIENCE"),
+  website_host: System.get_env("WEBSITE_HOST"),
+  website_url: System.get_env("WEBSITE_URL")
+
+config :api_gateway, ApiGateway.Mailer,
+  adapter: Bamboo.PostmarkAdapter,
+  api_key: System.get_env("TRANSACTIONAL_EMAIL_API_TOKEN")
+
+config :exredis,
+  url: System.get_env("REDIS_URL")

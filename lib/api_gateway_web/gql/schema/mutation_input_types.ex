@@ -249,4 +249,33 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :project_id, :uuid
     field :user_id, :uuid
   end
+
+  ######################
+  # Non-node mutations #
+  ######################
+
+  input_object :account_invitation_send_input do
+    field :email, :email
+  end
+
+  input_object :create_user_with_workspace_registration_input do
+    field :full_name, non_null(:string)
+    field :password, non_null(:string)
+  end
+
+  input_object :create_workspace_with_user_registration_input do
+    field :title, non_null(:string)
+    field :workspace_subdomain, non_null(:string)
+  end
+
+  input_object :register_user_and_workspace_input do
+    field :token, non_null(:string)
+    field :encoded_email_connected_to_invitation, non_null(:string)
+
+    field :create_user_with_workspace_registration_input,
+          non_null(:create_user_with_workspace_registration_input)
+
+    field :create_workspace_with_user_registration_input,
+          non_null(:create_workspace_with_user_registration_input)
+  end
 end

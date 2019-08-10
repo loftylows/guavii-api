@@ -12,7 +12,7 @@ defmodule ApiGateway.Models.SubListItemComment do
     field :edited, :boolean
 
     belongs_to :sub_list_item, ApiGateway.Models.SubListItem
-    belongs_to :by, ApiGateway.Models.User, foreign_key: :user_id
+    belongs_to :by, ApiGateway.Models.Account.User, foreign_key: :user_id
 
     timestamps()
   end
@@ -98,7 +98,7 @@ defmodule ApiGateway.Models.SubListItemComment do
 
   def maybe_commenter_id_assoc_filter(query, commenter_id) do
     query
-    |> Ecto.Query.join(:inner, [sub_list_item_comment], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [sub_list_item_comment], user in ApiGateway.Models.Account.User,
       on: sub_list_item_comment.user_id == ^commenter_id
     )
     |> Ecto.Query.select([sub_list_item_comment, user], sub_list_item_comment)

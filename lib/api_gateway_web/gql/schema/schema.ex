@@ -7,6 +7,7 @@ defmodule ApiGatewayWeb.Gql.Schema.Schema do
   import_types(ApiGatewayWeb.Gql.Schema.QueryInputTypes)
   import_types(ApiGatewayWeb.Gql.Schema.QueryType)
   import_types(ApiGatewayWeb.Gql.Schema.MutationInputTypes)
+  import_types(ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes)
   import_types(ApiGatewayWeb.Gql.Schema.MutationType)
 
   def context(ctx) do

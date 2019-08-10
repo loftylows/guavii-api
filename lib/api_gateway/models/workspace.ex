@@ -6,6 +6,8 @@ defmodule ApiGateway.Models.Workspace do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Models.InternalSubdomain
+  alias ApiGateway.Models.ArchivedWorkspaceSubdomain
 
   schema "workspaces" do
     field :title, :string
@@ -13,7 +15,7 @@ defmodule ApiGateway.Models.Workspace do
     field :description, :string
     field :storage_cap, :integer
 
-    has_many :members, ApiGateway.Models.User
+    has_many :members, ApiGateway.Models.Account.User
     has_many :teams, ApiGateway.Models.Team
     has_many :archived_workspace_subdomains, ApiGateway.Models.ArchivedWorkspaceSubdomain
 
@@ -25,8 +27,6 @@ defmodule ApiGateway.Models.Workspace do
     :workspace_subdomain,
     :description,
     :storage_cap
-    # :members,
-    # :teams
   ]
   @required_fields_create [
     :title,
@@ -40,6 +40,15 @@ defmodule ApiGateway.Models.Workspace do
       "ADMIN",
       "MEMBER"
     ]
+  end
+
+  def get_workspace_roles_map do
+    %{
+      primary_owner: "PRIMARY_OWNER",
+      owner: "OWNER",
+      admin: "ADMIN",
+      member: "MEMBER"
+    }
   end
 
   ####################
@@ -100,10 +109,21 @@ defmodule ApiGateway.Models.Workspace do
     ApiGateway.Models.Workspace |> add_query_filters(filters) |> Repo.all()
   end
 
-  def create_workspace(data) when is_map(data) do
-    %ApiGateway.Models.Workspace{}
-    |> changeset_create(data)
-    |> Repo.insert()
+  def create_workspace(%{subdomain: subdomain} = data) when is_binary(subdomain) do
+    internal_subdomain = InternalSubdomain.get_internal_subdomain_by_subdomain(subdomain)
+
+    archived_subdomain =
+      ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
+
+    case {internal_subdomain, archived_subdomain} do
+      {nil, nil} ->
+        %ApiGateway.Models.Workspace{}
+        |> changeset_create(data)
+        |> Repo.insert()
+
+      _ ->
+        {:error, "Subdomain taken"}
+    end
   end
 
   def update_workspace(%{id: id, data: data}) do
@@ -112,9 +132,23 @@ defmodule ApiGateway.Models.Workspace do
         {:error, "Not found"}
 
       workspace ->
-        workspace
-        |> changeset_update(data)
-        |> Repo.update()
+        changeset =
+          workspace
+          |> changeset_update(data)
+
+        case Ecto.Changeset.get_change(changeset, :workspace_subdomain) do
+          nil ->
+            Repo.update(changeset)
+
+          subdomain ->
+            case check_subdomain_taken(subdomain) do
+              false ->
+                Repo.update(changeset)
+
+              true ->
+                {:error, "Subdomain taken"}
+            end
+        end
     end
   end
 
@@ -124,9 +158,23 @@ defmodule ApiGateway.Models.Workspace do
         {:error, "Not found"}
 
       workspace ->
-        workspace
-        |> changeset_update(data)
-        |> Repo.update()
+        changeset =
+          workspace
+          |> changeset_update(data)
+
+        case Ecto.Changeset.get_change(changeset, :workspace_subdomain) do
+          nil ->
+            Repo.update(changeset)
+
+          subdomain ->
+            case check_subdomain_taken(subdomain) do
+              false ->
+                Repo.update(changeset)
+
+              true ->
+                {:error, "Subdomain taken"}
+            end
+        end
     end
   end
 
@@ -149,5 +197,13 @@ defmodule ApiGateway.Models.Workspace do
       workspace ->
         Repo.delete(workspace)
     end
+  end
+
+  defp check_subdomain_taken(subdomain) do
+    internal = InternalSubdomain.get_internal_subdomain_by_subdomain(subdomain)
+
+    archived = ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
+
+    if internal || archived, do: true, else: false
   end
 end

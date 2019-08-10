@@ -26,7 +26,6 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
   @required_fields_create [
     :email,
     :invitation_token_hashed,
-    :accepted,
     :workspace_id
   ]
 

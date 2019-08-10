@@ -14,8 +14,7 @@ defmodule ApiGateway.Repo.Migrations.CreateUsersTable do
       add :last_login, :utc_datetime
       add :workspace_role, :string, null: false
       add :billing_status, :string, null: false
-      add :session_id, :string
-      add :password_hash, :string
+      add :password_hash, :string, null: false
 
       add :time_zone, :map
 
@@ -24,7 +23,6 @@ defmodule ApiGateway.Repo.Migrations.CreateUsersTable do
       timestamps()
     end
 
-    create unique_index("users", [:email, :workspace_id], name: :unique_workspace_email_index)
-    create index("users", [:email])
+    create unique_index("users", [:email, :workspace_id], name: "unique_workspace_email_index")
   end
 end

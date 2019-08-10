@@ -1,4 +1,4 @@
-defmodule ApiGatewayWeb.UserSocket do
+defmodule ApiGatewayWeb.Channels.UserSocket do
   use Phoenix.Socket
   use Absinthe.Phoenix.Socket, schema: ApiGatewayWeb.Gql.Schema.Schema
 

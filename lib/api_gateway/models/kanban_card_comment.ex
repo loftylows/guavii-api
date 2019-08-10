@@ -12,7 +12,7 @@ defmodule ApiGateway.Models.KanbanCardComment do
     field :edited, :string
 
     belongs_to :kanban_card, ApiGateway.Models.KanbanCard
-    belongs_to :by, ApiGateway.Models.User, foreign_key: :user_id
+    belongs_to :by, ApiGateway.Models.Account.User, foreign_key: :user_id
 
     timestamps()
   end
@@ -86,7 +86,7 @@ defmodule ApiGateway.Models.KanbanCardComment do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(:inner, [kanban_card_comment], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [kanban_card_comment], user in ApiGateway.Models.Account.User,
       on: kanban_card_comment.user_id == ^user_id
     )
     |> Ecto.Query.select([kanban_card_comment, user], kanban_card_comment)

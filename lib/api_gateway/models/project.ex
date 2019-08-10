@@ -14,13 +14,13 @@ defmodule ApiGateway.Models.Project do
     field :project_type, :string
     field :status, :string
 
-    many_to_many :members, ApiGateway.Models.User, join_through: "projects_members"
+    many_to_many :members, ApiGateway.Models.Account.User, join_through: "projects_members"
     has_one :kanban_board, ApiGateway.Models.KanbanBoard
     has_one :lists_board, ApiGateway.Models.ProjectListsBoard
     has_many :documents, ApiGateway.Models.Document
     belongs_to :workspace, ApiGateway.Models.Workspace
     belongs_to :owner, ApiGateway.Models.Team, foreign_key: :team_id
-    belongs_to :created_by, ApiGateway.Models.User, foreign_key: :created_by_id
+    belongs_to :created_by, ApiGateway.Models.Account.User, foreign_key: :created_by_id
 
     timestamps()
   end
@@ -154,7 +154,7 @@ defmodule ApiGateway.Models.Project do
 
   def maybe_created_by_id_assoc_filter(query, created_by_id) do
     query
-    |> Ecto.Query.join(:inner, [project], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [project], user in ApiGateway.Models.Account.User,
       on: project.user_id == ^created_by_id
     )
     |> Ecto.Query.select([project, user], project)

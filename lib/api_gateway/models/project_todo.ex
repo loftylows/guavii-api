@@ -21,7 +21,7 @@ defmodule ApiGateway.Models.ProjectTodo do
     has_many :lists, ApiGateway.Models.SubList
 
     belongs_to :project_todo_list, ApiGateway.Models.ProjectTodoList
-    belongs_to :assigned_to, ApiGateway.Models.User, foreign_key: :user_id
+    belongs_to :assigned_to, ApiGateway.Models.Account.User, foreign_key: :user_id
     belongs_to :project, ApiGateway.Models.Project
 
     timestamps()
@@ -104,7 +104,7 @@ defmodule ApiGateway.Models.ProjectTodo do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
-    |> Ecto.Query.join(:inner, [project_todo], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [project_todo], user in ApiGateway.Models.Account.User,
       on: project_todo.user_id == ^assigned_to_id
     )
     |> Ecto.Query.select([project_todo, user], project_todo)

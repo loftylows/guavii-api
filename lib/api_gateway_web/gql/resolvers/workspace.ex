@@ -33,6 +33,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Workspace do
           errors
         )
 
+      {:error, "Subdomain taken"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Workspace subdomain taken")
+
       {:error, _} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User input error")
     end
@@ -48,6 +51,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Workspace do
 
       {:error, "Not found"} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Workspace not found")
+
+      {:error, "Subdomain taken"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Workspace subdomain taken")
 
       {:error, _} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User input error")
@@ -67,6 +73,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Workspace do
 
       {:error, "Not found"} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Workspace not found")
+
+      {:error, "Subdomain taken"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Workspace subdomain taken")
 
       {:error, _} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User input error")

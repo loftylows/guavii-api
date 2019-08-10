@@ -76,9 +76,8 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   ####################
   # Unions #
   ####################
-  # TODO: fix this definition by providing a proper resolve function
   union :project_focus_item do
-    description("The type of project. Either a board or a list")
+    description("The type of project. Either a kanban or a list board")
 
     types([:kanban_board, :project_lists_board])
 

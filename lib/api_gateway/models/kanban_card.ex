@@ -26,7 +26,7 @@ defmodule ApiGateway.Models.KanbanCard do
 
     belongs_to :kanban_lane, ApiGateway.Models.KanbanLane
     belongs_to :project, ApiGateway.Models.Project
-    belongs_to :assignedTo, ApiGateway.Models.User, foreign_key: :user_id
+    belongs_to :assignedTo, ApiGateway.Models.Account.User, foreign_key: :user_id
 
     timestamps()
   end
@@ -108,7 +108,7 @@ defmodule ApiGateway.Models.KanbanCard do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
-    |> Ecto.Query.join(:inner, [kanban_card], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [kanban_card], user in ApiGateway.Models.Account.User,
       on: kanban_card.user_id == ^assigned_to_id
     )
     |> Ecto.Query.select([kanban_card, user], kanban_card)

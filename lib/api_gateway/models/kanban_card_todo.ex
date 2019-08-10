@@ -18,7 +18,7 @@ defmodule ApiGateway.Models.KanbanCardTodo do
 
     belongs_to :kanban_card_todo_list, ApiGateway.Models.KanbanCardTodoList
 
-    belongs_to :assigned_to, ApiGateway.Models.User, foreign_key: :user_id
+    belongs_to :assigned_to, ApiGateway.Models.Account.User, foreign_key: :user_id
     belongs_to :card, ApiGateway.Models.KanbanCard
     belongs_to :project, ApiGateway.Models.Project
 
@@ -110,7 +110,7 @@ defmodule ApiGateway.Models.KanbanCardTodo do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(:inner, [kanban_card_todo], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [kanban_card_todo], user in ApiGateway.Models.Account.User,
       on: kanban_card_todo.user_id == ^user_id
     )
     |> Ecto.Query.select([kanban_card_todo, user], kanban_card_todo)

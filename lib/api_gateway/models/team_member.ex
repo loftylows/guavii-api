@@ -10,7 +10,7 @@ defmodule ApiGateway.Models.TeamMember do
   schema "team_members" do
     field :role, :string
 
-    belongs_to :user, ApiGateway.Models.User
+    belongs_to :user, ApiGateway.Models.Account.User
     belongs_to :team, ApiGateway.Models.Team
 
     timestamps()
@@ -87,7 +87,7 @@ defmodule ApiGateway.Models.TeamMember do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(:inner, [team_member], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [team_member], user in ApiGateway.Models.Account.User,
       on: team_member.user_id == ^user_id
     )
     |> Ecto.Query.select([team_member, user], team_member)

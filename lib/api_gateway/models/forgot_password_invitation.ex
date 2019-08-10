@@ -11,7 +11,7 @@ defmodule ApiGateway.Models.ForgotPasswordInvitation do
     field :token_hashed, :string
     field :accepted, :boolean
 
-    belongs_to :user, ApiGateway.Models.User
+    belongs_to :user, ApiGateway.Models.Account.User
 
     timestamps()
   end
@@ -23,7 +23,6 @@ defmodule ApiGateway.Models.ForgotPasswordInvitation do
   ]
   @required_fields [
     :token_hashed,
-    :accepted,
     :user_id
   ]
 
@@ -67,7 +66,7 @@ defmodule ApiGateway.Models.ForgotPasswordInvitation do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(:inner, [forgot_password_invitation], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [forgot_password_invitation], user in ApiGateway.Models.Account.User,
       on: forgot_password_invitation.user_id == ^user_id
     )
     |> Ecto.Query.select([forgot_password_invitation, user], forgot_password_invitation)

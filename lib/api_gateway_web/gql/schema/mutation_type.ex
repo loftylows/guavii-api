@@ -3,6 +3,9 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
   alias ApiGatewayWeb.Gql.Resolvers
 
   object :root_mutations do
+    ####################
+    # Main Node mutations #
+    ####################
     @desc "Create a workspace using provided data"
     field :create_workspace, non_null(:workspace) do
       arg(:data, non_null(:workspace_create_input))
@@ -371,5 +374,27 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     ####################
     # Other mutations #
     ####################
+
+    @desc "Send an account invitation using provided data"
+    field :send_account_invitation, non_null(:account_invitation_send_payload) do
+      arg(:data, non_null(:account_invitation_send_input))
+
+      resolve(&Resolvers.AccountInvitation.send_account_invitation/3)
+    end
+
+    @desc "Register a user and a workspace together using provided data"
+    field :register_user_and_workspace, non_null(:register_user_and_workspace_payload) do
+      arg(:data, non_null(:create_workspace_with_user_registration_input))
+
+      resolve(&Resolvers.User.register_user_and_workspace/3)
+
+      middleware(fn resolution, _ ->
+        with %{value: %{user: user}} <- resolution do
+          Map.update!(resolution, :context, fn ctx ->
+            Map.put(ctx, :login_info, %{user_id: user.id})
+          end)
+        end
+      end)
+    end
   end
 end

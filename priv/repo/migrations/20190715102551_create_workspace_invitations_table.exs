@@ -5,7 +5,7 @@ defmodule ApiGateway.Repo.Migrations.CreateWorkspaceInvitationsTable do
     create table(:workspace_invitations) do
       add :email, :string, null: false
       add :invitation_token_hashed, :string, null: false
-      add :accepted, :boolean, null: false
+      add :accepted, :boolean, null: false, default: false
 
       add :workspace_id, references("workspaces", on_delete: :delete_all), null: false
 

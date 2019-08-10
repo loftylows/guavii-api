@@ -31,6 +31,7 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
     archived_workspace_subdomain
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> unique_constraint(:subdomain)
     |> foreign_key_constraint(:workspace_id)
   end
 
@@ -41,19 +42,13 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
     archived_workspace_subdomain
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
+    |> unique_constraint(:subdomain)
     |> foreign_key_constraint(:workspace_id)
   end
 
   ####################
   # Query helpers #
   ####################
-  def maybe_accepted_filter(query, bool) when is_boolean(bool) do
-    query |> Ecto.Query.where([p], p.accepted == ^bool)
-  end
-
-  def maybe_accepted_filter(query, _) do
-    query
-  end
 
   @doc "workspace_id must be a valid 'uuid' or an error will be raised"
   def maybe_workspace_id_assoc_filter(query, workspace_id) when is_nil(workspace_id) do

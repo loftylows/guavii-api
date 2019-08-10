@@ -19,7 +19,7 @@ defmodule ApiGateway.Models.SubListItem do
     has_many :comments, ApiGateway.Models.SubListItemComment
 
     belongs_to :sub_list, ApiGateway.Models.SubList
-    belongs_to :assigned_to, ApiGateway.Models.User, foreign_key: :user_id
+    belongs_to :assigned_to, ApiGateway.Models.Account.User, foreign_key: :user_id
     belongs_to :project, ApiGateway.Models.Project
 
     timestamps()
@@ -101,7 +101,7 @@ defmodule ApiGateway.Models.SubListItem do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
-    |> Ecto.Query.join(:inner, [sub_list_item], user in ApiGateway.Models.User,
+    |> Ecto.Query.join(:inner, [sub_list_item], user in ApiGateway.Models.Account.User,
       on: sub_list_item.user_id == ^assigned_to_id
     )
     |> Ecto.Query.select([sub_list_item, user], sub_list_item)

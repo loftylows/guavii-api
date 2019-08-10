@@ -47,7 +47,10 @@ defmodule ApiGateway.MixProject do
       {:poison, "~> 2.1.0"},
       {:absinthe_relay, "~> 1.4.0-rc or ~> 1.4"},
       {:argon2_elixir, "~> 2.0.5"},
-      {:dataloader, "~> 1.0.0"}
+      {:dataloader, "~> 1.0.0"},
+      {:bamboo, "~> 1.2"},
+      {:bamboo_postmark, "~> 0.6"},
+      {:redbird, "~> 0.4.0"}
     ]
   end
 

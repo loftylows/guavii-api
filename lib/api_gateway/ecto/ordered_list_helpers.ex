@@ -49,7 +49,8 @@ defmodule ApiGateway.Ecto.OrderedListHelpers do
     of items supposed to be in an ordered list. sorts the fields, based on the 'rank_field_name',
     amd then sets the 'rank_field_name' based on the ROW_NUMBER sql window function
     """
-    @spec normalize_list_order(String.t(), String.t(), String.t(), String.t()) :: :ok | :error
+    @spec normalize_list_order(String.t(), String.t(), String.t(), String.t()) ::
+            {:ok, any()} | {:error, any()}
     def normalize_list_order(table_name, rank_field_name, relation_id_field, relation_id)
         when is_binary(table_name) do
       query = """

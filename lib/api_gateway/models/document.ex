@@ -15,7 +15,7 @@ defmodule ApiGateway.Models.Document do
     embeds_one :last_update, LastUpdate do
       field :date, :utc_datetime
 
-      belongs_to :user, ApiGateway.Models.User
+      belongs_to :user, ApiGateway.Models.Account.User
     end
 
     belongs_to :project, ApiGateway.Models.Project

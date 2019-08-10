@@ -18,7 +18,7 @@ config :api_gateway, ApiGateway.Repo,
 
 # Configures the endpoint
 config :api_gateway, ApiGatewayWeb.Endpoint,
-  url: [host: "localhost"],
+  url: [host: System.get_env("WEBSITE_HOST")],
   secret_key_base: "Inb+JtuT+nX9fLULIUP4Q0jrec1V83poFtFpFMvczJWCRoROhaz+DRxywqBFrT/5",
   render_errors: [view: ApiGatewayWeb.ErrorView, accepts: ~w(json)],
   pubsub: [name: ApiGateway.PubSub, adapter: Phoenix.PubSub.PG2]
