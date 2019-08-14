@@ -9,7 +9,7 @@ defmodule ApiGatewayWeb.Router do
   scope "/" do
     pipe_through :api
 
-    forward("/api", Absinthe.Plug,
+    forward("/gql", Absinthe.Plug,
       schema: ApiGatewayWeb.Gql.Schema.Schema,
       before_send: {ApiGatewayWeb.Gql.AbsintheBeforeSend, :absinthe_before_send},
       analyze_complexity: true,
