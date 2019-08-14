@@ -1,8 +1,12 @@
 defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
+  require Ecto.Query
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
   import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+  import Ecto.Query, only: [from: 2]
+
+  # TODO: fix all connections to use dataloader to stop N+1 queries
 
   ####################
   # Custom scalars #
@@ -42,10 +46,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   # Enums #
   ####################
   enum :workspace_member_role do
-    value(:primary_owner, as: "primary_owner")
-    value(:owner, as: "owner")
-    value(:admin, as: "admin")
-    value(:member, as: "member")
+    value(:primary_owner, as: "PRIMARY_OWNER")
+    value(:owner, as: "OWNER")
+    value(:admin, as: "ADMIN")
+    value(:member, as: "MEMBER")
   end
 
   enum :user_billing_status do
@@ -101,6 +105,21 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   end
 
   object :date_range do
+    field :start, :iso_date_time
+    field :end, :iso_date_time
+  end
+
+  ######################
+  # Custom Connections #
+  ######################
+  input_object :connection_input do
+    field :after, :string
+    field :before, :string
+    field :first, :integer
+    field :last, :integer
+  end
+
+  object :workspace_member_connection do
     field :start, :iso_date_time
     field :end, :iso_date_time
   end
@@ -374,36 +393,43 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :storage_cap, non_null(:integer)
     field :current_storage_amount, non_null(:integer)
 
-    # TODO: Add resolver
+    # field :members, non_null_list(:user), resolve: dataloader(ApiGateway.Dataloader)
+
     connection field :members, node_type: :user do
       arg(:where, :user_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: workspace} ->
+          IO.inspect(pagination_args)
+
+          ApiGateway.Models.Account.User
+          |> ApiGateway.Models.Account.User.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(workspace_id: ^workspace.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
-    # TODO: Add resolver
     connection field :teams, node_type: :team do
       arg(:where, :team_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: workspace} ->
+          ApiGateway.Models.Team
+          |> ApiGateway.Models.Team.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(workspace_id: ^workspace.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
-    # TODO: Add resolver
     connection field :projects, node_type: :project do
       arg(:where, :project_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: workspace} ->
+          ApiGateway.Models.Project
+          |> ApiGateway.Models.Project.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(workspace_id: ^workspace.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -430,14 +456,20 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :teams, node_type: :team do
       arg(:where, :team_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: user} ->
+          query =
+            from team_member in ApiGateway.Models.TeamMember,
+              join: team in ApiGateway.Models.Team,
+              on: team_member.user_id == ^user.id and team_member.team_id == team.id,
+              select: team
+
+          query
+          |> ApiGateway.Models.Team.add_query_filters(pagination_args[:where])
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -471,25 +503,27 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :members, node_type: :team_member do
       arg(:where, :team_member_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: team} ->
+          ApiGateway.Models.TeamMember
+          |> ApiGateway.Models.TeamMember.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(team_id: ^team.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
-    # TODO: Add resolver
     connection field :projects, node_type: :project do
       arg(:where, :project_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: team} ->
+          ApiGateway.Models.Project
+          |> ApiGateway.Models.Project.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(team_id: ^team.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -512,25 +546,28 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
     field :created_by, non_null(:user), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :members, node_type: :user do
       arg(:where, :user_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: project} ->
+          IO.inspect(pagination_args)
+
+          Ecto.assoc(project, :members)
+          |> ApiGateway.Models.Account.User.add_query_filters(pagination_args[:where])
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
-    # TODO: Add resolver
     connection field :documents, node_type: :document do
       arg(:where, :document_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: project} ->
+          ApiGateway.Models.Document
+          |> ApiGateway.Models.Document.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(project_id: ^project.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -554,7 +591,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       arg(:where, :user_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
+        _pagination_args, %{source: _document} ->
           nil
           # ... return {:ok, a_connection}
       end)
@@ -569,14 +606,15 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :lists, node_type: :project_todo_list do
       arg(:where, :project_todo_list_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: project_lists_board} ->
+          ApiGateway.Models.ProjectTodoList
+          |> ApiGateway.Models.ProjectTodoList.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(project_lists_board_id: ^project_lists_board.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -592,14 +630,15 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :todos, node_type: :project_todo do
       arg(:where, :sub_list_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: project_todo_list} ->
+          ApiGateway.Models.ProjectTodo
+          |> ApiGateway.Models.ProjectTodo.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(project_todo_list_id: ^project_todo_list.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -623,14 +662,15 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
     field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :lists, node_type: :sub_list do
       arg(:where, :sub_list_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: project_todo} ->
+          ApiGateway.Models.SubList
+          |> ApiGateway.Models.SubList.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(project_todo_id: ^project_todo.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -646,14 +686,15 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :project_todo, non_null(:project_todo), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :lists_items, node_type: :sub_list_item do
       arg(:where, :sub_list_item_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: sub_list} ->
+          ApiGateway.Models.SubListItem
+          |> ApiGateway.Models.SubListItem.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(sub_list_id: ^sub_list.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -674,14 +715,15 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :sub_list, non_null(:sub_list), resolve: dataloader(ApiGateway.Dataloader)
     field :project, :project, resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :comments, node_type: :sub_list_item_comment do
       arg(:where, :sub_list_item_comment_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: sub_list_item} ->
+          ApiGateway.Models.SubListItemComment
+          |> ApiGateway.Models.SubListItemComment.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(sub_list_item_id: ^sub_list_item.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -710,25 +752,27 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :lanes, node_type: :kanban_lane do
       arg(:where, :kanban_lane_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: kanban_board} ->
+          ApiGateway.Models.KanbanLane
+          |> ApiGateway.Models.KanbanLane.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(kanban_board_id: ^kanban_board.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
-    # TODO: Add resolver
     connection field :labels, node_type: :kanban_label do
       arg(:where, :kanban_label_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: kanban_board} ->
+          ApiGateway.Models.KanbanLabel
+          |> ApiGateway.Models.KanbanLabel.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(kanban_board_id: ^kanban_board.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -758,14 +802,15 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :kanban_board, non_null(:kanban_board), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :cards, node_type: :kanban_card do
       arg(:where, :kanban_card_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: kanban_lane} ->
+          ApiGateway.Models.KanbanCard
+          |> ApiGateway.Models.KanbanCard.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(kanban_lane_id: ^kanban_lane.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -787,36 +832,48 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
     field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :todo_lists, node_type: :kanban_card_todo_list do
       arg(:where, :kanban_card_todo_list_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: kanban_card} ->
+          ApiGateway.Models.KanbanCardTodoList
+          |> ApiGateway.Models.KanbanCardTodoList.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(kanban_card_id: ^kanban_card.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
-    # TODO: Add resolver
     connection field :active_labels, node_type: :kanban_label do
       arg(:where, :kanban_label_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: kanban_card} ->
+          query =
+            from active_labels in "kanban_cards_active_labels",
+              join: kanban_label in ApiGateway.Models.KanbanLabel,
+              on: kanban_label.id == active_labels.kanban_label_id,
+              join: kanban_card in ApiGateway.Models.KanbanCard,
+              on:
+                kanban_card.id == active_labels.kanban_card_id and
+                  kanban_card.id == ^kanban_card.id,
+              select: kanban_label
+
+          query
+          |> ApiGateway.Models.KanbanLabel.add_query_filters(pagination_args[:where])
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
-    # TODO: Add resolver
     connection field :comments, node_type: :kanban_card_comment do
       arg(:where, :kanban_card_comment_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: kanban_card} ->
+          ApiGateway.Models.KanbanCardComment
+          |> ApiGateway.Models.KanbanCardComment.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(kanban_card_id: ^kanban_card.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 
@@ -846,14 +903,15 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :kanban_card, non_null(:kanban_card), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     connection field :todos, node_type: :kanban_card_todo do
       arg(:where, :kanban_card_todo_where_input)
 
       resolve(fn
-        _pagination_args, %{source: _workspace} ->
-          nil
-          # ... return {:ok, a_connection}
+        pagination_args, %{source: kanban_card_todo_list} ->
+          ApiGateway.Models.KanbanCardTodo
+          |> ApiGateway.Models.KanbanCardTodo.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(kanban_card_todo_list_id: ^kanban_card_todo_list.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
 

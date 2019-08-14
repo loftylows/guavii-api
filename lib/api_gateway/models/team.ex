@@ -6,6 +6,8 @@ defmodule ApiGateway.Models.Team do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Models.TeamMember
+  alias __MODULE__
 
   schema "teams" do
     field :title, :string
@@ -35,7 +37,7 @@ defmodule ApiGateway.Models.Team do
     |> foreign_key_constraint(:workspace_id)
   end
 
-  def changeset_update(%ApiGateway.Models.Team{} = team, attrs \\ %{}) do
+  def changeset_update(%Team{} = team, attrs \\ %{}) do
     team
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields_create)
@@ -58,6 +60,10 @@ defmodule ApiGateway.Models.Team do
     |> Ecto.Query.select([team, workspace], team)
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
@@ -72,18 +78,44 @@ defmodule ApiGateway.Models.Team do
   # CRUD funcs #
   ####################
   @doc "team_id must be a valid 'uuid' or an error will raise"
-  def get_team(team_id), do: Repo.get(ApiGateway.Models.Team, team_id)
+  def get_team(team_id), do: Repo.get(Team, team_id)
 
   def get_teams(filters \\ %{}) do
-    ApiGateway.Models.Team
+    Team
     |> add_query_filters(filters)
     |> Repo.all()
   end
 
   def create_team(data) when is_map(data) do
-    %ApiGateway.Models.Team{}
+    %Team{}
     |> changeset_create(data)
     |> Repo.insert()
+  end
+
+  def create_team_with_member(data, %{id: user_id, workspace_id: workspace_id})
+      when is_map(data) do
+    %Team{}
+    |> changeset_create(Map.put(data, :workspace_id, workspace_id))
+    |> Repo.insert()
+    |> case do
+      {:error, _} = error ->
+        error
+
+      {:ok, team} ->
+        roles_map = TeamMember.get_team_member_roles_map()
+
+        %{user_id: user_id, team_id: team.id, role: roles_map.admin}
+        |> ApiGateway.Models.TeamMember.create_team_member()
+        |> case do
+          {:error, _} ->
+            delete_team(team.id)
+
+            {:error, :internal_error}
+
+          {:ok, _} ->
+            {:ok, team}
+        end
+    end
   end
 
   def update_team(%{id: id, data: data}) do

@@ -41,9 +41,7 @@ defmodule ApiGatewayWeb.Gql.Utils.Errors do
   def user_input_error_from_changeset(msg, invalid_args)
       when is_binary(msg) and is_list(invalid_args) and length(invalid_args) > 0 do
     errors =
-      Enum.map(invalid_args, fn {field, message} ->
-        {msg_String, _} = message
-
+      Enum.map(invalid_args, fn {field, {msg_String, _}} ->
         %{
           message: msg,
           code: @user_input_error,

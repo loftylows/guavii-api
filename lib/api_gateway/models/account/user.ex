@@ -29,6 +29,7 @@ defmodule ApiGateway.Models.Account.User do
       field :name, :string
     end
 
+    has_many :team_members, ApiGateway.Models.TeamMember
     belongs_to :workspace, Workspace
 
     timestamps()
@@ -44,6 +45,7 @@ defmodule ApiGateway.Models.Account.User do
     :location,
     :profile_pic_url,
     :workspace_role,
+    :billing_status,
     :workspace_id,
     :password
   ]
@@ -65,6 +67,15 @@ defmodule ApiGateway.Models.Account.User do
     :name
   ]
 
+  @user_billing_status [
+    "ACTIVE",
+    "DEACTIVATED"
+  ]
+
+  def get_user_billing_status_options do
+    @user_billing_status
+  end
+
   def changeset_create(%User{} = user, attrs \\ %{}) do
     user
     |> cast(attrs, @permitted_fields)
@@ -73,6 +84,7 @@ defmodule ApiGateway.Models.Account.User do
     |> validate_length(:password, min: 8, max: 100, message: "should be at least 8 characters")
     |> validate_format(:email, Utils.Regex.get_email_regex())
     |> validate_inclusion(:workspace_role, Workspace.get_workspace_roles())
+    |> validate_inclusion(:billing_status, get_user_billing_status_options())
     |> maybe_put_pass_hash()
     |> foreign_key_constraint(:workspace_id)
     |> unique_constraint(:email, name: :unique_workspace_email_index)
@@ -81,10 +93,11 @@ defmodule ApiGateway.Models.Account.User do
   def changeset_update(%User{} = user, attrs \\ %{}) do
     user
     |> cast(attrs, @permitted_fields)
-    |> cast_embed(:child, with: &time_zone_changeset/2)
+    |> cast_embed(:time_zone, with: &time_zone_changeset/2)
     |> validate_required(@required_fields_update)
     |> validate_format(:email, Utils.Regex.get_email_regex())
     |> validate_inclusion(:workspace_role, Workspace.get_workspace_roles())
+    |> validate_inclusion(:billing_status, get_user_billing_status_options())
     |> maybe_put_pass_hash()
     |> foreign_key_constraint(:workspace_id)
     |> unique_constraint(:email, name: :unique_workspace_email_index)
@@ -121,12 +134,12 @@ defmodule ApiGateway.Models.Account.User do
     query
   end
 
-  def maybe_billing_status_filter(query, bool) when is_boolean(bool) do
-    query |> Ecto.Query.where([user], user.billing_status == ^bool)
+  def maybe_billing_status_filter(query, nil) do
+    query
   end
 
-  def maybe_billing_status_filter(query, _) do
-    query
+  def maybe_billing_status_filter(query, billing_status) do
+    query |> Ecto.Query.where([user], user.billing_status == ^billing_status)
   end
 
   def maybe_last_login_filter(query, date) when is_nil(date) do
@@ -154,7 +167,7 @@ defmodule ApiGateway.Models.Account.User do
   end
 
   @doc "workspace_id must be a valid 'uuid' or an error will be raised"
-  def maybe_workspace_id_assoc_filter(query, workspace_id) when is_nil(workspace_id) do
+  def maybe_workspace_id_assoc_filter(query, nil) do
     query
   end
 
@@ -166,8 +179,13 @@ defmodule ApiGateway.Models.Account.User do
     |> Ecto.Query.select([user, workspace], user)
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
+    |> CommonFilterHelpers.maybe_first_filter(filters[:first])
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
@@ -196,6 +214,19 @@ defmodule ApiGateway.Models.Account.User do
     |> Repo.one!()
   end
 
+  def get_user_by_email_and_subdomain(email, subdomain) do
+    case Workspace.get_workspace_by_subdomain(subdomain) do
+      nil ->
+        nil
+
+      workspace ->
+        User
+        |> Ecto.Query.where([user], email: ^email, workspace_id: ^workspace.id)
+        |> Repo.one!()
+    end
+  end
+
+  @spec get_users(map) :: [User.t()]
   def get_users(filters \\ %{}) do
     IO.inspect(filters)
 
@@ -233,19 +264,25 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
-  def authenticate_by_email_password(email, password, workspace_id) do
-    User
-    |> Ecto.Query.where([u], u.email == ^email)
-    |> Ecto.Query.where([u], u.workspace_id == ^workspace_id)
-    |> Repo.one()
-    |> case do
-      %User{password_hash: password_hash} = user ->
-        password
-        |> Argon2.verify_pass(password_hash)
-        |> if(do: {:ok, user}, else: {:error, :unauthorized})
-
+  def authenticate_by_email_password(email, password, subdomain) do
+    case Workspace.get_workspace_by_subdomain(subdomain) do
       nil ->
-        {:error, :unauthorized}
+        {:error, "Cannot find workspace"}
+
+      workspace ->
+        User
+        |> Ecto.Query.where([u], u.email == ^email)
+        |> Ecto.Query.where([u], u.workspace_id == ^workspace.id)
+        |> Repo.one()
+        |> case do
+          %User{password_hash: password_hash} = user ->
+            password
+            |> Argon2.verify_pass(password_hash)
+            |> if(do: {:ok, user}, else: {:error, :unauthorized})
+
+          nil ->
+            {:error, :unauthorized}
+        end
     end
   end
 

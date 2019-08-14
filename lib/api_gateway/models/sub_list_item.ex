@@ -120,6 +120,10 @@ defmodule ApiGateway.Models.SubListItem do
     |> Ecto.Query.select([sub_list_item, project], sub_list_item)
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])

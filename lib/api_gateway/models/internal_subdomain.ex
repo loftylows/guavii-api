@@ -10,18 +10,14 @@ defmodule ApiGateway.Models.InternalSubdomain do
   schema "internal_subdomains" do
     field :subdomain, :string
 
-    belongs_to :workspace, ApiGateway.Models.Workspace
-
     timestamps()
   end
 
   @permitted_fields [
-    :subdomain,
-    :workspace_id
+    :subdomain
   ]
   @required_fields [
-    :subdomain,
-    :workspace_id
+    :subdomain
   ]
 
   def changeset_create(
@@ -31,7 +27,6 @@ defmodule ApiGateway.Models.InternalSubdomain do
     internal_subdomain
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:workspace_id)
   end
 
   def changeset_update(
@@ -41,12 +36,15 @@ defmodule ApiGateway.Models.InternalSubdomain do
     internal_subdomain
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:workspace_id)
   end
 
   ####################
   # Query helpers #
   ####################
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])

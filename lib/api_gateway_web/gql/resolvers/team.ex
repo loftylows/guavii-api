@@ -14,8 +14,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Team do
     {:ok, Models.Team.get_teams()}
   end
 
-  def create_team(_, %{data: data}, _) do
-    case Models.Team.create_team(data) do
+  def create_team(_, %{data: _}, %{context: %{current_user: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def create_team(_, %{data: data}, %{context: %{current_user: user}}) do
+    case Models.Team.create_team_with_member(data, user) do
       {:ok, team} ->
         {:ok, team}
 
@@ -24,6 +28,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Team do
           "Team input error",
           errors
         )
+
+      {:error, :internal_error} ->
+        Errors.internal_error()
 
       {:error, _} ->
         Errors.user_input_error("Team input error")

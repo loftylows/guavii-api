@@ -282,4 +282,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
   end
+
+  ####################
+  # Non-node type input queries #
+  ####################
+  input_object :find_my_workspaces_input do
+    field :email, non_null(:string)
+    field :token, non_null(:string)
+  end
 end

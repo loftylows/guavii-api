@@ -33,11 +33,9 @@ defmodule ApiGateway.Email.Transactional do
   @spec send_forgot_password_email(String.t(), String.t(), String.t(), String.t()) ::
           Bamboo.Email.t()
   def send_forgot_password_email(recipient, user_id, subdomain, token) do
-    base_64_encoded_user_id = Base.url_encode64(user_id, padding: false)
-
     recipient
     |> build_forgot_password_email(
-      base_64_encoded_user_id,
+      user_id,
       subdomain,
       token
     )
@@ -89,12 +87,12 @@ defmodule ApiGateway.Email.Transactional do
     |> template("11628349", template_params)
   end
 
-  defp build_forgot_password_email(to, base_64_encoded_user_id, subdomain, token) do
+  defp build_forgot_password_email(to, user_id, subdomain, token) do
     website_routes = RouteHelpers.get_website_routes()
 
     query_params = %{
       token: token,
-      user_id: base_64_encoded_user_id
+      user_id: user_id
     }
 
     action_url =
@@ -118,7 +116,7 @@ defmodule ApiGateway.Email.Transactional do
     new_email()
     |> to(to)
     |> from(@noReplyEmailAddress)
-    |> template("forgot-password", template_params)
+    |> template("11870080", template_params)
   end
 
   defp build_workspaces_reminder_email(to, base_64_encoded_email, token) do
@@ -147,6 +145,6 @@ defmodule ApiGateway.Email.Transactional do
     new_email()
     |> to(to)
     |> from(@noReplyEmailAddress)
-    |> template("find-your-workspaces", template_params)
+    |> template("11870374", template_params)
   end
 end

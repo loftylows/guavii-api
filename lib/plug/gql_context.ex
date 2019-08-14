@@ -1,9 +1,6 @@
 defmodule ApiGatewayWeb.Plug.GqlContext do
   @behaviour Plug
 
-  import Plug.Conn
-  alias ApiGateway.Models
-
   def init(opts), do: opts
 
   def call(conn, _) do

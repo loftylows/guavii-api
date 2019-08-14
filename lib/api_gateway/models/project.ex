@@ -160,6 +160,10 @@ defmodule ApiGateway.Models.Project do
     |> Ecto.Query.select([project, user], project)
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
@@ -187,9 +191,10 @@ defmodule ApiGateway.Models.Project do
     ApiGateway.Models.Project |> add_query_filters(filters) |> Repo.all()
   end
 
-  def create_project(%{project_type: "BOARD"} = data) do
+  def create_project(%{project_type: "BOARD"} = data, created_by_id) do
     project_result =
       %ApiGateway.Models.Project{}
+      |> Map.put(:created_by_id, created_by_id)
       |> changeset(data)
       |> Repo.insert()
 
@@ -210,9 +215,10 @@ defmodule ApiGateway.Models.Project do
     end
   end
 
-  def create_project(%{project_type: "LIST"} = data) do
+  def create_project(%{project_type: "LIST"} = data, created_by_id) do
     project_result =
       %ApiGateway.Models.Project{}
+      |> Map.put(:created_by_id, created_by_id)
       |> changeset(data)
       |> Repo.insert()
 
@@ -233,13 +239,6 @@ defmodule ApiGateway.Models.Project do
       {:error, _} = result ->
         result
     end
-  end
-
-  # TODO: finish this function
-  def create_project(%{project_type: "list"} = data) do
-    %ApiGateway.Models.Project{}
-    |> changeset(data)
-    |> Repo.insert()
   end
 
   def update_project(%{id: id, data: data}) do

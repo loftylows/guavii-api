@@ -13,7 +13,7 @@ defmodule ApiGateway.Repo.Migrations.CreateUsersTable do
       add :profile_pic_url, :string
       add :last_login, :utc_datetime
       add :workspace_role, :string, null: false
-      add :billing_status, :string, null: false
+      add :billing_status, :string, null: false, default: "ACTIVE"
       add :password_hash, :string, null: false
 
       add :time_zone, :map

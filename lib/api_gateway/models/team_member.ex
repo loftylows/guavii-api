@@ -32,8 +32,17 @@ defmodule ApiGateway.Models.TeamMember do
     "ADMIN"
   ]
 
+  @team_member_roles_map %{
+    member: "MEMBER",
+    admin: "ADMIN"
+  }
+
   def get_team_member_roles do
     @team_member_roles
+  end
+
+  def get_team_member_roles_map do
+    @team_member_roles_map
   end
 
   def changeset_create(%ApiGateway.Models.TeamMember{} = team_member, attrs \\ %{}) do
@@ -91,6 +100,10 @@ defmodule ApiGateway.Models.TeamMember do
       on: team_member.user_id == ^user_id
     )
     |> Ecto.Query.select([team_member, user], team_member)
+  end
+
+  def add_query_filters(query, nil) do
+    query
   end
 
   def add_query_filters(query, filters) when is_map(filters) do

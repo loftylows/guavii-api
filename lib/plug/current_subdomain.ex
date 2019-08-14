@@ -8,6 +8,8 @@ defmodule ApiGatewayWeb.Plug.CurrentSubdomain do
   def call(conn, _) do
     case get_subdomain(conn.host) do
       subdomain when byte_size(subdomain) > 0 ->
+        IO.puts(subdomain)
+
         conn
         |> assign(:current_subdomain, subdomain)
 

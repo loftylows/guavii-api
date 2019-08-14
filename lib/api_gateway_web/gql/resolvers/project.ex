@@ -11,8 +11,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Project do
     {:ok, ApiGateway.Models.Project.get_projects()}
   end
 
-  def create_project(_, %{data: data}, _) do
-    case ApiGateway.Models.Project.create_project(data) do
+  def create_project(_, %{data: _}, %{context: %{current_user: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def create_project(_, %{data: data}, %{context: %{current_user: user}}) do
+    case ApiGateway.Models.Project.create_project(data, user.id) do
       {:ok, project} ->
         {:ok, project}
 

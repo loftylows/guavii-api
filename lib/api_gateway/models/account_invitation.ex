@@ -8,6 +8,7 @@ defmodule ApiGateway.Models.AccountInvitation do
   alias ApiGateway.Ecto.CommonFilterHelpers
   alias __MODULE__
 
+  # 7 days
   @invite_expiration_in_seconds 60 * 60 * 24 * 7
 
   schema "account_invitations" do
@@ -52,6 +53,10 @@ defmodule ApiGateway.Models.AccountInvitation do
   end
 
   def maybe_accepted_filter(query, _) do
+    query
+  end
+
+  def add_query_filters(query, nil) do
     query
   end
 

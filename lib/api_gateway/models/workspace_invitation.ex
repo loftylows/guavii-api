@@ -76,6 +76,10 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
     |> Ecto.Query.select([workspace_invitation, workspace], workspace_invitation)
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])

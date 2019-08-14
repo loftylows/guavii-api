@@ -92,10 +92,54 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset("User input error", errors)
 
       {:error, reason} when is_binary(reason) ->
-        {:error, reason}
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error(reason)
 
       {:ok, payload} ->
         {:ok, payload}
     end
+  end
+
+  # make sure that the user is not already logged in with this guard
+  def login_user_with_email_and_password(_, _, %{context: %{current_user: user}})
+      when is_map(user) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error("You are already logged into this workspace")
+  end
+
+  # make sure that the user is logging into a workspace because 'current_subdomain' should be set
+  def login_user_with_email_and_password(_, _, %{context: %{current_subdomain: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def login_user_with_email_and_password(
+        _,
+        %{
+          data: %{
+            email: email,
+            password: password
+          }
+        },
+        %{context: %{current_subdomain: subdomain}}
+      ) do
+    ApiGateway.Models.Account.User.authenticate_by_email_password(email, password, subdomain)
+    |> case do
+      {:error, "Cannot find workspace"} ->
+        # TODO: maybe change the error message to the default forbidden message
+        ApiGatewayWeb.Gql.Utils.Errors.forbidden_error("Workspace unavailable")
+
+      {:error, _} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Incorrect email/password combination.")
+
+      {:ok, user} ->
+        {:ok, user}
+    end
+  end
+
+  def logout_user(_, _, %{context: %{current_subdomain: subdomain, current_user: user}})
+      when is_nil(user) or is_nil(subdomain) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def logout_user(_, _, _) do
+    {:ok, %{ok: true}}
   end
 end

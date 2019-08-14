@@ -11,8 +11,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
     {:ok, ApiGateway.Models.Document.get_documents()}
   end
 
-  def create_document(_, %{data: data}, _) do
-    case ApiGateway.Models.Document.create_document(data) do
+  def create_document(_, _, %{context: %{current_user: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def create_document(_, %{data: data}, %{context: %{current_user: user}}) do
+    case ApiGateway.Models.Document.create_document(data, user.id) do
       {:ok, document} ->
         {:ok, document}
 
@@ -27,8 +31,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
     end
   end
 
-  def update_document(_, %{data: data, where: %{id: id}}, _) do
-    case ApiGateway.Models.Document.update_document(%{id: id, data: data}) do
+  def update_document(_, _, %{context: %{current_user: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def update_document(_, %{data: data, where: %{id: id}}, %{context: %{current_user: user}}) do
+    case ApiGateway.Models.Document.update_document(%{id: id, data: data}, user.id) do
       {:ok, document} ->
         {:ok, document}
 

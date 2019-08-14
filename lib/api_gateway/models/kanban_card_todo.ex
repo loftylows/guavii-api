@@ -146,6 +146,10 @@ defmodule ApiGateway.Models.KanbanCardTodo do
     |> Ecto.Query.select([kanban_card_todo, kanban_card_todo_list], kanban_card_todo)
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])

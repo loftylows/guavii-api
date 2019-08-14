@@ -87,6 +87,10 @@ defmodule ApiGateway.Models.KanbanLane do
     |> Ecto.Query.select([kanban_lane, kanban_board], kanban_lane)
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])

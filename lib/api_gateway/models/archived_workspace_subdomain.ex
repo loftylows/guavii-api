@@ -7,7 +7,7 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
 
-  schema "archived_workspace_subdomain" do
+  schema "archived_workspace_subdomains" do
     field :subdomain, :string
 
     belongs_to :workspace, ApiGateway.Models.Workspace
@@ -64,6 +64,10 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
       on: archived_workspace_subdomain.workspace_id == ^workspace_id
     )
     |> Ecto.Query.select([archived_workspace_subdomain, workspace], archived_workspace_subdomain)
+  end
+
+  def add_query_filters(query, nil) do
+    query
   end
 
   def add_query_filters(query, filters) when is_map(filters) do

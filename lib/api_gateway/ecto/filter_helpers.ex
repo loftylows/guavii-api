@@ -2,6 +2,15 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
   require Ecto.Query
   alias Utils.UUID
 
+  @spec maybe_first_filter(any, boolean()) :: Ecto.Query.t()
+  def maybe_first_filter(query, bool) when is_boolean(bool) do
+    query |> Ecto.Query.first()
+  end
+
+  def maybe_first_filter(query, _) do
+    query
+  end
+
   def maybe_id_in_filter(query, list \\ [])
 
   def maybe_id_in_filter(query, list) when is_list(list) and length(list) > 0 do

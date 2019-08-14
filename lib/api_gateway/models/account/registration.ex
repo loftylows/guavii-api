@@ -25,6 +25,7 @@ defmodule ApiGateway.Models.Account.Registration do
 
           {:ok, _} ->
             workspace_info
+            |> Map.put(:workspace_subdomain, workspace_info[:subdomain])
             |> Workspace.create_workspace()
             |> case do
               {:error, %{errors: _}} = error ->
@@ -40,6 +41,7 @@ defmodule ApiGateway.Models.Account.Registration do
                 workspace_roles = Workspace.get_workspace_roles_map()
 
                 user_info
+                |> Map.put(:email, email)
                 |> Map.put(:workspace_role, workspace_roles.primary_owner)
                 |> Map.put(:workspace_id, workspace.id)
                 |> User.create_user()

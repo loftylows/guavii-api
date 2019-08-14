@@ -11,11 +11,16 @@ defmodule ApiGatewayWeb.Router do
 
     forward("/api", Absinthe.Plug,
       schema: ApiGatewayWeb.Gql.Schema.Schema,
-      before_send: &ApiGatewayWeb.Gql.AbsintheBeforeSend.absinthe_before_send/2
+      before_send: {ApiGatewayWeb.Gql.AbsintheBeforeSend, :absinthe_before_send},
+      analyze_complexity: true,
+      max_complexity: 1000
     )
 
     forward "/graphiql", Absinthe.Plug.GraphiQL,
       schema: ApiGatewayWeb.Gql.Schema.Schema,
-      socket: ApiGatewayWeb.Channels.UserSocket
+      socket: ApiGatewayWeb.Channels.UserSocket,
+      before_send: {ApiGatewayWeb.Gql.AbsintheBeforeSend, :absinthe_before_send},
+      analyze_complexity: true,
+      max_complexity: 1000
   end
 end

@@ -54,7 +54,6 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
   input_object :team_create_input do
     field :title, non_null(:string)
     field :description, :string
-    field :workspace_id, non_null(:uuid)
   end
 
   input_object :team_update_input do
@@ -265,7 +264,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
 
   input_object :create_workspace_with_user_registration_input do
     field :title, non_null(:string)
-    field :workspace_subdomain, non_null(:string)
+    field :subdomain, non_null(:string)
   end
 
   input_object :register_user_and_workspace_input do
@@ -277,5 +276,24 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
 
     field :create_workspace_with_user_registration_input,
           non_null(:create_workspace_with_user_registration_input)
+  end
+
+  input_object :login_user_with_email_and_password_input do
+    field :email, non_null(:string)
+    field :password, non_null(:string)
+  end
+
+  input_object :send_forgot_password_email_input do
+    field :email, non_null(:string)
+  end
+
+  input_object :reset_password_from_forgot_password_invite_input do
+    field :user_id, non_null(:uuid)
+    field :token, non_null(:string)
+    field :password, non_null(:string)
+  end
+
+  input_object :send_find_my_workspaces_email_input do
+    field :email, non_null(:string)
   end
 end

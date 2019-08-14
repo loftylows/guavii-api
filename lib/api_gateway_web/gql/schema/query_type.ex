@@ -8,6 +8,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :workspace, :workspace do
       arg(:where, non_null(:workspace_where_unique_input))
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Workspace.get_workspace/3)
     end
 
@@ -15,6 +16,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :workspaces, non_null_list(:workspace) do
       arg(:where, :workspace_where_input)
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Workspace.get_workspaces/3)
     end
 
@@ -22,6 +24,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :user, :user do
       arg(:where, non_null(:user_where_unique_input))
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.User.get_user/3)
     end
 
@@ -29,6 +32,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :users, non_null_list(:user) do
       arg(:where, :user_where_input)
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.User.get_users/3)
     end
 
@@ -36,6 +40,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :team, :team do
       arg(:where, non_null(:team_where_unique_input))
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Team.get_team/3)
     end
 
@@ -43,6 +48,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :teams, non_null_list(:team) do
       arg(:where, :team_where_input)
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Team.get_teams/3)
     end
 
@@ -50,6 +56,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :project, :project do
       arg(:where, non_null(:project_where_unique_input))
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Project.get_project/3)
     end
 
@@ -57,6 +64,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :document, :document do
       arg(:where, non_null(:document_where_unique_input))
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Document.get_document/3)
     end
 
@@ -64,6 +72,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :documents, non_null_list(:document) do
       arg(:where, :document_where_input)
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Document.get_documents/3)
     end
 
@@ -71,6 +80,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :kanban_card, :kanban_card do
       arg(:where, non_null(:kanban_card_where_unique_input))
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.KanbanCard.get_kanban_card/3)
     end
 
@@ -112,22 +122,14 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
 
     @desc "Find current logged in user"
     field :current_user, :user do
-      # TODO: implement resolver
-      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
+      resolve(fn _, _, %{context: %{current_user: user}} -> user end)
     end
 
-    @desc "Find all workspaces connected to an email address"
+    @desc "Find a user's workspaces based on given email address and email token"
     field :find_my_workspaces, non_null_list(:workspace) do
-      arg(:input, non_null(:find_my_workspaces_input))
+      arg(:data, non_null(:find_my_workspaces_input))
 
-      # TODO: implement resolver
-      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
-    end
-
-    @desc "Find all workspaces connected to an email address"
-    field :session_workspaces, non_null_list(:workspace) do
-      # TODO: implement resolver
-      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
+      resolve(&Resolvers.FindMyWorkspaces.find_my_workspaces/3)
     end
   end
 end

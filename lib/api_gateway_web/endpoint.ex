@@ -34,7 +34,9 @@ defmodule ApiGatewayWeb.Endpoint do
     store: :redis,
     key: "_api_gateway_key",
     signing_salt: "cSLtGnQqy",
-    http_only: true
+    http_only: true,
+    # 7 days
+    max_age: 604_800
 
   plug ApiGatewayWeb.Plug.CurrentSubdomain
 

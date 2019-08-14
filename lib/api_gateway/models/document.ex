@@ -80,6 +80,10 @@ defmodule ApiGateway.Models.Document do
     |> Ecto.Query.select([document, project], document)
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
@@ -102,18 +106,22 @@ defmodule ApiGateway.Models.Document do
     ApiGateway.Models.Document |> add_query_filters(filters) |> Repo.all()
   end
 
-  def create_document(data) when is_map(data) do
+  def create_document(data, user_id) when is_map(data) and is_binary(user_id) do
+    data = Map.put(data, :last_update, %{user_id: user_id, date: DateTime.utc_now()})
+
     %ApiGateway.Models.Document{}
     |> changeset_create(data)
     |> Repo.insert()
   end
 
-  def update_document(%{id: id, data: data}) do
+  def update_document(%{id: id, data: data}, user_id) when is_binary(user_id) do
     case get_document(id) do
       nil ->
         {:error, "Not found"}
 
       document ->
+        data = Map.put(data, :last_update, %{user_id: user_id, date: DateTime.utc_now()})
+
         document
         |> changeset_update(data)
         |> Repo.update()

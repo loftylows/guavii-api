@@ -83,6 +83,10 @@ defmodule ApiGateway.Models.Workspace do
     query
   end
 
+  def add_query_filters(query, nil) do
+    query
+  end
+
   def add_query_filters(query, filters) when is_map(filters) do
     query
     |> CommonFilterHelpers.maybe_id_in_filter(filters[:id_in])
@@ -118,7 +122,7 @@ defmodule ApiGateway.Models.Workspace do
     case {internal_subdomain, archived_subdomain} do
       {nil, nil} ->
         %ApiGateway.Models.Workspace{}
-        |> changeset_create(data)
+        |> changeset_create(Map.put(data, :workspace_subdomain, subdomain))
         |> Repo.insert()
 
       _ ->
