@@ -13,8 +13,8 @@ defmodule ApiGateway.Models.KanbanCard do
   schema "kanban_cards" do
     field :title, :string
     field :description, :string
-    field :completed, :boolean
-    field :attachments, {:array, :string}
+    field :completed, :boolean, read_after_writes: true
+    field :attachments, {:array, :string}, read_after_writes: true
     field :due_date_range, ApiGateway.CustomEctoTypes.EctoDateRange
     field :list_order_rank, :float
 
@@ -22,11 +22,11 @@ defmodule ApiGateway.Models.KanbanCard do
     has_many :comments, ApiGateway.Models.KanbanCardComment
 
     many_to_many :activeLabels, ApiGateway.Models.KanbanLabel,
-      join_through: "kanban_cards_active_labels"
+      join_through: "kanban_card_active_labels"
 
     belongs_to :kanban_lane, ApiGateway.Models.KanbanLane
     belongs_to :project, ApiGateway.Models.Project
-    belongs_to :assignedTo, ApiGateway.Models.Account.User, foreign_key: :user_id
+    belongs_to :assigned_to, ApiGateway.Models.Account.User, foreign_key: :user_id
 
     timestamps()
   end
@@ -144,8 +144,15 @@ defmodule ApiGateway.Models.KanbanCard do
   end
 
   def create_kanban_card(data) when is_map(data) do
+    rank =
+      OrderedListHelpers.DB.get_new_item_insert_rank(
+        "kanban_cards",
+        :kanban_lane_id,
+        data[:kanban_lane_id]
+      )
+
     %KanbanCard{}
-    |> changeset(data)
+    |> changeset(Map.put(data, :list_order_rank, rank))
     |> Repo.insert()
   end
 

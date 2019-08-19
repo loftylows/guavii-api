@@ -105,7 +105,7 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Workspace do
   ####################
   # Other resolvers #
   ####################
-  def check_workspace_subdomain_available(_, %{input: %{subdomain: subdomain}}, _) do
+  def check_workspace_subdomain_available(_, %{data: %{subdomain: subdomain}}, _) do
     is_available? =
       subdomain
       |> ApiGateway.Models.Workspace.get_workspace_by_subdomain()

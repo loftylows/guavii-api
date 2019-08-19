@@ -13,8 +13,8 @@ defmodule ApiGateway.Models.ProjectTodo do
   schema "project_todos" do
     field :title, :string
     field :description, :string
-    field :completed, :boolean
-    field :attachments, {:array, :string}
+    field :completed, :boolean, read_after_writes: true
+    field :attachments, {:array, :string}, read_after_writes: true
     field :due_date_range, ApiGateway.CustomEctoTypes.EctoDateRange
     field :list_order_rank, :float
 

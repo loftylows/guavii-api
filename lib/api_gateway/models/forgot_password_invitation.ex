@@ -14,7 +14,7 @@ defmodule ApiGateway.Models.ForgotPasswordInvitation do
 
   schema "forgot_password_invitations" do
     field :token_hashed, :string
-    field :accepted, :boolean
+    field :accepted, :boolean, read_after_writes: true
 
     belongs_to :user, ApiGateway.Models.Account.User
 

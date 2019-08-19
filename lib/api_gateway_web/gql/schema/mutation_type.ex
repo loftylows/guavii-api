@@ -437,6 +437,8 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
 
       middleware(fn resolution, _ ->
         with %{value: %{user: user}} <- resolution do
+          ApiGateway.Models.Account.User.set_last_login_now(user.id)
+
           Map.update!(resolution, :context, fn ctx ->
             Map.put(ctx, :login_info, %{user_id: user.id})
           end)
@@ -452,6 +454,8 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
 
       middleware(fn resolution, _ ->
         with %{value: %{id: id}} <- resolution do
+          ApiGateway.Models.Account.User.set_last_login_now(id)
+
           Map.update!(resolution, :context, fn ctx ->
             Map.put(ctx, :login_info, %{user_id: id})
           end)

@@ -6,6 +6,9 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
   import Ecto.Query, only: [from: 2]
 
+  alias ApiGateway.Models.KanbanBoard
+  alias ApiGateway.Models.ProjectListsBoard
+
   # TODO: fix all connections to use dataloader to stop N+1 queries
 
   ####################
@@ -13,12 +16,18 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   ####################
   scalar :iso_date_time, description: "ISO 8601 date-time string" do
     parse(fn val ->
-      case DateTime.from_iso8601(val.value) do
-        {:ok, date, _} ->
-          {:ok, date}
+      case val do
+        %Absinthe.Blueprint.Input.Null{} ->
+          {:ok, nil}
 
         _ ->
-          :error
+          case DateTime.from_iso8601(val.value) do
+            {:ok, date, _} ->
+              {:ok, date}
+
+            _ ->
+              :error
+          end
       end
     end)
 
@@ -86,9 +95,11 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     types([:kanban_board, :project_lists_board])
 
     resolve_type(fn
-      %{lanes: _}, _ -> :kanban_board
-      %{lists: _}, _ -> :project_lists_board
+      %KanbanBoard{}, _ -> :kanban_board
+      %ProjectListsBoard{}, _ -> :project_lists_board
     end)
+
+    resolve
   end
 
   ####################
@@ -96,32 +107,18 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   ####################
   object :time_zone do
     field :offset, non_null(:string)
-    field :billing_status, non_null(:string)
+    field :name, non_null(:string)
   end
 
   object :document_last_update do
     field :date, non_null(:iso_date_time)
-    field :user, non_null(:user)
+
+    field :user, :user, resolve: dataloader(ApiGateway.Dataloader)
   end
 
   object :date_range do
-    field :start, :iso_date_time
-    field :end, :iso_date_time
-  end
-
-  ######################
-  # Custom Connections #
-  ######################
-  input_object :connection_input do
-    field :after, :string
-    field :before, :string
-    field :first, :integer
-    field :last, :integer
-  end
-
-  object :workspace_member_connection do
-    field :start, :iso_date_time
-    field :end, :iso_date_time
+    field :start, non_null(:iso_date_time)
+    field :end, non_null(:iso_date_time)
   end
 
   ####################
@@ -400,8 +397,6 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
       resolve(fn
         pagination_args, %{source: workspace} ->
-          IO.inspect(pagination_args)
-
           ApiGateway.Models.Account.User
           |> ApiGateway.Models.Account.User.add_query_filters(pagination_args[:where])
           |> Ecto.Query.where(workspace_id: ^workspace.id)
@@ -453,6 +448,13 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :last_login, :iso_date_time
     field :workspace_role, non_null(:workspace_member_role)
     field :billing_status, non_null(:user_billing_status)
+
+    field :is_online, non_null(:boolean) do
+      resolve(fn
+        %ApiGateway.Models.Account.User{} = user, _, _ ->
+          {:ok, ApiGatewayWeb.Gql.Resolvers.User.is_online?(user)}
+      end)
+    end
 
     field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
 
@@ -536,11 +538,19 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :id, non_null(:id)
     field :title, non_null(:string)
-    field :description, non_null(:string)
+    field :description, :string
     field :privacy_policy, non_null(:project_privacy_policy)
-    field :project_focus_item, non_null(:project_focus_item)
     field :project_type, non_null(:project_type)
     field :status, non_null(:project_status)
+
+    field :project_focus_item, non_null(:project_focus_item) do
+      resolve(fn project, _, _ ->
+        case project do
+          %ApiGateway.Models.Project{project_type: "BOARD"} -> {:ok, project.kanban_board}
+          %ApiGateway.Models.Project{project_type: "LIST"} -> {:ok, project.lists_board}
+        end
+      end)
+    end
 
     field :owner, non_null(:team), resolve: dataloader(ApiGateway.Dataloader)
     field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
@@ -551,8 +561,6 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
       resolve(fn
         pagination_args, %{source: project} ->
-          IO.inspect(pagination_args)
-
           Ecto.assoc(project, :members)
           |> ApiGateway.Models.Account.User.add_query_filters(pagination_args[:where])
           |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
@@ -567,6 +575,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
           ApiGateway.Models.Document
           |> ApiGateway.Models.Document.add_query_filters(pagination_args[:where])
           |> Ecto.Query.where(project_id: ^project.id)
+          |> Ecto.Query.preload(:last_update)
           |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)
     end
@@ -824,7 +833,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :id, non_null(:id)
     field :title, non_null(:string)
     field :description, :string
-    field :completed, non_null(:string)
+    field :completed, non_null(:boolean)
     field :due_date_range, :date_range
     field :attachments, non_null_list(:string)
 
@@ -850,7 +859,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       resolve(fn
         pagination_args, %{source: kanban_card} ->
           query =
-            from active_labels in "kanban_cards_active_labels",
+            from active_labels in "kanban_card_active_labels",
               join: kanban_label in ApiGateway.Models.KanbanLabel,
               on: kanban_label.id == active_labels.kanban_label_id,
               join: kanban_card in ApiGateway.Models.KanbanCard,

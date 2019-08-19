@@ -20,6 +20,13 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
       {:ok, document} ->
         {:ok, document}
 
+      {:error, %{changes: %{last_update: %{errors: errors}}}}
+      when is_list(errors) and length(errors) > 0 ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset(
+          "Document input error",
+          errors
+        )
+
       {:error, %{errors: errors}} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset(
           "Document input error",

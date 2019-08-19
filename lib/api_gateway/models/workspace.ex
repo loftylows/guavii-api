@@ -13,7 +13,7 @@ defmodule ApiGateway.Models.Workspace do
     field :title, :string
     field :workspace_subdomain, :string
     field :description, :string
-    field :storage_cap, :integer
+    field :storage_cap, :integer, read_after_writes: true
 
     has_many :members, ApiGateway.Models.Account.User
     has_many :teams, ApiGateway.Models.Team

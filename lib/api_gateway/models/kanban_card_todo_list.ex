@@ -109,8 +109,15 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
   end
 
   def create_kanban_card_todo_list(data) when is_map(data) do
+    rank =
+      OrderedListHelpers.DB.get_new_item_insert_rank(
+        "kanban_card_todo_lists",
+        :kanban_card_id,
+        data[:kanban_card_id]
+      )
+
     %KanbanCardTodoList{}
-    |> changeset(data)
+    |> changeset(Map.put(data, :list_order_rank, rank))
     |> Repo.insert()
   end
 

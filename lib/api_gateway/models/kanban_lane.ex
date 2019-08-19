@@ -115,8 +115,15 @@ defmodule ApiGateway.Models.KanbanLane do
   end
 
   def create_kanban_lane(data) when is_map(data) do
+    rank =
+      OrderedListHelpers.DB.get_new_item_insert_rank(
+        "kanban_lanes",
+        :kanban_board_id,
+        data[:kanban_board_id]
+      )
+
     %KanbanLane{}
-    |> changeset(data)
+    |> changeset(Map.put(data, :list_order_rank, rank))
     |> Repo.insert()
   end
 

@@ -1,18 +1,20 @@
 defmodule ApiGatewayWeb.Gql.Resolvers.User do
+  alias ApiGateway.Models.Account.User
+
   def get_user(_, %{where: %{id: user_id}}, _) do
-    {:ok, ApiGateway.Models.Account.User.get_user(user_id)}
+    {:ok, User.get_user(user_id)}
   end
 
   def get_users(_, %{where: filters}, _) do
-    {:ok, ApiGateway.Models.Account.User.get_users(filters)}
+    {:ok, User.get_users(filters)}
   end
 
   def get_users(_, _, _) do
-    {:ok, ApiGateway.Models.Account.User.get_users()}
+    {:ok, User.get_users()}
   end
 
   def create_user(_, %{data: data}, _) do
-    case ApiGateway.Models.Account.User.create_user(data) do
+    case User.create_user(data) do
       {:ok, user} ->
         {:ok, user}
 
@@ -28,7 +30,7 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   end
 
   def update_user(_, %{data: data, where: %{id: id}}, _) do
-    case ApiGateway.Models.Account.User.update_user(%{id: id, data: data}) do
+    case User.update_user(%{id: id, data: data}) do
       {:ok, user} ->
         {:ok, user}
 
@@ -44,7 +46,7 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   end
 
   def delete_user(_, %{where: %{id: id}}, _) do
-    case ApiGateway.Models.Account.User.delete_user(id) do
+    case User.delete_user(id) do
       {:ok, user} ->
         {:ok, user}
 
@@ -56,9 +58,18 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   ####################
   # Other resolvers #
   ####################
+  # TODO: implement this func to check if a user is online
+  def is_online?(%User{} = _user) do
+    false
+  end
+
+  def is_online?(_) do
+    false
+  end
+
   def check_user_email_unused_in_workspace(
         _,
-        %{input: %{email: email, workspace_id: workspace_id}},
+        %{data: %{email: email, workspace_id: workspace_id}},
         _
       ) do
     is_unused? =
@@ -130,6 +141,7 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Incorrect email/password combination.")
 
       {:ok, user} ->
+        ApiGateway.Models.Account.User.set_last_login_now(user.id)
         {:ok, user}
     end
   end

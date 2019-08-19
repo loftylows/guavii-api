@@ -24,7 +24,7 @@
                         'Elixir.ApiGateway.Models.AccountInvitation',
                         'Elixir.ApiGateway.Models.ArchivedWorkspaceSubdomain',
                         'Elixir.ApiGateway.Models.Document',
-                        'Elixir.ApiGateway.Models.Document.LastUpdate',
+                        'Elixir.ApiGateway.Models.DocumentLastUpdate',
                         'Elixir.ApiGateway.Models.FindMyWorkspacesInvitation',
                         'Elixir.ApiGateway.Models.ForgotPasswordInvitation',
                         'Elixir.ApiGateway.Models.InternalSubdomain',

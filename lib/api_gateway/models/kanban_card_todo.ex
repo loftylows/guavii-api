@@ -12,7 +12,7 @@ defmodule ApiGateway.Models.KanbanCardTodo do
 
   schema "kanban_card_todos" do
     field :title, :string
-    field :completed, :boolean
+    field :completed, :boolean, read_after_writes: true
     field :due_date, :utc_datetime
     field :list_order_rank, :float
 
@@ -181,8 +181,15 @@ defmodule ApiGateway.Models.KanbanCardTodo do
   end
 
   def create_kanban_card_todo(data) when is_map(data) do
+    rank =
+      OrderedListHelpers.DB.get_new_item_insert_rank(
+        "kanban_card_todos",
+        :kanban_card_todo_list_id,
+        data[:kanban_card_todo_list_id]
+      )
+
     %KanbanCardTodo{}
-    |> changeset(data)
+    |> changeset(Map.put(data, :list_order_rank, rank))
     |> Repo.insert()
   end
 

@@ -10,7 +10,7 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
   schema "workspace_invitations" do
     field :email, :string
     field :invitation_token_hashed, :string
-    field :accepted, :boolean
+    field :accepted, :boolean, read_after_writes: true
 
     belongs_to :workspace, ApiGateway.Models.Workspace
 

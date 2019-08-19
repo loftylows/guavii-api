@@ -12,7 +12,7 @@ defmodule ApiGateway.Models.SubListItem do
 
   schema "sub_list_items" do
     field :title, :string
-    field :completed, :boolean
+    field :completed, :boolean, read_after_writes: true
     field :due_date, :utc_datetime
     field :list_order_rank, :float
 

@@ -14,7 +14,7 @@ defmodule ApiGateway.Models.AccountInvitation do
   schema "account_invitations" do
     field :email, :string
     field :invitation_token_hashed, :string
-    field :accepted, :boolean
+    field :accepted, :boolean, read_after_writes: true
 
     timestamps()
   end

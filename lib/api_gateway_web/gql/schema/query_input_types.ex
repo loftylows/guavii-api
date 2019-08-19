@@ -79,8 +79,8 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :id_in, list_of(:uuid)
     field :title_contains, :uuid
     field :project_type, :project_type
-    field :project_status, :project_status
-    field :project_privacy_policy, :project_privacy_policy
+    field :status, :project_status
+    field :privacy_policy, :project_privacy_policy
     field :workspace_id, :uuid
     field :owner_id, :uuid
     field :created_by_id, :uuid

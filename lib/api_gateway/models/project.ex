@@ -6,13 +6,14 @@ defmodule ApiGateway.Models.Project do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias ApiGateway.Models.Account.User
 
   schema "projects" do
     field :title, :string
     field :description, :string
-    field :privacy_policy, :string
+    field :privacy_policy, :string, read_after_writes: true
     field :project_type, :string
-    field :status, :string
+    field :status, :string, read_after_writes: true
 
     many_to_many :members, ApiGateway.Models.Account.User, join_through: "projects_members"
     has_one :kanban_board, ApiGateway.Models.KanbanBoard
@@ -56,7 +57,9 @@ defmodule ApiGateway.Models.Project do
     "PRIVATE"
   ]
 
-  @project_privacy_policy_default "PRIVATE"
+  @project_privacy_policy_default "PUBLIC"
+
+  @project_status_default "ACTIVE"
 
   def get_project_status do
     @project_status
@@ -68,6 +71,10 @@ defmodule ApiGateway.Models.Project do
 
   def get_project_privacy_policy_default do
     @project_privacy_policy_default
+  end
+
+  def get_project_status_default do
+    @project_status_default
   end
 
   def get_project_type do
@@ -99,26 +106,21 @@ defmodule ApiGateway.Models.Project do
     query |> Ecto.Query.where([project], project.project_type == ^project_type)
   end
 
-  def maybe_project_status_filter(query, project_status \\ nil)
-
-  def maybe_project_status_filter(query, project_status) when is_nil(project_status) do
+  def maybe_project_status_filter(query, nil) do
     query
   end
 
-  def maybe_project_status_filter(query, project_status) do
-    query |> Ecto.Query.where([project], project.project_status == ^project_status)
+  def maybe_project_status_filter(query, status) do
+    query |> Ecto.Query.where([project], project.status == ^status)
   end
 
-  def maybe_project_privacy_policy_filter(query, project_privacy_policy \\ nil)
-
-  def maybe_project_privacy_policy_filter(query, project_privacy_policy)
-      when is_nil(project_privacy_policy) do
+  def maybe_project_privacy_policy_filter(query, nil) do
     query
   end
 
-  def maybe_project_privacy_policy_filter(query, project_privacy_policy) do
+  def maybe_project_privacy_policy_filter(query, privacy_policy) do
     query
-    |> Ecto.Query.where([project], project.project_privacy_policy == ^project_privacy_policy)
+    |> Ecto.Query.where([project], project.privacy_policy == ^privacy_policy)
   end
 
   @doc "workspace_id must be a valid 'uuid' or an error will be raised"
@@ -172,8 +174,8 @@ defmodule ApiGateway.Models.Project do
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> maybe_project_type_filter(filters[:project_type])
-    |> maybe_project_status_filter(filters[:project_status])
-    |> maybe_project_privacy_policy_filter(filters[:project_privacy_policy])
+    |> maybe_project_status_filter(filters[:status])
+    |> maybe_project_privacy_policy_filter(filters[:privacy_policy])
     |> maybe_workspace_id_assoc_filter(filters[:workspace_id])
     |> maybe_owner_id_assoc_filter(filters[:owner_id])
     |> maybe_created_by_id_assoc_filter(filters[:created_by_id])
@@ -183,26 +185,39 @@ defmodule ApiGateway.Models.Project do
   # CRUD funcs #
   ####################
   @doc "project_id must be a valid 'uuid' or an error will raise"
-  def get_project(project_id), do: Repo.get(ApiGateway.Models.Project, project_id)
+  def get_project(project_id) do
+    ApiGateway.Models.Project
+    |> Ecto.Query.preload(:kanban_board)
+    |> Ecto.Query.preload(:lists_board)
+    |> Repo.get(project_id)
+  end
 
   def get_projects(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.Project |> add_query_filters(filters) |> Repo.all()
+    ApiGateway.Models.Project
+    |> Ecto.Query.preload(:kanban_board)
+    |> Ecto.Query.preload(:lists_board)
+    |> add_query_filters(filters)
+    |> Repo.all()
   end
 
-  def create_project(%{project_type: "BOARD"} = data, created_by_id) do
+  def create_project(%{project_type: "BOARD"} = data, %User{} = user) do
+    full_data =
+      data
+      |> Map.put(:created_by_id, user.id)
+      |> Map.put(:workspace_id, user.workspace_id)
+
     project_result =
       %ApiGateway.Models.Project{}
-      |> Map.put(:created_by_id, created_by_id)
-      |> changeset(data)
+      |> changeset(full_data)
       |> Repo.insert()
 
     case project_result do
       {:ok, project} ->
         case ApiGateway.Models.KanbanBoard.create_kanban_board(%{project_id: project.id}) do
-          {:ok, _} ->
-            {:ok, project}
+          {:ok, kanban_board} ->
+            {:ok, Map.put(project, :kanban_board, kanban_board)}
 
           {:error, _} = errors ->
             ApiGateway.Models.Project.delete_project(project.id)
@@ -215,11 +230,15 @@ defmodule ApiGateway.Models.Project do
     end
   end
 
-  def create_project(%{project_type: "LIST"} = data, created_by_id) do
+  def create_project(%{project_type: "LIST"} = data, %User{} = user) do
+    full_data =
+      data
+      |> Map.put(:created_by_id, user.id)
+      |> Map.put(:workspace_id, user.workspace_id)
+
     project_result =
       %ApiGateway.Models.Project{}
-      |> Map.put(:created_by_id, created_by_id)
-      |> changeset(data)
+      |> changeset(full_data)
       |> Repo.insert()
 
     case project_result do
@@ -227,8 +246,8 @@ defmodule ApiGateway.Models.Project do
         case ApiGateway.Models.ProjectListsBoard.create_project_lists_board(%{
                project_id: project.id
              }) do
-          {:ok, _} ->
-            {:ok, project}
+          {:ok, lists_board} ->
+            {:ok, Map.put(project, :lists_board, lists_board)}
 
           {:error, _} = errors ->
             ApiGateway.Models.Project.delete_project(project.id)
@@ -250,6 +269,17 @@ defmodule ApiGateway.Models.Project do
         project
         |> changeset(data)
         |> Repo.update()
+        |> case do
+          {:error, _} = error ->
+            error
+
+          {:ok, project} ->
+            full_project =
+              project
+              |> Repo.preload(:kanban_board)
+
+            {:ok, full_project}
+        end
     end
   end
 

@@ -71,11 +71,11 @@ defmodule ApiGateway.Ecto.OrderedListHelpers do
       end
     end
 
-    def get_new_item_insert_rank(table_name_or_schema, relation_id, relation_id_field)
+    def get_new_item_insert_rank(table_name_or_schema, relation_id_field, relation_id)
         when is_binary(relation_id) do
       query =
         from x in table_name_or_schema,
-          where: field(x, ^relation_id_field) == ^relation_id,
+          where: field(x, ^relation_id_field) == type(^relation_id, :binary_id),
           select: max(x.list_order_rank)
 
       case ApiGateway.Repo.one(query) do

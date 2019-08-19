@@ -20,11 +20,11 @@ defmodule ApiGateway.Models.Account.User do
     field :profile_pic_url, :string
     field :last_login, :utc_datetime
     field :workspace_role, :string
-    field :billing_status, :string
+    field :billing_status, :string, read_after_writes: true
     field :password, :string, virtual: true
     field :password_hash, :string
 
-    embeds_one :time_zone, TimeZone do
+    embeds_one :time_zone, TimeZone, on_replace: :update do
       field :offset, :string
       field :name, :string
     end
@@ -47,7 +47,8 @@ defmodule ApiGateway.Models.Account.User do
     :workspace_role,
     :billing_status,
     :workspace_id,
-    :password
+    :password,
+    :last_login
   ]
   @required_fields_create [
     :full_name,
@@ -264,7 +265,7 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
-  def authenticate_by_email_password(email, password, subdomain) do
+  def authenticate_by_email_password(email, password, subdomain, opts \\ []) do
     case Workspace.get_workspace_by_subdomain(subdomain) do
       nil ->
         {:error, "Cannot find workspace"}
@@ -278,12 +279,26 @@ defmodule ApiGateway.Models.Account.User do
           %User{password_hash: password_hash} = user ->
             password
             |> Argon2.verify_pass(password_hash)
-            |> if(do: {:ok, user}, else: {:error, :unauthorized})
+            |> case do
+              false ->
+                {:error, :unauthorized}
+
+              true ->
+                if Keyword.get(opts, :set_login_time, false) do
+                  update_user(%{id: user.id, data: %{last_login: DateTime.utc_now()}})
+                else
+                  {:ok, user}
+                end
+            end
 
           nil ->
             {:error, :unauthorized}
         end
     end
+  end
+
+  def set_last_login_now(id) do
+    update_user(%{id: id, data: %{last_login: DateTime.utc_now()}})
   end
 
   ####################

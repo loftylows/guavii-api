@@ -9,7 +9,7 @@ defmodule ApiGateway.Models.KanbanCardComment do
 
   schema "kanban_card_comments" do
     field :content, :string
-    field :edited, :string
+    field :edited, :string, read_after_writes: true
 
     belongs_to :kanban_card, ApiGateway.Models.KanbanCard
     belongs_to :by, ApiGateway.Models.Account.User, foreign_key: :user_id

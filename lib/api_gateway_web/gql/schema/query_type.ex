@@ -89,14 +89,14 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     ####################
     @desc "Check whether the provided email is unused in the workspace"
     field :check_email_unused_in_workspace, non_null(:boolean) do
-      arg(:input, non_null(:check_email_unused_in_workspace_input))
+      arg(:data, non_null(:check_email_unused_in_workspace_input))
 
       resolve(&Resolvers.User.check_user_email_unused_in_workspace/3)
     end
 
     @desc "Check logged into workspace having provided subdomain"
     field :check_logged_into_workspace, non_null(:boolean) do
-      arg(:input, non_null(:check_logged_into_workspace_input))
+      arg(:data, non_null(:check_logged_into_workspace_input))
 
       # TODO: implement resolver
       # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
@@ -104,7 +104,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
 
     @desc "Check workspace subdomain available"
     field :check_workspace_subdomain_available, non_null(:boolean) do
-      arg(:input, non_null(:check_workspace_subdomain_available_input))
+      arg(:data, non_null(:check_workspace_subdomain_available_input))
 
       resolve(&Resolvers.Workspace.check_workspace_subdomain_available/3)
     end
@@ -114,7 +114,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     May be invalid if already used, past the expiration date or not genuine.
     """
     field :check_user_invite_token_valid, non_null(:boolean) do
-      arg(:input, non_null(:check_user_invite_token_valid_input))
+      arg(:data, non_null(:check_user_invite_token_valid_input))
 
       # TODO: implement resolver
       # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
@@ -122,7 +122,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
 
     @desc "Find current logged in user"
     field :current_user, :user do
-      resolve(fn _, _, %{context: %{current_user: user}} -> user end)
+      resolve(fn _, _, %{context: %{current_user: user}} -> {:ok, user} end)
     end
 
     @desc "Find a user's workspaces based on given email address and email token"

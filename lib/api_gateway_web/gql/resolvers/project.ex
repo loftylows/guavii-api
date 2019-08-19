@@ -16,8 +16,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Project do
   end
 
   def create_project(_, %{data: data}, %{context: %{current_user: user}}) do
-    case ApiGateway.Models.Project.create_project(data, user.id) do
+    case ApiGateway.Models.Project.create_project(data, user) do
       {:ok, project} ->
+        IO.inspect(project)
         {:ok, project}
 
       {:error, %{errors: errors}} ->

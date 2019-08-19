@@ -9,7 +9,7 @@ defmodule ApiGateway.Models.SubListItemComment do
 
   schema "sub_list_item_comments" do
     field :content, :string
-    field :edited, :boolean
+    field :edited, :boolean, read_after_writes: true
 
     belongs_to :sub_list_item, ApiGateway.Models.SubListItem
     belongs_to :by, ApiGateway.Models.Account.User, foreign_key: :user_id
