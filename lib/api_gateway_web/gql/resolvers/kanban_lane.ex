@@ -40,15 +40,26 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanLane do
         _
       ) do
     case KanbanLane.update_with_position(%{id: id, data: data, prev: prev, next: next}) do
-      # TODO: send out a subscription notification about this list normalization
-      {{:list_order_normalized, _normalized_list_id}, {:ok, kanban_lane}} ->
-        {:ok, kanban_lane}
-
-      {{:list_order_normalized, _normalized_list_id}, {:error, "Not found"}} ->
-        Errors.user_input_error("KanbanLane not found")
-
       {:ok, kanban_lane} ->
-        {:ok, kanban_lane}
+        payload = %{
+          kanban_lane: kanban_lane,
+          just_normalized: false
+        }
+
+        {:ok, payload}
+
+      # TODO: send out a subscription notification about this list normalization
+      {{:list_order_normalized, _normalized_list_id, normalized_items}, {:ok, kanban_lane}} ->
+        payload = %{
+          kanban_lane: kanban_lane,
+          just_normalized: true,
+          normalized_kanban_lanes: normalized_items
+        }
+
+        {:ok, payload}
+
+      {{:list_order_normalized, _normalized_list_id, _normalized_items}, {:error, "Not found"}} ->
+        Errors.user_input_error("KanbanLane not found")
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("KanbanLane input error", errors)
@@ -64,7 +75,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanLane do
   def update_kanban_lane(_, %{data: data, where: %{id: id}}, _) do
     case KanbanLane.update_kanban_lane(%{id: id, data: data}) do
       {:ok, kanban_lane} ->
-        {:ok, kanban_lane}
+        payload = %{
+          kanban_lane: kanban_lane,
+          just_normalized: false
+        }
+
+        {:ok, payload}
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("KanbanLane input error", errors)

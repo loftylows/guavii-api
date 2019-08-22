@@ -68,7 +68,10 @@ defmodule ApiGateway.Models.KanbanCard do
     kanban_card
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields)
-    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> validate_number(:list_order_rank,
+      greater_than: 0,
+      less_than: OrderedListHelpers.get_largest_rank_possible()
+    )
     |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_lane_id)
     |> foreign_key_constraint(:project_id)
@@ -79,7 +82,10 @@ defmodule ApiGateway.Models.KanbanCard do
     kanban_card
     |> cast(attrs, @permitted_fields_update)
     |> validate_required(@required_fields_update)
-    |> validate_number(:list_order_rank, greater_than: 0, less_than: 100_000_000)
+    |> validate_number(:list_order_rank,
+      greater_than: 0,
+      less_than: OrderedListHelpers.get_largest_rank_possible()
+    )
     |> unique_constraint(:list_order_rank)
     |> foreign_key_constraint(:kanban_lane_id)
     |> foreign_key_constraint(:project_id)
@@ -232,7 +238,7 @@ defmodule ApiGateway.Models.KanbanCard do
       data
       |> Map.put(:list_order_rank, OrderedListHelpers.get_insert_rank(prev, next))
 
-    item =
+    {:ok, item} =
       item
       |> changeset(full_data)
       |> Repo.update()
@@ -267,10 +273,14 @@ defmodule ApiGateway.Models.KanbanCard do
               {:ok, _} ->
                 case ApiGateway.Repo.get(__MODULE__, item.id) do
                   nil ->
-                    {{:list_order_normalized, normalized_list_id}, {:error, "Not found"}}
+                    normalized_items = get_kanban_card(%{kanban_lane_id: normalized_list_id})
+
+                    {{:list_order_normalized, normalized_list_id, normalized_items},
+                     {:error, "Not found"}}
 
                   item ->
-                    {{:list_order_normalized, normalized_list_id}, {:ok, item}}
+                    normalized_items = get_kanban_card(%{kanban_lane_id: normalized_list_id})
+                    {{:list_order_normalized, normalized_list_id, normalized_items}, {:ok, item}}
                 end
 
               {:error, _exception} ->

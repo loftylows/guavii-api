@@ -141,7 +141,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a project_todo_list using provided data"
-    field :update_project_todo_list, non_null(:project_todo_list) do
+    field :update_project_todo_list, non_null(:update_project_todo_list_payload) do
       arg(:data, non_null(:project_todo_list_update_input))
       arg(:where, non_null(:project_todo_list_where_unique_input))
       arg(:list_item_position, :list_item_position_input)
@@ -167,7 +167,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a project_todo using provided data"
-    field :update_project_todo, non_null(:project_todo) do
+    field :update_project_todo, non_null(:update_project_todo_payload) do
       arg(:data, non_null(:project_todo_update_input))
       arg(:where, non_null(:project_todo_where_unique_input))
       arg(:list_item_position, :list_item_position_input)
@@ -193,7 +193,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a sub_list using provided data"
-    field :update_sub_list, non_null(:sub_list) do
+    field :update_sub_list, non_null(:update_sub_list_payload) do
       arg(:data, non_null(:sub_list_update_input))
       arg(:where, non_null(:sub_list_where_unique_input))
       arg(:list_item_position, :list_item_position_input)
@@ -219,7 +219,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a sub_list_item using provided data"
-    field :update_sub_list_item, non_null(:sub_list_item) do
+    field :update_sub_list_item, non_null(:update_sub_list_item_payload) do
       arg(:data, non_null(:sub_list_item_update_input))
       arg(:where, non_null(:sub_list_item_where_unique_input))
       arg(:list_item_position, :list_item_position_input)
@@ -297,7 +297,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a kanban_lane using provided data"
-    field :update_kanban_lane, non_null(:kanban_lane) do
+    field :update_kanban_lane, non_null(:update_kanban_lane_payload) do
       arg(:data, non_null(:kanban_lane_update_input))
       arg(:where, non_null(:kanban_lane_where_unique_input))
       arg(:list_item_position, :list_item_position_input)
@@ -323,7 +323,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a kanban_card using provided data"
-    field :update_kanban_card, non_null(:kanban_card) do
+    field :update_kanban_card, non_null(:update_kanban_card_payload) do
       arg(:data, non_null(:kanban_card_update_input))
       arg(:where, non_null(:kanban_card_where_unique_input))
       arg(:list_item_position, :list_item_position_input)
@@ -375,7 +375,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a kanban_card_todo_list using provided data"
-    field :update_kanban_card_todo_list, non_null(:kanban_card_todo_list) do
+    field :update_kanban_card_todo_list, non_null(:update_kanban_card_todo_list_payload) do
       arg(:data, non_null(:kanban_card_todo_list_update_input))
       arg(:where, non_null(:kanban_card_todo_list_where_unique_input))
       arg(:list_item_position, :list_item_position_input)
@@ -401,7 +401,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a kanban_card_todo using provided data"
-    field :update_kanban_card_todo, non_null(:kanban_card_todo) do
+    field :update_kanban_card_todo, non_null(:update_kanban_card_todo_payload) do
       arg(:data, non_null(:kanban_card_todo_update_input))
       arg(:where, non_null(:kanban_card_todo_where_unique_input))
       arg(:list_item_position, :list_item_position_input)

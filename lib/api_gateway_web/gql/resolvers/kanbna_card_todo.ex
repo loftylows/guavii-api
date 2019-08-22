@@ -40,15 +40,26 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCardTodo do
         _
       ) do
     case KanbanCardTodo.update_with_position(%{id: id, data: data, prev: prev, next: next}) do
-      # TODO: send out a subscription notification about this list normalization
-      {{:list_order_normalized, _normalized_list_id}, {:ok, kanban_card_todo}} ->
-        {:ok, kanban_card_todo}
-
-      {{:list_order_normalized, _normalized_list_id}, {:error, "Not found"}} ->
-        Errors.user_input_error("KanbanCardTodo not found")
-
       {:ok, kanban_card_todo} ->
-        {:ok, kanban_card_todo}
+        payload = %{
+          kanban_card_todo: kanban_card_todo,
+          just_normalized: false
+        }
+
+        {:ok, payload}
+
+      # TODO: send out a subscription notification about this list normalization
+      {{:list_order_normalized, _normalized_list_id, normalized_items}, {:ok, kanban_card_todo}} ->
+        payload = %{
+          kanban_card_todo: kanban_card_todo,
+          just_normalized: true,
+          normalized_kanban_card_todos: normalized_items
+        }
+
+        {:ok, payload}
+
+      {{:list_order_normalized, _normalized_list_id, _normalized_items}, {:error, "Not found"}} ->
+        Errors.user_input_error("KanbanCardTodo not found")
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("KanbanCardTodo input error", errors)
@@ -64,7 +75,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCardTodo do
   def update_kanban_card_todo(_, %{data: data, where: %{id: id}}, _) do
     case KanbanCardTodo.update_kanban_card_todo(%{id: id, data: data}) do
       {:ok, kanban_card_todo} ->
-        {:ok, kanban_card_todo}
+        payload = %{
+          kanban_card_todo: kanban_card_todo,
+          just_normalized: false
+        }
+
+        {:ok, payload}
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("KanbanCardTodo input error", errors)

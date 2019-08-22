@@ -40,15 +40,28 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCardTodoList do
         _
       ) do
     case KanbanCardTodoList.update_with_position(%{id: id, data: data, prev: prev, next: next}) do
-      # TODO: send out a subscription notification about this list normalization
-      {{:list_order_normalized, _normalized_list_id}, {:ok, kanban_card_todo_list}} ->
-        {:ok, kanban_card_todo_list}
-
-      {{:list_order_normalized, _normalized_list_id}, {:error, "Not found"}} ->
-        Errors.user_input_error("KanbanCardTodoList not found")
-
       {:ok, kanban_card_todo_list} ->
-        {:ok, kanban_card_todo_list}
+        payload = %{
+          kanban_card_todo_list: kanban_card_todo_list,
+          just_normalized: false
+        }
+
+        {:ok, payload}
+
+      # TODO: send out a subscription notification about this list normalization
+      {{:list_order_normalized, _normalized_list_id, normalized_items},
+       {:ok, kanban_card_todo_list}} ->
+        payload = %{
+          kanban_card_todo_list: kanban_card_todo_list,
+          just_normalized: true,
+          normalized_kanban_card_todo_lists: normalized_items
+        }
+
+        {:ok, payload}
+
+      # TODO: send out a subscription notification about this list normalization
+      {{:list_order_normalized, _normalized_list_id, _normalized_items}, {:error, "Not found"}} ->
+        Errors.user_input_error("KanbanCardTodoList not found")
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("KanbanCardTodoList input error", errors)
@@ -64,7 +77,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCardTodoList do
   def update_kanban_card_todo_list(_, %{data: data, where: %{id: id}}, _) do
     case KanbanCardTodoList.update_kanban_card_todo_list(%{id: id, data: data}) do
       {:ok, kanban_card_todo_list} ->
-        {:ok, kanban_card_todo_list}
+        payload = %{
+          kanban_card_todo_list: kanban_card_todo_list,
+          just_normalized: false
+        }
+
+        {:ok, payload}
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("KanbanCardTodoList input error", errors)

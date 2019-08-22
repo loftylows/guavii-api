@@ -674,6 +674,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :id, non_null(:id)
     field :title, non_null(:string)
+    field :list_order_rank, non_null(:float)
 
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
 
@@ -702,6 +703,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     add(:completed, non_null(:boolean))
     add(:attachments, non_null_list(:string))
     add(:due_date_range, :due_date_range)
+    field :list_order_rank, non_null(:float)
 
     field :project_todo_list, non_null(:project_todo_list),
       resolve: dataloader(ApiGateway.Dataloader)
@@ -730,6 +732,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :id, non_null(:id)
     field :title, non_null(:string)
+    field :list_order_rank, non_null(:float)
 
     field :project_todo, non_null(:project_todo), resolve: dataloader(ApiGateway.Dataloader)
 
@@ -757,6 +760,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :description, :string
     field :completed, :boolean
     field :due_date, :iso_date_time
+    field :list_order_rank, non_null(:float)
 
     field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)
     field :sub_list, non_null(:sub_list), resolve: dataloader(ApiGateway.Dataloader)
@@ -846,6 +850,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :id, non_null(:id)
     field :title, non_null(:string)
     field :lane_color, non_null(:string)
+    field :list_order_rank, non_null(:float)
 
     field :kanban_board, non_null(:kanban_board), resolve: dataloader(ApiGateway.Dataloader)
 
@@ -874,6 +879,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :completed, non_null(:boolean)
     field :due_date_range, :date_range
     field :attachments, non_null_list(:string)
+    field :list_order_rank, non_null(:float)
 
     field :kanban_lane, non_null(:kanban_lane), resolve: dataloader(ApiGateway.Dataloader)
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
@@ -947,6 +953,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :id, non_null(:id)
     field :title, non_null(:string)
+    field :list_order_rank, non_null(:float)
 
     field :kanban_card, non_null(:kanban_card), resolve: dataloader(ApiGateway.Dataloader)
 
@@ -973,6 +980,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :title, non_null(:string)
     field :completed, non_null(:boolean)
     field :due_date, :iso_date_time
+    field :list_order_rank, non_null(:float)
 
     field :todo_list, non_null(:kanban_card_todo_list), resolve: dataloader(ApiGateway.Dataloader)
     field :card, non_null(:kanban_card), resolve: dataloader(ApiGateway.Dataloader)

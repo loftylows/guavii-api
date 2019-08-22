@@ -2,6 +2,9 @@ defmodule ApiGateway.Ecto.OrderedListHelpers do
   require Ecto.Query
   import Ecto.Query, only: [from: 2]
 
+  def get_smallest_gap_possible, do: 5.0e-50
+  def get_largest_rank_possible, do: 5.0e50
+
   # TODO: Fix the possible race condition in this case
   def get_insert_rank(prev, next) when is_float(prev) and is_float(next) do
     # in between
@@ -27,13 +30,17 @@ defmodule ApiGateway.Ecto.OrderedListHelpers do
   def gap_acceptable?(prev, next) when is_float(prev) and is_float(next) do
     gap = next - prev
 
-    gap > 0 and gap > 0.0000000005
+    gap > 0 and gap > get_smallest_gap_possible()
   end
 
   def gap_acceptable?(nil, next) when is_float(next) do
     gap = next - 0
 
-    gap > 0 and gap > 0.0000000005
+    gap > 0 and gap > get_smallest_gap_possible()
+  end
+
+  def gap_acceptable?(prev, nil) when is_float(prev) do
+    prev <= get_largest_rank_possible()
   end
 
   def gap_acceptable?(_, _) do

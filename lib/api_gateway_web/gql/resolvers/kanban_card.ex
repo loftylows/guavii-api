@@ -40,15 +40,26 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCard do
         _
       ) do
     case KanbanCard.update_with_position(%{id: id, data: data, prev: prev, next: next}) do
-      # TODO: send out a subscription notification about this list normalization
-      {{:list_order_normalized, _normalized_list_id}, {:ok, kanban_card}} ->
-        {:ok, kanban_card}
-
-      {{:list_order_normalized, _normalized_list_id}, {:error, "Not found"}} ->
-        Errors.user_input_error("KanbanCard not found")
-
       {:ok, kanban_card} ->
-        {:ok, kanban_card}
+        payload = %{
+          kanban_card: kanban_card,
+          just_normalized: false
+        }
+
+        {:ok, payload}
+
+      # TODO: send out a subscription notification about this list normalization
+      {{:list_order_normalized, _normalized_list_id, normalized_items}, {:ok, kanban_card}} ->
+        payload = %{
+          kanban_card: kanban_card,
+          just_normalized: true,
+          normalized_kanban_cards: normalized_items
+        }
+
+        {:ok, payload}
+
+      {{:list_order_normalized, _normalized_list_id, _normalized_items}, {:error, "Not found"}} ->
+        Errors.user_input_error("KanbanCard not found")
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("KanbanCard input error", errors)
@@ -64,7 +75,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCard do
   def update_kanban_card(_, %{data: data, where: %{id: id}}, _) do
     case KanbanCard.update_kanban_card(%{id: id, data: data}) do
       {:ok, kanban_card} ->
-        {:ok, kanban_card}
+        payload = %{
+          kanban_card: kanban_card,
+          just_normalized: false
+        }
+
+        {:ok, payload}
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("KanbanCard input error", errors)

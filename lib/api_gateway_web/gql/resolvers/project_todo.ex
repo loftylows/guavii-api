@@ -40,15 +40,26 @@ defmodule ApiGatewayWeb.Gql.Resolvers.ProjectTodo do
         _
       ) do
     case ProjectTodo.update_with_position(%{id: id, data: data, prev: prev, next: next}) do
-      # TODO: send out a subscription notification about this list normalization
-      {{:list_order_normalized, _normalized_list_id}, {:ok, project_todo}} ->
-        {:ok, project_todo}
-
-      {{:list_order_normalized, _normalized_list_id}, {:error, "Not found"}} ->
-        Errors.user_input_error("ProjectTodo not found")
-
       {:ok, project_todo} ->
-        {:ok, project_todo}
+        payload = %{
+          project_todo: project_todo,
+          just_normalized: false
+        }
+
+        {:ok, payload}
+
+      # TODO: send out a subscription notification about this list normalization
+      {{:list_order_normalized, _normalized_list_id, normalized_items}, {:ok, project_todo}} ->
+        payload = %{
+          project_todo: project_todo,
+          just_normalized: true,
+          normalized_project_todos: normalized_items
+        }
+
+        {:ok, payload}
+
+      {{:list_order_normalized, _normalized_list_id, _normalized_items}, {:error, "Not found"}} ->
+        Errors.user_input_error("ProjectTodo not found")
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("ProjectTodo input error", errors)
@@ -64,7 +75,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.ProjectTodo do
   def update_project_todo(_, %{data: data, where: %{id: id}}, _) do
     case ProjectTodo.update_project_todo(%{id: id, data: data}) do
       {:ok, project_todo} ->
-        {:ok, project_todo}
+        payload = %{
+          project_todo: project_todo,
+          just_normalized: false
+        }
+
+        {:ok, payload}
 
       {:error, %{errors: errors}} ->
         Errors.user_input_error_from_changeset("ProjectTodo input error", errors)
