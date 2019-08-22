@@ -31,16 +31,50 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       end
     end)
 
-    serialize(&DateTime.to_iso8601(&1))
+    serialize(fn date_time ->
+      DateTime.to_iso8601(date_time)
+    end)
   end
 
   scalar :email, description: "Email address" do
-    parse(&ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs.check_email(&1))
+    parse(fn val ->
+      IO.inspect(val)
+
+      case val do
+        %Absinthe.Blueprint.Input.Null{} ->
+          {:ok, nil}
+
+        _ ->
+          case ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs.check_email(val) do
+            {:ok, email} ->
+              {:ok, email}
+
+            _ ->
+              :error
+          end
+      end
+    end)
+
     serialize(& &1)
   end
 
   scalar :uuid, description: "UUID string" do
-    parse(&Ecto.UUID.cast(&1.value))
+    parse(fn val ->
+      case val do
+        %Absinthe.Blueprint.Input.Null{} ->
+          {:ok, nil}
+
+        _ ->
+          case Ecto.UUID.cast(val.value) do
+            {:ok, uuid} ->
+              {:ok, uuid}
+
+            _ ->
+              :error
+          end
+      end
+    end)
+
     serialize(& &1)
   end
 
@@ -388,7 +422,11 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :workspace_subdomain, non_null(:string)
     field :description, :string
     field :storage_cap, non_null(:integer)
-    field :current_storage_amount, non_null(:integer)
+
+    # TODO: write a resolver to check amazon s3 for this method and calculate total space
+    field :current_storage_amount, non_null(:integer) do
+      resolve(fn _, _, _ -> {:ok, 0} end)
+    end
 
     # field :members, non_null_list(:user), resolve: dataloader(ApiGateway.Dataloader)
 

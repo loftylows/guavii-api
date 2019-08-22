@@ -30,6 +30,7 @@
                         'Elixir.ApiGateway.Models.InternalSubdomain',
                         'Elixir.ApiGateway.Models.KanbanBoard',
                         'Elixir.ApiGateway.Models.KanbanCard',
+                        'Elixir.ApiGateway.Models.KanbanCardActiveLabels',
                         'Elixir.ApiGateway.Models.KanbanCardComment',
                         'Elixir.ApiGateway.Models.KanbanCardTodo',
                         'Elixir.ApiGateway.Models.KanbanCardTodoList',

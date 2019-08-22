@@ -6,57 +6,46 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
   defstruct [:start, :end]
 
   # Provide custom casting rules.
-  # Cast strings into the DateRangeDateRange struct to be used at runtime
-  def cast(%{start: startDate, end: endDate}) when is_binary(startDate) and is_binary(endDate) do
-    case {Date.from_iso8601(startDate), Date.from_iso8601(endDate)} do
-      {{:ok, _}, {:ok, _}} ->
-        {:ok, %ApiGateway.CustomStructs.DateRange{start: startDate, end: endDate}}
+  # Cast strings into the DateRange struct to be used at runtime
+  def cast(%{start: startDate, end: endDate})
+      when is_binary(startDate) and is_binary(endDate) do
+    case {DateTime.from_iso8601(startDate), DateTime.from_iso8601(endDate)} do
+      {{:ok, date_time_start, _}, {:ok, date_time_end, _}} ->
+        {:ok, %ApiGateway.CustomStructs.DateRange{start: date_time_start, end: date_time_end}}
 
       _ ->
         {:error, "Start and end dates must be iso8601 strings"}
     end
   end
 
-  # Accept casting of DateRange structs as well
-  def cast(%ApiGateway.CustomStructs.DateRange{start: startDate, end: endDate} = date_range)
-      when is_binary(startDate) and is_binary(endDate) do
-    case {Date.from_iso8601(startDate), Date.from_iso8601(endDate)} do
-      {{:ok, _}, {:ok, _}} ->
-        {:ok, date_range}
-
-      _ ->
-        {:error, "Start and end dates must be iso8601 strings"}
-    end
+  def cast(%{start: %DateTime{}, end: %DateTime{}} = date_range) do
+    {:ok, struct!(ApiGateway.CustomStructs.DateRange, date_range)}
   end
 
   # Everything else is a failure though
-  def cast(_), do: :error
+  def cast(_) do
+    :error
+  end
 
   # When loading data from the database, we are guaranteed to
   # receive a map (as databases are strict) and we will
-  # just put the data back into an DateRangeDateRange struct to be stored
+  # just put the data back into an DateRange struct to be stored
   # in the loaded schema struct.
-  def load(data) when is_map(data) do
-    data =
-      for {key, val} <- data do
-        {String.to_existing_atom(key), val}
-      end
+  def load(%{"start" => startDate, "end" => endDate}) do
+    case {DateTime.from_iso8601(startDate), DateTime.from_iso8601(endDate)} do
+      {{:ok, date_time_start, _}, {:ok, date_time_end, _}} ->
+        {:ok, %ApiGateway.CustomStructs.DateRange{start: date_time_start, end: date_time_end}}
 
-    {:ok, struct!(ApiGateway.CustomStructs.DateRange, data)}
+      _ ->
+        {:error, "Start and end dates must be iso8601 strings"}
+    end
   end
 
   # When dumping data to the database, we *expect* an DateRange struct
   # but any value could be inserted into the schema struct at runtime,
   # so we need to guard against them.
-  def dump(%ApiGateway.CustomStructs.DateRange{start: startDate, end: endDate} = date_range)
-      when is_binary(startDate) and is_binary(endDate) do
-    case {Date.from_iso8601(startDate), Date.from_iso8601(endDate)} do
-      {{:ok, _}, {:ok, _}} ->
-        {:ok, Map.from_struct(date_range)}
-
-      _ ->
-        {:error, "Start and end dates must be iso8601 strings"}
-    end
+  def dump(%ApiGateway.CustomStructs.DateRange{} = date_range) do
+    {:ok, Map.from_struct(date_range)}
   end
 
   def dump(_), do: :error

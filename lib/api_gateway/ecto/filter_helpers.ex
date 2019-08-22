@@ -11,14 +11,12 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
     query
   end
 
-  def maybe_id_in_filter(query, list \\ [])
-
-  def maybe_id_in_filter(query, list) when is_list(list) and length(list) > 0 do
-    query |> Ecto.Query.where([p], p.id in ^UUID.cast_vals_to_uuid!(list))
+  def maybe_id_in_filter(query, nil) do
+    query
   end
 
-  def maybe_id_in_filter(query, _) do
-    query
+  def maybe_id_in_filter(query, list) when is_list(list) do
+    query |> Ecto.Query.where([p], p.id in ^UUID.cast_vals_to_uuid!(list))
   end
 
   def maybe_completed_filter(query, bool) when is_boolean(bool) do

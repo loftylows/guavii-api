@@ -104,7 +104,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :title, non_null(:string)
     field :description, :string
     field :completed, :boolean
-    field :attachments, list_of(:string)
+    field :attachments, :string |> non_null() |> list_of()
     field :due_date_range, :date_range_input
 
     field :project_todo_list_id, non_null(:uuid)
@@ -116,7 +116,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :title, :string
     field :description, :string
     field :completed, :boolean
-    field :attachments, list_of(:string)
+    field :attachments, :string |> non_null() |> list_of()
     field :due_date_range, :date_range_input
 
     field :project_todo_list_id, :uuid
@@ -189,7 +189,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :title, non_null(:string)
     field :description, :string
     field :completed, :boolean
-    field :attachments, list_of(:string)
+    field :attachments, :string |> non_null() |> list_of()
     field :due_date_range, :date_range_input
 
     field :kanban_lane_id, non_null(:uuid)
@@ -201,8 +201,9 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :title, :string
     field :description, :string
     field :completed, :boolean
-    field :attachments, list_of(:string)
+    field :attachments, :string |> non_null() |> list_of()
     field :due_date_range, :date_range_input
+    field :active_labels, :uuid |> non_null() |> list_of()
 
     field :kanban_lane_id, :uuid
     field :user_id, :uuid
