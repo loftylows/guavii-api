@@ -982,7 +982,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :due_date, :iso_date_time
     field :list_order_rank, non_null(:float)
 
-    field :todo_list, non_null(:kanban_card_todo_list), resolve: dataloader(ApiGateway.Dataloader)
+    field :kanban_card_todo_list, non_null(:kanban_card_todo_list),
+      name: "todo_list",
+      resolve: dataloader(ApiGateway.Dataloader)
+
     field :card, non_null(:kanban_card), resolve: dataloader(ApiGateway.Dataloader)
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
     field :assigned_to, :user, resolve: dataloader(ApiGateway.Dataloader)

@@ -83,6 +83,7 @@ defmodule ApiGateway.Models.TeamMember do
 
   def maybe_team_id_assoc_filter(query, team_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [team_member], team in ApiGateway.Models.Team,
       on: team_member.team_id == ^team_id
     )
@@ -96,6 +97,7 @@ defmodule ApiGateway.Models.TeamMember do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [team_member], user in ApiGateway.Models.Account.User,
       on: team_member.user_id == ^user_id
     )

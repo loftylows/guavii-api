@@ -12,17 +12,17 @@ defmodule ApiGateway.Ecto.OrderedListHelpers do
   end
 
   # TODO: Fix the possible race condition in this case
-  def get_insert_rank(prev, next) when is_nil(prev) and is_float(next) do
+  def get_insert_rank(nil, next) when is_float(next) do
     # first
     next / 2.0
   end
 
-  def get_insert_rank(prev, next) when is_float(prev) and is_nil(next) do
+  def get_insert_rank(prev, nil) when is_float(prev) do
     # last
     prev + (1.0 + :rand.uniform(1000)) / 1
   end
 
-  def get_insert_rank(prev, next) when is_nil(prev) and is_nil(next) do
+  def get_insert_rank(nil, nil) do
     # only item
     (1.0 + :rand.uniform(1000)) / 1
   end

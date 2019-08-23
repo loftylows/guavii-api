@@ -61,6 +61,7 @@ defmodule ApiGateway.Models.KanbanLabel do
 
   def maybe_kanban_board_id_assoc_filter(query, kanban_board_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [kanban_label], kanban_board in ApiGateway.Models.KanbanBoard,
       on: kanban_label.kanban_board_id == ^kanban_board_id
     )

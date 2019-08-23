@@ -54,6 +54,7 @@ defmodule ApiGateway.Models.Team do
 
   def maybe_workspace_id_assoc_filter(query, workspace_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [team], workspace in ApiGateway.Models.Workspace,
       on: team.workspace_id == ^workspace_id
     )

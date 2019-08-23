@@ -48,6 +48,7 @@ defmodule ApiGateway.Models.Document do
 
   def maybe_project_id_assoc_filter(query, project_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [document], project in ApiGateway.Models.Project,
       on: document.project_id == ^project_id
     )

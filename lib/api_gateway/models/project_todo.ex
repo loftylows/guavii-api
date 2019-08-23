@@ -110,6 +110,7 @@ defmodule ApiGateway.Models.ProjectTodo do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [project_todo], user in ApiGateway.Models.Account.User,
       on: project_todo.user_id == ^assigned_to_id
     )

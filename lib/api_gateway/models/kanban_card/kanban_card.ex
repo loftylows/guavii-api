@@ -108,6 +108,7 @@ defmodule ApiGateway.Models.KanbanCard do
 
   def maybe_kanban_lane_id_assoc_filter(query, kanban_lane_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [kanban_card_todo], kanban_lane in ApiGateway.Models.KanbanLane,
       on: kanban_card_todo.kanban_lane_id == ^kanban_lane_id
     )
@@ -121,6 +122,7 @@ defmodule ApiGateway.Models.KanbanCard do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [kanban_card], user in ApiGateway.Models.Account.User,
       on: kanban_card.user_id == ^assigned_to_id
     )

@@ -96,26 +96,14 @@ defmodule ApiGateway.Models.KanbanCardTodo do
   ####################
   # Query helpers #
   ####################
-  @doc "project_id must be a valid 'uuid' or an error will be raised"
-  def maybe_project_id_assoc_filter(query, project_id) when is_nil(project_id) do
-    query
-  end
-
-  def maybe_project_id_assoc_filter(query, project_id) do
-    query
-    |> Ecto.Query.join(:inner, [kanban_card_todo], project in ApiGateway.Models.Project,
-      on: kanban_card_todo.project_id == ^project_id
-    )
-    |> Ecto.Query.select([kanban_card_todo, project], kanban_card_todo)
-  end
-
   @doc "user_id must be a valid 'uuid' or an error will be raised"
-  def maybe_user_id_assoc_filter(query, user_id) when is_nil(user_id) do
+  def maybe_user_id_assoc_filter(query, nil) do
     query
   end
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [kanban_card_todo], user in ApiGateway.Models.Account.User,
       on: kanban_card_todo.user_id == ^user_id
     )
@@ -123,26 +111,27 @@ defmodule ApiGateway.Models.KanbanCardTodo do
   end
 
   @doc "kanban_card_id must be a valid 'uuid' or an error will be raised"
-  def maybe_kanban_card_id_assoc_filter(query, kanban_card_id) when is_nil(kanban_card_id) do
+  def maybe_kanban_card_id_assoc_filter(query, nil) do
     query
   end
 
   def maybe_kanban_card_id_assoc_filter(query, kanban_card_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [kanban_card_todo], kanban_card in ApiGateway.Models.KanbanCard,
-      on: kanban_card_todo.kanban_card_id == ^kanban_card_id
+      on: kanban_card_todo.card_id == ^kanban_card_id
     )
     |> Ecto.Query.select([kanban_card_todo, kanban_card], kanban_card_todo)
   end
 
   @doc "kanban_card_todo_list_id must be a valid 'uuid' or an error will be raised"
-  def maybe_kanban_card_todo_list_id_assoc_filter(query, kanban_card_todo_list_id)
-      when is_nil(kanban_card_todo_list_id) do
+  def maybe_kanban_card_todo_list_id_assoc_filter(query, nil) do
     query
   end
 
   def maybe_kanban_card_todo_list_id_assoc_filter(query, kanban_card_todo_list_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(
       :inner,
       [kanban_card_todo],
@@ -167,7 +156,8 @@ defmodule ApiGateway.Models.KanbanCardTodo do
     |> CommonFilterHelpers.maybe_due_date_lte_filter(filters[:due_date_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> CommonFilterHelpers.maybe_completed_filter(filters[:completed])
-    |> maybe_project_id_assoc_filter(filters[:project_id])
+    |> CommonFilterHelpers.maybe_project_id_assoc_filter(filters[:project_id])
+    |> CommonFilterHelpers.maybe_project_id_assoc_filter(filters[:project_id])
     |> maybe_user_id_assoc_filter(filters[:assigned_to_id])
     |> maybe_kanban_card_id_assoc_filter(filters[:kanban_card_id])
     |> maybe_kanban_card_todo_list_id_assoc_filter(filters[:kanban_card_todo_list_id])
@@ -183,7 +173,11 @@ defmodule ApiGateway.Models.KanbanCardTodo do
   def get_kanban_card_todos(filters \\ %{}) do
     IO.inspect(filters)
 
-    KanbanCardTodo |> add_query_filters(filters) |> Repo.all()
+    todos = KanbanCardTodo |> add_query_filters(filters) |> Repo.all()
+
+    IO.inspect(todos)
+
+    todos
   end
 
   def create_kanban_card_todo(data) when is_map(data) do

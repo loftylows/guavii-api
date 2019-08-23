@@ -104,6 +104,7 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [x], user in ApiGateway.Models.Account.User,
       on: x.user_id == ^user_id
     )
@@ -117,6 +118,7 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
 
   def maybe_project_id_assoc_filter(query, project_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [x], p in ApiGateway.Models.Project,
       on: x.project_id == ^project_id
     )

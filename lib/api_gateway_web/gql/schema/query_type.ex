@@ -84,6 +84,14 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.KanbanCard.get_kanban_card/3)
     end
 
+    @desc "Get a kanban card todos using criteria"
+    field :kanban_card_todos, non_null_list(:kanban_card_todo) do
+      arg(:where, non_null(:kanban_card_todo_where_input))
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.KanbanCardTodo.get_kanban_card_todos/3)
+    end
+
     ####################
     # Other queries #
     ####################

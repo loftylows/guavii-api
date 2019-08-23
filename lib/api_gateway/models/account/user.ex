@@ -174,6 +174,7 @@ defmodule ApiGateway.Models.Account.User do
 
   def maybe_workspace_id_assoc_filter(query, workspace_id) do
     query
+    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [user], workspace in Workspace,
       on: user.workspace_id == ^workspace_id
     )
