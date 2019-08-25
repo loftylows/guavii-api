@@ -48,7 +48,6 @@ defmodule ApiGateway.Models.Document do
 
   def maybe_project_id_assoc_filter(query, project_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [document], project in ApiGateway.Models.Project,
       on: document.project_id == ^project_id
     )
@@ -66,6 +65,7 @@ defmodule ApiGateway.Models.Document do
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_project_id_assoc_filter(filters[:project_id])
   end
 

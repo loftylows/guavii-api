@@ -98,6 +98,7 @@ defmodule ApiGateway.Models.ProjectTodoList do
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> CommonFilterHelpers.maybe_project_id_assoc_filter(filters[:project_id])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_project_lists_board_id_assoc_filter(filters[:project_lists_board_id])
   end
 

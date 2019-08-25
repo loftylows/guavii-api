@@ -74,7 +74,6 @@ defmodule ApiGateway.Models.SubList do
 
   def maybe_project_todo_id_assoc_filter(query, project_todo_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [sub_list], project_todo in ApiGateway.Models.ProjectTodo,
       on: sub_list.project_todo_id == ^project_todo_id
     )
@@ -92,6 +91,7 @@ defmodule ApiGateway.Models.SubList do
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_project_todo_id_assoc_filter(filters[:project_todo_id])
   end
 

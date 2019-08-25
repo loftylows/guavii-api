@@ -41,6 +41,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :last_login, :iso_date_time
     field :last_login_gte, :iso_date_time
     field :last_login_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   @desc "Must provide either an ID or a workspace subdomain"
@@ -56,6 +57,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :team_where_unique_input do
@@ -69,6 +71,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :project_where_unique_input do
@@ -87,6 +90,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :team_member_where_unique_input do
@@ -101,6 +105,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :document_where_unique_input do
@@ -114,6 +119,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :project_todo_list_where_unique_input do
@@ -127,6 +133,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :project_todo_where_unique_input do
@@ -140,9 +147,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :project_id, :uuid
     field :todo_list_id, :uuid
     field :assigned_to_id, :uuid
+    field :has_due_date, :boolean
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
+    field :has_due_date, :boolean
   end
 
   input_object :sub_list_where_unique_input do
@@ -156,6 +166,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :sub_list_item_where_unique_input do
@@ -170,12 +181,15 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :project_id, :uuid
     field :sub_list_id, :uuid
     field :assigned_to, :uuid
+    field :has_due_date, :boolean
     field :due_date, :iso_date_time
     field :due_date_gte, :iso_date_time
     field :due_date_lte, :iso_date_time
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
+    field :has_due_date, :boolean
   end
 
   input_object :sub_list_item_comment_where_unique_input do
@@ -190,6 +204,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :kanban_lane_where_unique_input do
@@ -204,6 +219,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :kanban_label_where_unique_input do
@@ -218,6 +234,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :kanban_card_where_unique_input do
@@ -230,10 +247,13 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :completed, :boolean
     field :assigned_to_id, :uuid
     field :kanban_lane_id, :uuid
+    field :has_due_date, :boolean
     field :project_id, :uuid
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
+    field :has_due_date, :boolean
   end
 
   input_object :kanban_card_comment_where_unique_input do
@@ -248,6 +268,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :kanban_card_todo_list_where_unique_input do
@@ -261,6 +282,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
   end
 
   input_object :kanban_card_todo_where_unique_input do
@@ -271,6 +293,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :id_in, list_of(:uuid)
     field :title_contains, :string
     field :completed, :boolean
+    field :has_due_date, :boolean
     field :assigned_to_id, :uuid
     field :kanban_card_id, :uuid
     field :kanban_card_todo_list_id, :uuid
@@ -281,6 +304,8 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at, :iso_date_time
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
+    field :has_due_date, :boolean
   end
 
   ####################

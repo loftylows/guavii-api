@@ -130,7 +130,6 @@ defmodule ApiGateway.Models.Project do
 
   def maybe_workspace_id_assoc_filter(query, workspace_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [project], workspace in ApiGateway.Models.Workspace,
       on: project.workspace_id == ^workspace_id
     )
@@ -144,7 +143,6 @@ defmodule ApiGateway.Models.Project do
 
   def maybe_owner_id_assoc_filter(query, owner_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [project], team in ApiGateway.Models.Team,
       on: project.team_id == ^owner_id
     )
@@ -158,7 +156,6 @@ defmodule ApiGateway.Models.Project do
 
   def maybe_created_by_id_assoc_filter(query, created_by_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [project], user in ApiGateway.Models.Account.User,
       on: project.user_id == ^created_by_id
     )
@@ -176,6 +173,7 @@ defmodule ApiGateway.Models.Project do
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_project_type_filter(filters[:project_type])
     |> maybe_project_status_filter(filters[:status])
     |> maybe_project_privacy_policy_filter(filters[:privacy_policy])

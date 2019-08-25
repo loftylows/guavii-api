@@ -98,7 +98,6 @@ defmodule ApiGateway.Models.SubListItemComment do
 
   def maybe_commenter_id_assoc_filter(query, commenter_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [sub_list_item_comment], user in ApiGateway.Models.Account.User,
       on: sub_list_item_comment.user_id == ^commenter_id
     )
@@ -115,6 +114,7 @@ defmodule ApiGateway.Models.SubListItemComment do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_content_contains_filter(filters[:content_contains])
     |> maybe_edited_filter(filters[:edited])
     |> maybe_sub_list_item_id_assoc_filter(filters[:sub_list_item_id])

@@ -101,6 +101,20 @@ defmodule ApiGateway.Models.KanbanCard do
   ####################
   # Query helpers #
   ####################
+  def maybe_has_due_date_filter(query, nil) do
+    query
+  end
+
+  def maybe_has_due_date_filter(query, true) do
+    query
+    |> Ecto.Query.where([kanban_card], not is_nil(kanban_card.due_date_range))
+  end
+
+  def maybe_has_due_date_filter(query, false) do
+    query
+    |> Ecto.Query.where([kanban_card], is_nil(kanban_card.due_date_range))
+  end
+
   @doc "kanban_lane_id must be a valid 'uuid' or an error will be raised"
   def maybe_kanban_lane_id_assoc_filter(query, kanban_lane_id) when is_nil(kanban_lane_id) do
     query
@@ -142,6 +156,7 @@ defmodule ApiGateway.Models.KanbanCard do
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> CommonFilterHelpers.maybe_completed_filter(filters[:completed])
     |> CommonFilterHelpers.maybe_project_id_assoc_filter(filters[:project_id])
+    |> maybe_has_due_date_filter(filters[:has_due_date])
     |> maybe_kanban_lane_id_assoc_filter(filters[:kanban_lane_id])
     |> maybe_assigned_to_id_assoc_filter(filters[:assigned_to])
   end

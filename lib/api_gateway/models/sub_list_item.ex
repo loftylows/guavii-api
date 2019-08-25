@@ -87,6 +87,16 @@ defmodule ApiGateway.Models.SubListItem do
   ####################
   # Query helpers #
   ####################
+  def maybe_has_due_date_filter(query, true) do
+    query
+    |> Ecto.Query.where([sub_list_item], not is_nil(sub_list_item.due_date))
+  end
+
+  def maybe_has_due_date_filter(query, false) do
+    query
+    |> Ecto.Query.where([sub_list_item], is_nil(sub_list_item.due_date))
+  end
+
   @doc "sub_list_id must be a valid 'uuid' or an error will be raised"
   def maybe_sub_list_id_assoc_filter(query, sub_list_id) when is_nil(sub_list_id) do
     query
@@ -94,7 +104,6 @@ defmodule ApiGateway.Models.SubListItem do
 
   def maybe_sub_list_id_assoc_filter(query, sub_list_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [sub_list_item], sub_list in ApiGateway.Models.SubList,
       on: sub_list_item.sub_list_id == ^sub_list_id
     )
@@ -108,7 +117,6 @@ defmodule ApiGateway.Models.SubListItem do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [sub_list_item], user in ApiGateway.Models.Account.User,
       on: sub_list_item.user_id == ^assigned_to_id
     )
@@ -122,7 +130,6 @@ defmodule ApiGateway.Models.SubListItem do
 
   def maybe_project_id_assoc_filter(query, project_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [sub_list_item], project in ApiGateway.Models.Project,
       on: sub_list_item.project_id == ^project_id
     )
@@ -144,6 +151,8 @@ defmodule ApiGateway.Models.SubListItem do
     |> CommonFilterHelpers.maybe_due_date_lte_filter(filters[:due_date_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> CommonFilterHelpers.maybe_completed_filter(filters[:completed])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
+    |> maybe_has_due_date_filter(filters[:has_due_date])
     |> maybe_assigned_to_id_assoc_filter(filters[:assigned_to])
     |> maybe_sub_list_id_assoc_filter(filters[:sub_list_id])
     |> maybe_project_id_assoc_filter(filters[:project_id])

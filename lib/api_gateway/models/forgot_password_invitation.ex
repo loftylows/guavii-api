@@ -90,6 +90,7 @@ defmodule ApiGateway.Models.ForgotPasswordInvitation do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_accepted_filter(filters[:accepted])
     |> maybe_user_id_assoc_filter(filters[:user_id])
   end

@@ -27,6 +27,18 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
     query
   end
 
+  def maybe_distinct(query, nil) do
+    query
+  end
+
+  def maybe_distinct(query, false) do
+    query
+  end
+
+  def maybe_distinct(query, true) do
+    query |> Ecto.Query.distinct(true)
+  end
+
   def maybe_created_at_filter(query, date \\ nil)
 
   def maybe_created_at_filter(query, date) when is_nil(date) do
@@ -104,7 +116,6 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [x], user in ApiGateway.Models.Account.User,
       on: x.user_id == ^user_id
     )
@@ -118,7 +129,6 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
 
   def maybe_project_id_assoc_filter(query, project_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [x], p in ApiGateway.Models.Project,
       on: x.project_id == ^project_id
     )

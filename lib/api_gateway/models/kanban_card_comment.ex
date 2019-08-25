@@ -73,7 +73,6 @@ defmodule ApiGateway.Models.KanbanCardComment do
 
   def maybe_kanban_card_id_assoc_filter(query, kanban_card_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [kanban_card_comment], kanban_card in ApiGateway.Models.KanbanCard,
       on: kanban_card_comment.kanban_card_id == ^kanban_card_id
     )
@@ -87,7 +86,6 @@ defmodule ApiGateway.Models.KanbanCardComment do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [kanban_card_comment], user in ApiGateway.Models.Account.User,
       on: kanban_card_comment.user_id == ^user_id
     )
@@ -104,6 +102,7 @@ defmodule ApiGateway.Models.KanbanCardComment do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_edited_filter(filters[:edited])
     |> maybe_content_contains_filter(filters[:content_contains])
     |> maybe_kanban_card_id_assoc_filter(filters[:kanban_card_id])

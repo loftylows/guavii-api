@@ -76,6 +76,7 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_workspace_id_assoc_filter(filters[:workspace_id])
   end
 

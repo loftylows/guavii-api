@@ -98,6 +98,7 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_kanban_card_id_assoc_filter(filters[:kanban_card_id])
   end
 

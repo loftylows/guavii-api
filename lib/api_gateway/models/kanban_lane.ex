@@ -70,9 +70,8 @@ defmodule ApiGateway.Models.KanbanLane do
   ####################
   # Query helpers #
   ####################
-  def maybe_lane_color_filter(query, lane_color \\ nil)
 
-  def maybe_lane_color_filter(query, lane_color) when is_nil(lane_color) do
+  def maybe_lane_color_filter(query, nil) do
     query
   end
 
@@ -87,7 +86,6 @@ defmodule ApiGateway.Models.KanbanLane do
 
   def maybe_kanban_board_id_assoc_filter(query, kanban_board_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [kanban_lane], kanban_board in ApiGateway.Models.KanbanBoard,
       on: kanban_lane.kanban_board_id == ^kanban_board_id
     )
@@ -105,6 +103,7 @@ defmodule ApiGateway.Models.KanbanLane do
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_lane_color_filter(filters[:lane_color])
     |> maybe_kanban_board_id_assoc_filter(filters[:kanban_board_id])
   end

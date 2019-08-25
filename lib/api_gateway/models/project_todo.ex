@@ -86,6 +86,16 @@ defmodule ApiGateway.Models.ProjectTodo do
   ####################
   # Query helpers #
   ####################
+  def maybe_has_due_date_filter(query, true) do
+    query
+    |> Ecto.Query.where([project_todo], not is_nil(project_todo.due_date_range))
+  end
+
+  def maybe_has_due_date_filter(query, false) do
+    query
+    |> Ecto.Query.where([project_todo], is_nil(project_todo.due_date_range))
+  end
+
   @doc "project_todo_id must be a valid 'uuid' or an error will be raised"
   def maybe_project_todo_list_id_assoc_filter(query, project_todo_list_id)
       when is_nil(project_todo_list_id) do
@@ -110,7 +120,6 @@ defmodule ApiGateway.Models.ProjectTodo do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [project_todo], user in ApiGateway.Models.Account.User,
       on: project_todo.user_id == ^assigned_to_id
     )
@@ -126,6 +135,8 @@ defmodule ApiGateway.Models.ProjectTodo do
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> CommonFilterHelpers.maybe_completed_filter(filters[:completed])
     |> CommonFilterHelpers.maybe_project_id_assoc_filter(filters[:project_id])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
+    |> maybe_has_due_date_filter(filters[:has_due_date])
     |> maybe_project_todo_list_id_assoc_filter(filters[:project_todo_list_id])
     |> maybe_assigned_to_id_assoc_filter(filters[:assigned_to])
   end

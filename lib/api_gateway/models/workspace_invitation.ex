@@ -70,7 +70,6 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
 
   def maybe_workspace_id_assoc_filter(query, workspace_id) do
     query
-    |> Ecto.Query.distinct(true)
     |> Ecto.Query.join(:inner, [workspace_invitation], workspace in ApiGateway.Models.Workspace,
       on: workspace_invitation.workspace_id == ^workspace_id
     )
@@ -87,6 +86,7 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
     |> CommonFilterHelpers.maybe_created_at_filter(filters[:created_at])
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_accepted_filter(filters[:accepted])
     |> maybe_workspace_id_assoc_filter(filters[:workspace_id])
   end
