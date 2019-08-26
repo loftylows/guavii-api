@@ -13,7 +13,7 @@ defmodule ApiGateway.Models.Document do
     field :content, :string, read_after_writes: true
     field :is_pinned, :boolean, read_after_writes: true
 
-    has_one :last_update, DocumentLastUpdate
+    has_one :last_update, DocumentLastUpdate, on_replace: :update
 
     belongs_to :project, ApiGateway.Models.Project
 
@@ -114,7 +114,9 @@ defmodule ApiGateway.Models.Document do
         {:error, "Not found"}
 
       document ->
-        last_update = %{user_id: user_id, date: DateTime.utc_now()}
+        date_now = DateTime.truncate(DateTime.utc_now(), :second)
+
+        last_update = %{user_id: user_id, date: date_now}
 
         document
         |> changeset(data)

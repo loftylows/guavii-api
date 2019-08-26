@@ -61,6 +61,45 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
     end
   end
 
+  def update_document_content(_, _, %{context: %{current_user: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def update_document_content(
+        _,
+        %{data: %{content: content}, where: %{id: id}},
+        %{context: %{current_user: user}}
+      ) do
+    case ApiGateway.Models.Document.update_document(%{id: id, data: %{content: content}}, user.id) do
+      {:ok, document} ->
+        # TODO: notify others of content change
+        {:ok, document}
+
+      {:error, %{errors: errors}} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset(
+          "Document input error",
+          errors
+        )
+
+      {:error, "Not found"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Document not found")
+
+      {:error, _} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Document input error")
+    end
+  end
+
+  def on_document_selection_change(
+        _,
+        %{data: %{range: range}, where: %{id: _id}},
+        _
+      ) do
+    # TODO: write resolver to notify others of selection change
+    IO.inspect(range)
+
+    {:ok, %{ok: true}}
+  end
+
   def delete_document(_, %{where: %{id: id}}, _) do
     case ApiGateway.Models.Document.delete_document(id) do
       {:ok, document} ->

@@ -11,7 +11,7 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCardTodo do
   end
 
   def get_kanban_card_todos(_, _, _) do
-    {:ok, KanbanCardTodo.get_kanban_card_todos()}
+    {:ok, KanbanCardTodo.get_kanban_card_todos(%{})}
   end
 
   def create_kanban_card_todo(_, %{data: data}, _) do

@@ -124,6 +124,24 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       resolve(&Resolvers.Document.update_document/3)
     end
 
+    @desc "Update a document content using provided data"
+    field :update_document_content, non_null(:document) do
+      arg(:data, non_null(:document_update_content_input))
+      arg(:where, non_null(:document_where_unique_input))
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.Document.update_document_content/3)
+    end
+
+    @desc "Update a document content using provided data"
+    field :on_document_selection_change, non_null(:on_document_selection_change_payload) do
+      arg(:data, non_null(:on_document_selection_change_input))
+      arg(:where, non_null(:document_where_unique_input))
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.Document.on_document_selection_change/3)
+    end
+
     @desc "Delete a document"
     field :delete_document, non_null(:document) do
       arg(:where, non_null(:document_where_unique_input))

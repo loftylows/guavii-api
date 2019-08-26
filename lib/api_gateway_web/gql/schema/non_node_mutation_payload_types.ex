@@ -69,4 +69,8 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
     field :normalized_sub_list_items, :sub_list_item |> non_null() |> list_of()
     field :just_normalized, non_null(:boolean)
   end
+
+  object :on_document_selection_change_payload do
+    field :ok, non_null(:boolean)
+  end
 end
