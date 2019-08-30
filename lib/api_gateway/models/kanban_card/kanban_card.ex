@@ -116,31 +116,23 @@ defmodule ApiGateway.Models.KanbanCard do
   end
 
   @doc "kanban_lane_id must be a valid 'uuid' or an error will be raised"
-  def maybe_kanban_lane_id_assoc_filter(query, kanban_lane_id) when is_nil(kanban_lane_id) do
+  def maybe_kanban_lane_id_assoc_filter(query, nil) do
     query
   end
 
   def maybe_kanban_lane_id_assoc_filter(query, kanban_lane_id) do
     query
-    |> Ecto.Query.distinct(true)
-    |> Ecto.Query.join(:inner, [kanban_card_todo], kanban_lane in ApiGateway.Models.KanbanLane,
-      on: kanban_card_todo.kanban_lane_id == ^kanban_lane_id
-    )
-    |> Ecto.Query.select([kanban_card_todo, kanban_lane], kanban_card_todo)
+    |> Ecto.Query.where([p], p.kanban_lane_id == ^kanban_lane_id)
   end
 
   @doc "assigned_to_id must be a valid 'uuid' or an error will be raised"
-  def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) when is_nil(assigned_to_id) do
+  def maybe_assigned_to_id_assoc_filter(query, nil) do
     query
   end
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
-    |> Ecto.Query.distinct(true)
-    |> Ecto.Query.join(:inner, [kanban_card], user in ApiGateway.Models.Account.User,
-      on: kanban_card.user_id == ^assigned_to_id
-    )
-    |> Ecto.Query.select([kanban_card, user], kanban_card)
+    |> Ecto.Query.where([p], p.user_id == ^assigned_to_id)
   end
 
   def add_query_filters(query, nil) do
@@ -156,6 +148,7 @@ defmodule ApiGateway.Models.KanbanCard do
     |> CommonFilterHelpers.maybe_title_contains_filter(filters[:title_contains])
     |> CommonFilterHelpers.maybe_completed_filter(filters[:completed])
     |> CommonFilterHelpers.maybe_project_id_assoc_filter(filters[:project_id])
+    |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_has_due_date_filter(filters[:has_due_date])
     |> maybe_kanban_lane_id_assoc_filter(filters[:kanban_lane_id])
     |> maybe_assigned_to_id_assoc_filter(filters[:assigned_to])

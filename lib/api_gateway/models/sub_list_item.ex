@@ -104,10 +104,7 @@ defmodule ApiGateway.Models.SubListItem do
 
   def maybe_sub_list_id_assoc_filter(query, sub_list_id) do
     query
-    |> Ecto.Query.join(:inner, [sub_list_item], sub_list in ApiGateway.Models.SubList,
-      on: sub_list_item.sub_list_id == ^sub_list_id
-    )
-    |> Ecto.Query.select([sub_list_item, sub_list], sub_list_item)
+    |> Ecto.Query.where([x], x.sub_list_id == ^sub_list_id)
   end
 
   @doc "assigned_to_id must be a valid 'uuid' or an error will be raised"
@@ -117,10 +114,7 @@ defmodule ApiGateway.Models.SubListItem do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
-    |> Ecto.Query.join(:inner, [sub_list_item], user in ApiGateway.Models.Account.User,
-      on: sub_list_item.user_id == ^assigned_to_id
-    )
-    |> Ecto.Query.select([sub_list_item, user], sub_list_item)
+    |> Ecto.Query.where([x], x.user_id == ^assigned_to_id)
   end
 
   @doc "project_id must be a valid 'uuid' or an error will be raised"
@@ -130,10 +124,7 @@ defmodule ApiGateway.Models.SubListItem do
 
   def maybe_project_id_assoc_filter(query, project_id) do
     query
-    |> Ecto.Query.join(:inner, [sub_list_item], project in ApiGateway.Models.Project,
-      on: sub_list_item.project_id == ^project_id
-    )
-    |> Ecto.Query.select([sub_list_item, project], sub_list_item)
+    |> Ecto.Query.where([x], x.project_id == ^project_id)
   end
 
   def add_query_filters(query, nil) do

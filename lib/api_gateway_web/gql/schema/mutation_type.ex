@@ -447,6 +447,14 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       resolve(&Resolvers.AccountInvitation.send_account_invitation/3)
     end
 
+    @desc "Send an account invitation using provided data"
+    field :send_workspace_invitation, non_null(:workspace_invitation_send_payload) do
+      arg(:data, non_null(:workspace_invitation_send_input))
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.WorkspaceInvitation.send_workspace_invitation/3)
+    end
+
     @desc "Register a user and a workspace together using provided data"
     field :register_user_and_workspace, non_null(:register_user_and_workspace_payload) do
       arg(:data, non_null(:register_user_and_workspace_input))

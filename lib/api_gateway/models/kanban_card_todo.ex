@@ -117,10 +117,7 @@ defmodule ApiGateway.Models.KanbanCardTodo do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(:inner, [kanban_card_todo], user in ApiGateway.Models.Account.User,
-      on: kanban_card_todo.user_id == ^user_id
-    )
-    |> Ecto.Query.select([kanban_card_todo, user], kanban_card_todo)
+    |> Ecto.Query.where([x], x.user_id == ^user_id)
   end
 
   @doc "kanban_card_id must be a valid 'uuid' or an error will be raised"
@@ -130,10 +127,7 @@ defmodule ApiGateway.Models.KanbanCardTodo do
 
   def maybe_kanban_card_id_assoc_filter(query, kanban_card_id) do
     query
-    |> Ecto.Query.join(:inner, [kanban_card_todo], kanban_card in ApiGateway.Models.KanbanCard,
-      on: kanban_card_todo.card_id == ^kanban_card_id
-    )
-    |> Ecto.Query.select([kanban_card_todo, kanban_card], kanban_card_todo)
+    |> Ecto.Query.where([x], x.card_id == ^kanban_card_id)
   end
 
   @doc "kanban_card_todo_list_id must be a valid 'uuid' or an error will be raised"
@@ -143,13 +137,7 @@ defmodule ApiGateway.Models.KanbanCardTodo do
 
   def maybe_kanban_card_todo_list_id_assoc_filter(query, kanban_card_todo_list_id) do
     query
-    |> Ecto.Query.join(
-      :inner,
-      [kanban_card_todo],
-      kanban_card_todo_list in ApiGateway.Models.KanbanCardTodoList,
-      on: kanban_card_todo.kanban_card_todo_list_id == ^kanban_card_todo_list_id
-    )
-    |> Ecto.Query.select([kanban_card_todo, kanban_card_todo_list], kanban_card_todo)
+    |> Ecto.Query.where([x], x.kanban_card_todo_list_id == ^kanban_card_todo_list_id)
   end
 
   def add_query_filters(query, nil) do

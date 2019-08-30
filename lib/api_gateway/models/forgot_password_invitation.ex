@@ -71,13 +71,7 @@ defmodule ApiGateway.Models.ForgotPasswordInvitation do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(
-      :inner,
-      [forgot_password_invitation],
-      user in ApiGateway.Models.Account.User,
-      on: forgot_password_invitation.user_id == ^user_id
-    )
-    |> Ecto.Query.select([forgot_password_invitation, user], forgot_password_invitation)
+    |> Ecto.Query.where([x], x.user_id == ^user_id)
   end
 
   def add_query_filters(query, nil) do

@@ -57,13 +57,7 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
 
   def maybe_workspace_id_assoc_filter(query, workspace_id) do
     query
-    |> Ecto.Query.join(
-      :inner,
-      [archived_workspace_subdomain],
-      workspace in ApiGateway.Models.Workspace,
-      on: archived_workspace_subdomain.workspace_id == ^workspace_id
-    )
-    |> Ecto.Query.select([archived_workspace_subdomain, workspace], archived_workspace_subdomain)
+    |> Ecto.Query.where([x], x.workspace_id == ^workspace_id)
   end
 
   def add_query_filters(query, nil) do

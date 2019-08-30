@@ -110,28 +110,22 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
   end
 
   @doc "user_id must be a valid 'uuid' or an error will be raised"
-  def maybe_user_id_assoc_filter(query, user_id) when is_nil(user_id) do
+  def maybe_user_id_assoc_filter(query, nil) do
     query
   end
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(:inner, [x], user in ApiGateway.Models.Account.User,
-      on: x.user_id == ^user_id
-    )
-    |> Ecto.Query.select([x, user], x)
+    |> Ecto.Query.where([p], p.user_id == ^user_id)
   end
 
   @doc "project_id must be a valid 'uuid' or an error will be raised"
-  def maybe_project_id_assoc_filter(query, project_id) when is_nil(project_id) do
+  def maybe_project_id_assoc_filter(query, nil) do
     query
   end
 
   def maybe_project_id_assoc_filter(query, project_id) do
     query
-    |> Ecto.Query.join(:inner, [x], p in ApiGateway.Models.Project,
-      on: x.project_id == ^project_id
-    )
-    |> Ecto.Query.select([x, p], x)
+    |> Ecto.Query.where([p], p.project_id == ^project_id)
   end
 end

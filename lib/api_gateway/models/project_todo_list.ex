@@ -81,13 +81,7 @@ defmodule ApiGateway.Models.ProjectTodoList do
 
   def maybe_project_lists_board_id_assoc_filter(query, project_lists_board_id) do
     query
-    |> Ecto.Query.join(
-      :inner,
-      [project_todo_list],
-      project_lists_board in ApiGateway.Models.ProjectListsBoard,
-      on: project_todo_list.project_lists_board_id == ^project_lists_board_id
-    )
-    |> Ecto.Query.select([project_todo_list, project_lists_board], project_todo_list)
+    |> Ecto.Query.where([x], x.project_lists_board_id == ^project_lists_board_id)
   end
 
   def add_query_filters(query, filters) when is_map(filters) do

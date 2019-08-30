@@ -48,6 +48,7 @@ defmodule ApiGateway.Models.AccountInvitation do
   ####################
   # Query helpers #
   ####################
+
   def maybe_accepted_filter(query, bool) when is_boolean(bool) do
     query |> Ecto.Query.where([p], p.accepted == ^bool)
   end
@@ -117,8 +118,6 @@ defmodule ApiGateway.Models.AccountInvitation do
       account_invitation ->
         account_invitation
         |> changeset_update(%{accepted: false, invitation_token_hashed: invitation_token_hashed})
-
-        # Post exists, let's use it
     end
     |> Repo.insert_or_update()
 

@@ -104,13 +104,7 @@ defmodule ApiGateway.Models.ProjectTodo do
 
   def maybe_project_todo_list_id_assoc_filter(query, project_todo_list_id) do
     query
-    |> Ecto.Query.join(
-      :inner,
-      [project_todo],
-      project_todo_list in ApiGateway.Models.ProjectTodoList,
-      on: project_todo.project_todo_list_id == ^project_todo_list_id
-    )
-    |> Ecto.Query.select([project_todo, project_todo_list], project_todo)
+    |> Ecto.Query.where([x], x.project_todo_list_id == ^project_todo_list_id)
   end
 
   @doc "assigned_to_id must be a valid 'uuid' or an error will be raised"
@@ -120,10 +114,7 @@ defmodule ApiGateway.Models.ProjectTodo do
 
   def maybe_assigned_to_id_assoc_filter(query, assigned_to_id) do
     query
-    |> Ecto.Query.join(:inner, [project_todo], user in ApiGateway.Models.Account.User,
-      on: project_todo.user_id == ^assigned_to_id
-    )
-    |> Ecto.Query.select([project_todo, user], project_todo)
+    |> Ecto.Query.where([x], x.user_id == ^assigned_to_id)
   end
 
   def add_query_filters(query, filters) when is_map(filters) do

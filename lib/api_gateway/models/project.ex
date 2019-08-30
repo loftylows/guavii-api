@@ -130,10 +130,7 @@ defmodule ApiGateway.Models.Project do
 
   def maybe_workspace_id_assoc_filter(query, workspace_id) do
     query
-    |> Ecto.Query.join(:inner, [project], workspace in ApiGateway.Models.Workspace,
-      on: project.workspace_id == ^workspace_id
-    )
-    |> Ecto.Query.select([project, workspace], project)
+    |> Ecto.Query.where([x], x.workspace_id == ^workspace_id)
   end
 
   @doc "owner_id must be a valid 'uuid' or an error will be raised"
@@ -143,10 +140,7 @@ defmodule ApiGateway.Models.Project do
 
   def maybe_owner_id_assoc_filter(query, owner_id) do
     query
-    |> Ecto.Query.join(:inner, [project], team in ApiGateway.Models.Team,
-      on: project.team_id == ^owner_id
-    )
-    |> Ecto.Query.select([project, team], project)
+    |> Ecto.Query.where([x], x.team_id == ^owner_id)
   end
 
   @doc "created_by_id must be a valid 'uuid' or an error will be raised"
@@ -156,10 +150,7 @@ defmodule ApiGateway.Models.Project do
 
   def maybe_created_by_id_assoc_filter(query, created_by_id) do
     query
-    |> Ecto.Query.join(:inner, [project], user in ApiGateway.Models.Account.User,
-      on: project.user_id == ^created_by_id
-    )
-    |> Ecto.Query.select([project, user], project)
+    |> Ecto.Query.where([x], x.user_id == ^created_by_id)
   end
 
   def add_query_filters(query, nil) do

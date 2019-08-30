@@ -1,6 +1,8 @@
 defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
   use Absinthe.Schema.Notation
 
+  import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
+
   input_object :list_item_position_input do
     field :prev_item_rank, :float
     field :next_item_rank, :float
@@ -263,6 +265,10 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
 
   input_object :account_invitation_send_input do
     field :email, :email
+  end
+
+  input_object :workspace_invitation_send_input do
+    field :emails, non_null_list(:email)
   end
 
   input_object :create_user_with_workspace_registration_input do

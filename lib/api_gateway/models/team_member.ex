@@ -83,10 +83,7 @@ defmodule ApiGateway.Models.TeamMember do
 
   def maybe_team_id_assoc_filter(query, team_id) do
     query
-    |> Ecto.Query.join(:inner, [team_member], team in ApiGateway.Models.Team,
-      on: team_member.team_id == ^team_id
-    )
-    |> Ecto.Query.select([team_member, team], team_member)
+    |> Ecto.Query.where([x], x.team_id == ^team_id)
   end
 
   @doc "user_id must be a valid 'uuid' or an error will be raised"
@@ -96,10 +93,7 @@ defmodule ApiGateway.Models.TeamMember do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(:inner, [team_member], user in ApiGateway.Models.Account.User,
-      on: team_member.user_id == ^user_id
-    )
-    |> Ecto.Query.select([team_member, user], team_member)
+    |> Ecto.Query.where([x], x.user_id == ^user_id)
   end
 
   def add_query_filters(query, nil) do

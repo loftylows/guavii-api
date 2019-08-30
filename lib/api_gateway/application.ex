@@ -14,7 +14,8 @@ defmodule ApiGateway.Application do
       ApiGatewayWeb.Endpoint,
       # Starts a worker by calling: ApiGateway.Worker.start_link(arg)
       # {ApiGateway.Worker, arg},
-      {Absinthe.Subscription, [ApiGatewayWeb.Endpoint]}
+      {Absinthe.Subscription, [ApiGatewayWeb.Endpoint]},
+      ApiGatewayWeb.Presence
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

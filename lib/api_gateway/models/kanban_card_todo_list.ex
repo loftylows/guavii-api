@@ -78,13 +78,7 @@ defmodule ApiGateway.Models.KanbanCardTodoList do
 
   def maybe_kanban_card_id_assoc_filter(query, kanban_card_id) do
     query
-    |> Ecto.Query.join(
-      :inner,
-      [kanban_card_todo_list],
-      kanban_card in ApiGateway.Models.KanbanCard,
-      on: kanban_card_todo_list.kanban_card_id == ^kanban_card_id
-    )
-    |> Ecto.Query.select([kanban_card_todo_list, kanban_card], kanban_card_todo_list)
+    |> Ecto.Query.where([x], x.kanban_card_id == ^kanban_card_id)
   end
 
   def add_query_filters(query, nil) do

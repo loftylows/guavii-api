@@ -9,6 +9,8 @@ defmodule ApiGatewayWeb.Gql.Schema.Schema do
   import_types(ApiGatewayWeb.Gql.Schema.MutationInputTypes)
   import_types(ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes)
   import_types(ApiGatewayWeb.Gql.Schema.MutationType)
+  import_types(ApiGatewayWeb.Gql.Schema.SubscriptionInputTypes)
+  import_types(ApiGatewayWeb.Gql.Schema.SubscriptionType)
 
   def context(ctx) do
     loader =
@@ -30,5 +32,10 @@ defmodule ApiGatewayWeb.Gql.Schema.Schema do
   @desc "Root mutation type"
   mutation do
     import_fields(:root_mutations)
+  end
+
+  @desc "Root subscription type"
+  subscription do
+    import_fields(:root_subscriptions)
   end
 end

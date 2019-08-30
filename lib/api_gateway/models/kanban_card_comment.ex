@@ -86,10 +86,7 @@ defmodule ApiGateway.Models.KanbanCardComment do
 
   def maybe_user_id_assoc_filter(query, user_id) do
     query
-    |> Ecto.Query.join(:inner, [kanban_card_comment], user in ApiGateway.Models.Account.User,
-      on: kanban_card_comment.user_id == ^user_id
-    )
-    |> Ecto.Query.select([kanban_card_comment, user], kanban_card_comment)
+    |> Ecto.Query.where([x], x.user_id == ^user_id)
   end
 
   def add_query_filters(query, nil) do

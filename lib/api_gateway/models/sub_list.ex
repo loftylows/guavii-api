@@ -74,10 +74,7 @@ defmodule ApiGateway.Models.SubList do
 
   def maybe_project_todo_id_assoc_filter(query, project_todo_id) do
     query
-    |> Ecto.Query.join(:inner, [sub_list], project_todo in ApiGateway.Models.ProjectTodo,
-      on: sub_list.project_todo_id == ^project_todo_id
-    )
-    |> Ecto.Query.select([sub_list, project_todo], sub_list)
+    |> Ecto.Query.where([x], x.project_todo_id == ^project_todo_id)
   end
 
   def add_query_filters(query, nil) do

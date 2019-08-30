@@ -86,10 +86,7 @@ defmodule ApiGateway.Models.KanbanLane do
 
   def maybe_kanban_board_id_assoc_filter(query, kanban_board_id) do
     query
-    |> Ecto.Query.join(:inner, [kanban_lane], kanban_board in ApiGateway.Models.KanbanBoard,
-      on: kanban_lane.kanban_board_id == ^kanban_board_id
-    )
-    |> Ecto.Query.select([kanban_lane, kanban_board], kanban_lane)
+    |> Ecto.Query.where([x], x.kanban_board_id == ^kanban_board_id)
   end
 
   def add_query_filters(query, nil) do

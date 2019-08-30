@@ -98,10 +98,7 @@ defmodule ApiGateway.Models.SubListItemComment do
 
   def maybe_commenter_id_assoc_filter(query, commenter_id) do
     query
-    |> Ecto.Query.join(:inner, [sub_list_item_comment], user in ApiGateway.Models.Account.User,
-      on: sub_list_item_comment.user_id == ^commenter_id
-    )
-    |> Ecto.Query.select([sub_list_item_comment, user], sub_list_item_comment)
+    |> Ecto.Query.where([x], x.user_id == ^commenter_id)
   end
 
   def add_query_filters(query, nil) do
