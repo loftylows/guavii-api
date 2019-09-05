@@ -24,5 +24,11 @@ defmodule ApiGateway.Repo.Migrations.CreateProjectsTable do
 
       timestamps()
     end
+
+    create(index(:projects, [:workspace_id]))
+    create(index(:projects, [:team_id]))
+    create(index(:projects, [:privacy_policy]))
+    create(index(:projects, [:status]))
+    create(index(:projects, [:project_type]))
   end
 end

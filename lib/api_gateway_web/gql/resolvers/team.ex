@@ -63,6 +63,22 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Team do
     end
   end
 
+  def register_users_with_team(_, _, %{context: %{current_user: nil}}) do
+    Errors.forbidden_error()
+  end
+
+  def register_users_with_team(_, %{where: %{id: id}, data: data}, %{
+        context: %{current_user: current_user}
+      }) do
+    case Models.Team.add_team_members(%{id: id, data: data}, current_user) do
+      {:ok, team} ->
+        {:ok, team}
+
+      {:error, _} ->
+        Errors.user_input_error("User input error.")
+    end
+  end
+
   ####################
   # Relation resolvers #
   ####################

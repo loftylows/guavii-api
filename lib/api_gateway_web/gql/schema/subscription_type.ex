@@ -156,8 +156,8 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
           %{kanban_card_todo_list_id: kanban_card_todo_list_id} ->
             {:ok, topic: kanban_card_todo_list_id}
 
-          %{project_id: project_id} ->
-            {:ok, topic: project_id}
+          %{kanban_card_id: kanban_card_id} ->
+            {:ok, topic: kanban_card_id}
 
           _ ->
             {:error, "User input error."}
@@ -165,14 +165,14 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       end)
 
       trigger(:update_kanban_card_todo_list,
-        topic: fn kanban_card_todo_list ->
-          kanban_card_todo_list.kanban_card_todo_list.id
+        topic: fn payload ->
+          payload.kanban_card_todo_list.id
         end
       )
 
       trigger(:update_kanban_card_todo_list,
-        topic: fn kanban_card_todo_list ->
-          kanban_card_todo_list.kanban_card_todo_list.kanban_card_id
+        topic: fn payload ->
+          payload.kanban_card_todo_list.kanban_card_id
         end
       )
     end
@@ -197,28 +197,74 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       end)
 
       trigger(:update_kanban_card_todo,
-        topic: fn kanban_card_todo ->
-          kanban_card_todo.kanban_card_todo.id
+        topic: fn payload ->
+          payload.kanban_card_todo.id
         end
       )
 
       trigger(:update_kanban_card_todo,
-        topic: fn kanban_card_todo ->
-          kanban_card_todo.kanban_card_todo.project_id
+        topic: fn payload ->
+          payload.kanban_card_todo.project_id
         end
       )
     end
 
-    field :document_updated, :document do
+    field :document_info_updated, :document do
+      arg(
+        :where,
+        non_null(:document_subscription_where_input)
+      )
+
+      config(fn args, _ ->
+        case args.where do
+          %{document_id: document_id} ->
+            {:ok, topic: document_id}
+
+          %{project_id: project_id} ->
+            {:ok, topic: project_id}
+
+          _ ->
+            {:error, "User input error."}
+        end
+      end)
+
+      trigger(:update_document,
+        topic: fn document ->
+          document.id
+        end
+      )
+
+      trigger(:update_document,
+        topic: fn document ->
+          document.project_id
+        end
+      )
+    end
+
+    field :document_content_updated, :document do
       arg(:document_id, non_null(:uuid))
 
       config(fn args, _ ->
         {:ok, topic: args.document_id}
       end)
 
-      trigger(:update_document,
+      trigger(:update_document_content,
         topic: fn document ->
           document.id
+        end
+      )
+    end
+
+    field :on_document_selection_changed, :on_document_selection_change_payload do
+      arg(:document_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.document_id}
+      end)
+
+      trigger(:on_document_selection_change,
+        topic: fn payload ->
+          payload.id
         end
       )
     end

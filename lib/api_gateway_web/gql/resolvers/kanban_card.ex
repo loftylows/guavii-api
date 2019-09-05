@@ -14,8 +14,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCard do
     {:ok, ApiGateway.Models.KanbanCard.get_kanban_cards()}
   end
 
-  def create_kanban_card(_, %{data: data}, _) do
-    case KanbanCard.create_kanban_card(data) do
+  def create_kanban_card(_, _, %{context: %{current_user: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def create_kanban_card(_, %{data: data}, %{context: %{current_user: current_user}}) do
+    case KanbanCard.create_kanban_card(data, current_user.id) do
       {:ok, kanban_card} ->
         {:ok, kanban_card}
 
@@ -30,6 +34,10 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCard do
     end
   end
 
+  def update_kanban_card(_, _, %{context: %{current_user: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
   def update_kanban_card(
         _,
         %{
@@ -37,9 +45,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCard do
           where: %{id: id},
           list_item_position: %{prev_item_rank: prev, next_item_rank: next}
         },
-        _
+        %{context: %{current_user: current_user}}
       ) do
-    case KanbanCard.update_with_position(%{id: id, data: data, prev: prev, next: next}) do
+    case KanbanCard.update_with_position(
+           %{id: id, data: data, prev: prev, next: next},
+           current_user.id
+         ) do
       {:ok, kanban_card} ->
         payload = %{
           kanban_card: kanban_card,
@@ -48,7 +59,6 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCard do
 
         {:ok, payload}
 
-      # TODO: send out a subscription notification about this list normalization
       {{:list_order_normalized, _normalized_list_id, normalized_items}, {:ok, kanban_card}} ->
         payload = %{
           kanban_card: kanban_card,
@@ -72,8 +82,10 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCard do
     end
   end
 
-  def update_kanban_card(_, %{data: data, where: %{id: id}}, _) do
-    case KanbanCard.update_kanban_card(%{id: id, data: data}) do
+  def update_kanban_card(_, %{data: data, where: %{id: id}}, %{
+        context: %{current_user: current_user}
+      }) do
+    case KanbanCard.update_kanban_card(%{id: id, data: data}, current_user.id) do
       {:ok, kanban_card} ->
         payload = %{
           kanban_card: kanban_card,

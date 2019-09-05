@@ -35,8 +35,14 @@ defmodule ApiGateway.Models.Workspace do
 
   def get_workspace_roles do
     [
-      "PRIMARY_OWNER",
       "OWNER",
+      "ADMIN",
+      "MEMBER"
+    ]
+  end
+
+  def get_assignable_workspace_roles do
+    [
       "ADMIN",
       "MEMBER"
     ]
@@ -44,12 +50,13 @@ defmodule ApiGateway.Models.Workspace do
 
   def get_workspace_roles_map do
     %{
-      primary_owner: "PRIMARY_OWNER",
       owner: "OWNER",
       admin: "ADMIN",
       member: "MEMBER"
     }
   end
+
+  def get_default_workspace_role, do: get_workspace_roles_map().member
 
   ####################
   # Changeset funcs #

@@ -6,6 +6,7 @@ defmodule ApiGateway.Models.TeamMember do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias __MODULE__
 
   schema "team_members" do
     field :role, :string
@@ -45,7 +46,13 @@ defmodule ApiGateway.Models.TeamMember do
     @team_member_roles_map
   end
 
-  def changeset_create(%ApiGateway.Models.TeamMember{} = team_member, attrs \\ %{}) do
+  def get_default_team_member_role do
+    %{member: member_role} = get_team_member_roles_map()
+
+    member_role
+  end
+
+  def changeset_create(%TeamMember{} = team_member, attrs \\ %{}) do
     team_member
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields_create)
@@ -54,7 +61,7 @@ defmodule ApiGateway.Models.TeamMember do
     |> foreign_key_constraint(:user_id)
   end
 
-  def changeset_update(%ApiGateway.Models.TeamMember{} = team_member, attrs \\ %{}) do
+  def changeset_update(%TeamMember{} = team_member, attrs \\ %{}) do
     team_member
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields_create)
@@ -87,7 +94,17 @@ defmodule ApiGateway.Models.TeamMember do
   end
 
   @doc "user_id must be a valid 'uuid' or an error will be raised"
-  def maybe_user_id_assoc_filter(query, user_id) when is_nil(user_id) do
+  def maybe_user_id_in_assoc_filter(query, nil) do
+    query
+  end
+
+  def maybe_user_id_in_assoc_filter(query, user_ids) do
+    query
+    |> Ecto.Query.where([x], x.user_id in ^user_ids)
+  end
+
+  @doc "user_id must be a valid 'uuid' or an error will be raised"
+  def maybe_user_id_assoc_filter(query, nil) do
     query
   end
 
@@ -107,6 +124,7 @@ defmodule ApiGateway.Models.TeamMember do
     |> CommonFilterHelpers.maybe_created_at_gte_filter(filters[:created_at_gte])
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
+    |> maybe_user_id_in_assoc_filter(filters[:user_id_in])
     |> maybe_role_filter(filters[:role])
     |> maybe_team_id_assoc_filter(filters[:team_id])
     |> maybe_user_id_assoc_filter(filters[:user_id])
@@ -125,9 +143,16 @@ defmodule ApiGateway.Models.TeamMember do
   end
 
   def create_team_member(data) when is_map(data) do
-    %ApiGateway.Models.TeamMember{}
+    %TeamMember{}
     |> changeset_create(data)
     |> Repo.insert()
+  end
+
+  def create_team_members(data_items) when is_list(data_items) do
+    IO.inspect(data_items)
+
+    TeamMember
+    |> Repo.insert_all(data_items)
   end
 
   def update_team_member(%{id: id, data: data}) do

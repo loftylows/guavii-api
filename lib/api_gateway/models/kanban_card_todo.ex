@@ -170,14 +170,10 @@ defmodule ApiGateway.Models.KanbanCardTodo do
   def get_kanban_card_todo(kanban_card_todo_id),
     do: Repo.get(KanbanCardTodo, kanban_card_todo_id)
 
-  def get_kanban_card_todos(filters \\ %{}, opts) do
-    IO.inspect(filters)
-
-    todos = KanbanCardTodo |> add_query_filters(filters) |> Repo.all()
-
-    IO.inspect(todos)
-
-    todos
+  def get_kanban_card_todos(filters \\ %{}) do
+    KanbanCardTodo
+    |> add_query_filters(filters)
+    |> Repo.all()
   end
 
   def create_kanban_card_todo(data) when is_map(data) do

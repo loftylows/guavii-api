@@ -80,6 +80,40 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
     {:ok, is_unused?}
   end
 
+  def register_user_from_workspace_invitation(_, _, %{context: %{current_subdomain: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def register_user_from_workspace_invitation(
+        _,
+        %{
+          data: %{
+            full_name: full_name,
+            password: password,
+            token: token,
+            encoded_email_connected_to_invitation: base_64_url_encoded_email
+          }
+        },
+        %{context: %{current_subdomain: current_subdomain}}
+      ) do
+    ApiGateway.Models.Account.Registration.register_user_from_workspace_invitation(
+      token,
+      base_64_url_encoded_email,
+      %{full_name: full_name, password: password},
+      current_subdomain
+    )
+    |> case do
+      {:error, %{errors: errors}} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset("User input error", errors)
+
+      {:error, reason} when is_binary(reason) ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error(reason)
+
+      {:ok, payload} ->
+        {:ok, payload}
+    end
+  end
+
   def register_user_and_workspace(
         _,
         %{

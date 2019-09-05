@@ -8,7 +8,7 @@ defmodule ApiGateway.Repo.Migrations.CreateKanbanCardsTable do
       add(:completed, :boolean, default: false)
       add(:attachments, {:array, :string}, default: [])
       add(:due_date_range, :map)
-      add :list_order_rank, :float, null: false
+      add(:list_order_rank, :float, null: false)
 
       add(:kanban_lane_id, references("kanban_lanes", on_delete: :delete_all), null: false)
       add(:project_id, references("projects", on_delete: :delete_all), null: false)
@@ -17,6 +17,10 @@ defmodule ApiGateway.Repo.Migrations.CreateKanbanCardsTable do
       timestamps()
     end
 
-    create unique_index("kanban_cards", [:list_order_rank])
+    create(unique_index(:kanban_cards, [:list_order_rank]))
+    create(index(:kanban_cards, [:kanban_lane_id]))
+    create(index(:kanban_cards, [:project_id]))
+    create(index(:kanban_cards, [:completed]))
+    create(index(:kanban_cards, [:title]))
   end
 end

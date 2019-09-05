@@ -11,6 +11,8 @@ defmodule ApiGateway.Repo.Migrations.CreateKanbanLabelsTable do
       timestamps()
     end
 
-    create index("kanban_labels", [:color])
+    create(index(:kanban_labels, [:color]))
+    create(index(:kanban_labels, [:kanban_board_id]))
+    create(index(:kanban_labels, [:title]))
   end
 end

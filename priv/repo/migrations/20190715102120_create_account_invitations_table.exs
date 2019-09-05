@@ -3,14 +3,15 @@ defmodule ApiGateway.Repo.Migrations.CreateAccountInvitationsTable do
 
   def change do
     create table(:account_invitations) do
-      add :email, :string, null: false
-      add :invitation_token_hashed, :string, null: false
-      add :accepted, :boolean, null: false, default: false
+      add(:email, :string, null: false)
+      add(:invitation_token_hashed, :string, null: false)
+      add(:accepted, :boolean, null: false, default: false)
 
       timestamps()
     end
 
-    create unique_index("account_invitations", [:email])
-    create unique_index("account_invitations", [:invitation_token_hashed])
+    create(unique_index("account_invitations", [:email]))
+    create(unique_index("account_invitations", [:invitation_token_hashed]))
+    create(index(:account_invitations, [:accepted]))
   end
 end

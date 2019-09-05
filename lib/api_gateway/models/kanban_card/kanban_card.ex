@@ -8,6 +8,7 @@ defmodule ApiGateway.Models.KanbanCard do
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
   alias ApiGateway.Ecto.OrderedListHelpers
+  alias ApiGateway.Models.KanbanCard.LastUpdate
   alias __MODULE__
 
   schema "kanban_cards" do
@@ -17,6 +18,8 @@ defmodule ApiGateway.Models.KanbanCard do
     field :attachments, {:array, :string}, read_after_writes: true
     field :due_date_range, ApiGateway.CustomEctoTypes.EctoDateRange
     field :list_order_rank, :float
+
+    has_one :last_update, LastUpdate, on_replace: :update
 
     has_many :todo_lists, ApiGateway.Models.KanbanCardTodoList
     has_many :comments, ApiGateway.Models.KanbanCardComment
@@ -170,17 +173,19 @@ defmodule ApiGateway.Models.KanbanCard do
   def get_kanban_card(kanban_card_id, opts \\ []) do
     KanbanCard
     |> maybe_preload_active_labels(Keyword.get(opts, :preload_active_labels, false))
+    |> Ecto.Query.preload(:last_update)
     |> Repo.get(kanban_card_id)
   end
 
   def get_kanban_cards(filters \\ %{}, opts \\ []) do
     KanbanCard
     |> maybe_preload_active_labels(Keyword.get(opts, :preload_active_labels, false))
+    |> Ecto.Query.preload(:last_update)
     |> add_query_filters(filters)
     |> Repo.all()
   end
 
-  def create_kanban_card(data) when is_map(data) do
+  def create_kanban_card(data, user_id) when is_map(data) and is_binary(user_id) do
     rank =
       OrderedListHelpers.DB.get_new_item_insert_rank(
         "kanban_cards",
@@ -191,41 +196,88 @@ defmodule ApiGateway.Models.KanbanCard do
     %KanbanCard{}
     |> changeset(Map.put(data, :list_order_rank, rank))
     |> Repo.insert()
+    |> case do
+      {:error, _} = error ->
+        error
+
+      {:ok, kanban_card} ->
+        %{date: DateTime.utc_now(), user_id: user_id, kanban_card_id: kanban_card.id}
+        |> LastUpdate.create_last_update()
+        |> case do
+          {:error, _} = error ->
+            {:ok, _} = delete_kanban_card(kanban_card.id)
+            error
+
+          {:ok, last_update} ->
+            {:ok, Map.put(kanban_card, :last_update, last_update)}
+        end
+    end
   end
 
-  def update_kanban_card(%{id: id, data: %{active_labels: active_labels}}) do
+  def update_kanban_card(%{id: id, data: %{active_labels: active_labels}}, user_id)
+      when is_binary(user_id) do
     case get_kanban_card(id, preload_active_labels: true) do
       nil ->
         {:error, "Not found"}
 
       kanban_card ->
+        date_now = DateTime.truncate(DateTime.utc_now(), :second)
+        last_update = %{user_id: user_id, date: date_now}
         labels = ApiGateway.Models.KanbanLabel.get_kanban_labels(%{id_in: active_labels})
 
         kanban_card
         |> changeset_update_active_labels(labels)
+        |> put_assoc(:last_update, last_update)
         |> Repo.update()
+        |> case do
+          {:error, _} = error ->
+            error
+
+          {:ok, kanban_card} ->
+            kanban_card =
+              kanban_card
+              |> Repo.preload(:last_update)
+
+            {:ok, kanban_card}
+        end
     end
   end
 
-  def update_kanban_card(%{id: id, data: data}) do
+  def update_kanban_card(%{id: id, data: data}, user_id) when is_binary(user_id) do
     case get_kanban_card(id) do
       nil ->
         {:error, "Not found"}
 
       kanban_card ->
+        date_now = DateTime.truncate(DateTime.utc_now(), :second)
+        last_update = %{user_id: user_id, date: date_now}
+
         kanban_card
         |> changeset_update(data)
+        |> put_assoc(:last_update, last_update)
         |> Repo.update()
+        |> case do
+          {:error, _} = error ->
+            error
+
+          {:ok, kanban_card} ->
+            kanban_card =
+              kanban_card
+              |> Repo.preload(:last_update)
+
+            {:ok, kanban_card}
+        end
     end
   end
 
-  def update_with_position(%{id: id, data: data, prev: prev, next: next}) do
+  def update_with_position(%{id: id, data: data, prev: prev, next: next}, user_id)
+      when is_binary(user_id) do
     case get_kanban_card(id) do
       nil ->
         {:error, "Not found"}
 
       item ->
-        _update_with_position(item, prev, next, data)
+        _update_with_position(item, prev, next, data, user_id)
     end
   end
 
@@ -243,15 +295,30 @@ defmodule ApiGateway.Models.KanbanCard do
   ####################
   # Private helpers #
   ####################
-  defp _update_with_position(%KanbanCard{} = item, prev, next, data) do
+  defp _update_with_position(%KanbanCard{} = item, prev, next, data, user_id) do
     full_data =
       data
       |> Map.put(:list_order_rank, OrderedListHelpers.get_insert_rank(prev, next))
 
+    date_now = DateTime.truncate(DateTime.utc_now(), :second)
+    last_update = %{user_id: user_id, date: date_now}
+
     {:ok, item} =
       item
       |> changeset(full_data)
+      |> put_assoc(:last_update, last_update)
       |> Repo.update()
+      |> case do
+        {:error, _} = error ->
+          error
+
+        {:ok, kanban_card} ->
+          kanban_card =
+            kanban_card
+            |> Repo.preload(:last_update)
+
+          {:ok, kanban_card}
+      end
 
     case {prev, next} do
       # only item
@@ -283,13 +350,18 @@ defmodule ApiGateway.Models.KanbanCard do
               {:ok, _} ->
                 case ApiGateway.Repo.get(__MODULE__, item.id) do
                   nil ->
-                    normalized_items = get_kanban_card(%{kanban_lane_id: normalized_list_id})
+                    normalized_items =
+                      get_kanban_cards(%{kanban_lane_id: normalized_list_id})
+                      |> Repo.preload(:last_update)
 
                     {{:list_order_normalized, normalized_list_id, normalized_items},
                      {:error, "Not found"}}
 
                   item ->
-                    normalized_items = get_kanban_card(%{kanban_lane_id: normalized_list_id})
+                    normalized_items =
+                      get_kanban_cards(%{kanban_lane_id: normalized_list_id})
+                      |> Repo.preload(:last_update)
+
                     {{:list_order_normalized, normalized_list_id, normalized_items}, {:ok, item}}
                 end
 

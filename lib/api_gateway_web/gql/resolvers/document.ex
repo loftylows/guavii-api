@@ -42,8 +42,22 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
     ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
   end
 
+  def update_document(_, %{data: %{content: _content}, where: %{id: _id}}, %{
+        context: %{current_user: nil}
+      }) do
+    ApiGatewayWeb.Gql.Utils.Errors.user_input_error(
+      "Content should only be updated using the 'update_document_content' mutation."
+    )
+  end
+
   def update_document(_, %{data: data, where: %{id: id}}, %{context: %{current_user: user}}) do
-    case ApiGateway.Models.Document.update_document(%{id: id, data: data}, user.id) do
+    # Regular update operation should not update content
+    data_without_content = Map.delete(data, :content)
+
+    case ApiGateway.Models.Document.update_document(
+           %{id: id, data: data_without_content},
+           user.id
+         ) do
       {:ok, document} ->
         {:ok, document}
 
@@ -72,7 +86,6 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
       ) do
     case ApiGateway.Models.Document.update_document(%{id: id, data: %{content: content}}, user.id) do
       {:ok, document} ->
-        # TODO: notify others of content change
         {:ok, document}
 
       {:error, %{errors: errors}} ->
@@ -91,13 +104,18 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
 
   def on_document_selection_change(
         _,
-        %{data: %{range: range}, where: %{id: _id}},
-        _
+        _,
+        %{context: %{current_user: nil}}
       ) do
-    # TODO: write resolver to notify others of selection change
-    IO.inspect(range)
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
 
-    {:ok, %{ok: true}}
+  def on_document_selection_change(
+        _,
+        %{data: %{range: range}, where: %{id: id}},
+        %{context: %{current_user: current_user}}
+      ) do
+    {:ok, %{id: id, range: range, user: current_user}}
   end
 
   def delete_document(_, %{where: %{id: id}}, _) do

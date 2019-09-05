@@ -267,8 +267,31 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :email, :email
   end
 
-  input_object :workspace_invitation_send_input do
-    field :emails, non_null_list(:email)
+  input_object :register_user_with_team_info_input do
+    field :email, non_null(:email)
+    field :team_role, :team_member_role
+  end
+
+  input_object :register_users_with_team_input do
+    field :info_items, non_null_list(:register_user_with_team_info_input)
+  end
+
+  input_object :workspace_user_invitation_info_input do
+    field :email, non_null(:email)
+    field :name, non_null(:string)
+    field :workspace_role, :workspace_member_role
+  end
+
+  input_object :workspace_invitations_send_input do
+    field :invitation_info_items, non_null_list(:workspace_user_invitation_info_input)
+  end
+
+  input_object :register_user_from_workspace_invitation_input do
+    field :full_name, non_null(:string)
+    field :password, non_null(:string)
+
+    field :token, non_null(:string)
+    field :encoded_email_connected_to_invitation, non_null(:string)
   end
 
   input_object :create_user_with_workspace_registration_input do

@@ -31,15 +31,6 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       resolve(&Resolvers.Workspace.delete_workspace/3)
     end
 
-    """
-    @desc "Create a user using provided data"
-    field :create_user, non_null(:user) do
-      arg(:data, non_null(:user_create_input))
-
-      resolve(&Resolvers.User.create_user/3)
-    end
-    """
-
     @desc "Update a user using provided data"
     field :update_user, non_null(:user) do
       arg(:data, non_null(:user_update_input))
@@ -447,12 +438,37 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       resolve(&Resolvers.AccountInvitation.send_account_invitation/3)
     end
 
-    @desc "Send an account invitation using provided data"
-    field :send_workspace_invitation, non_null(:workspace_invitation_send_payload) do
-      arg(:data, non_null(:workspace_invitation_send_input))
+    @desc "Send an workspace invitation using provided data"
+    field :send_workspace_invitations, non_null(:workspace_invitations_send_payload) do
+      arg(:data, non_null(:workspace_invitations_send_input))
 
-      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      resolve(&Resolvers.WorkspaceInvitation.send_workspace_invitation/3)
+      resolve(&Resolvers.WorkspaceInvitation.send_workspace_invitations/3)
+    end
+
+    @desc "Send an workspace invitation using provided data"
+    field :register_users_with_team, non_null(:team) do
+      arg(:where, non_null(:team_where_unique_input))
+      arg(:data, non_null(:register_users_with_team_input))
+
+      resolve(&Resolvers.Team.register_users_with_team/3)
+    end
+
+    @desc "Register a user and a workspace together using provided data"
+    field :register_user_from_workspace_invitation,
+          non_null(:register_user_from_workspace_invitation_payload) do
+      arg(:data, non_null(:register_user_from_workspace_invitation_input))
+
+      resolve(&Resolvers.User.register_user_from_workspace_invitation/3)
+
+      middleware(fn resolution, _ ->
+        with %{value: %{user: user}} <- resolution do
+          ApiGateway.Models.Account.User.set_last_login_now(user.id)
+
+          Map.update!(resolution, :context, fn ctx ->
+            Map.put(ctx, :login_info, %{user_id: user.id})
+          end)
+        end
+      end)
     end
 
     @desc "Register a user and a workspace together using provided data"

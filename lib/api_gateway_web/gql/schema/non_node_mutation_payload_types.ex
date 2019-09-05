@@ -5,8 +5,17 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
     field :ok, non_null(:boolean)
   end
 
-  object :workspace_invitation_send_payload do
+  object :workspace_invitations_send_payload do
     field :ok, non_null(:boolean)
+  end
+
+  object :register_users_with_team_payload do
+    field :team, non_null(:team)
+  end
+
+  object :register_user_from_workspace_invitation_payload do
+    field :user, non_null(:user)
+    field :workspace, non_null(:workspace)
   end
 
   object :register_user_and_workspace_payload do
@@ -75,6 +84,8 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
   end
 
   object :on_document_selection_change_payload do
-    field :ok, non_null(:boolean)
+    field :id, non_null(:uuid)
+    field :range, non_null(:string)
+    field :user, non_null(:user)
   end
 end

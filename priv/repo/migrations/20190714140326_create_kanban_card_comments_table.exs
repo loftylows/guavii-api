@@ -11,5 +11,9 @@ defmodule ApiGateway.Repo.Migrations.CreateKanbanCardCommentsTable do
 
       timestamps()
     end
+
+    create(index(:kanban_card_comments, [:edited]))
+    create(index(:kanban_card_comments, [:kanban_card_id]))
+    create(index(:kanban_card_comments, [:user_id]))
   end
 end

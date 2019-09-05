@@ -30,6 +30,7 @@
                         'Elixir.ApiGateway.Models.InternalSubdomain',
                         'Elixir.ApiGateway.Models.KanbanBoard',
                         'Elixir.ApiGateway.Models.KanbanCard',
+                        'Elixir.ApiGateway.Models.KanbanCard.LastUpdate',
                         'Elixir.ApiGateway.Models.KanbanCardActiveLabels',
                         'Elixir.ApiGateway.Models.KanbanCardComment',
                         'Elixir.ApiGateway.Models.KanbanCardTodo',
@@ -102,7 +103,8 @@
                         'Elixir.ApiGatewayWeb.Router.RouteHelpers',
                         'Elixir.ApiGatewayWeb.Router.WebsiteUrl',
                         'Elixir.Utils.CustomGuards','Elixir.Utils.Float',
-                        'Elixir.Utils.Regex','Elixir.Utils.UUID']},
+                        'Elixir.Utils.Regex','Elixir.Utils.String',
+                        'Elixir.Utils.UUID']},
               {registered,[]},
               {vsn,"0.1.0"},
               {mod,{'Elixir.ApiGateway.Application',[]}}]}.

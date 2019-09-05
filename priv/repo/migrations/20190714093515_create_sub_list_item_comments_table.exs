@@ -11,5 +11,9 @@ defmodule ApiGateway.Repo.Migrations.CreateSubListItemCommentsTable do
 
       timestamps()
     end
+
+    create(index(:sub_list_item_comments, [:sub_list_item_id]))
+    create(index(:sub_list_item_comments, [:edited]))
+    create(index(:sub_list_item_comments, [:user_id]))
   end
 end

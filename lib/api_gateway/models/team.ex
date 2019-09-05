@@ -7,6 +7,7 @@ defmodule ApiGateway.Models.Team do
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
   alias ApiGateway.Models.TeamMember
+  alias ApiGateway.Models.Account.User
   alias __MODULE__
 
   schema "teams" do
@@ -136,6 +137,59 @@ defmodule ApiGateway.Models.Team do
 
       team ->
         Repo.delete(team)
+    end
+  end
+
+  def add_team_members(%{id: id, data: %{info_items: info_items}}, %User{} = current_user) do
+    case get_team(id) do
+      nil ->
+        {:error, "Not found"}
+
+      team ->
+        users_emails = Enum.map(info_items, fn %{email: email} -> email end)
+
+        User.get_users(%{email_in: users_emails, workspace_id: current_user.workspace_id})
+        |> case do
+          [] ->
+            {:ok, team}
+
+          users ->
+            user_ids = Enum.map(users, fn %{id: id} -> id end)
+
+            users_ids_of_already_team_members =
+              TeamMember.get_team_members(%{user_id_in: user_ids})
+              |> Enum.map(fn team_member -> team_member.user_id end)
+
+            users_by_email_map =
+              users
+              |> Enum.into(%{}, fn user -> {user.email, user} end)
+
+            filtered_info_items =
+              info_items
+              |> Enum.filter(fn %{email: email} ->
+                users_by_email_map[email] &&
+                  not (users_by_email_map[email].id in users_ids_of_already_team_members)
+              end)
+
+            now =
+              DateTime.utc_now()
+              |> DateTime.truncate(:second)
+
+            for %{email: email} = info_item <- filtered_info_items do
+              role = Map.get(info_item, :team_role, TeamMember.get_default_team_member_role())
+
+              %{
+                role: role,
+                user_id: users_by_email_map[email].id,
+                team_id: team.id,
+                inserted_at: now,
+                updated_at: now
+              }
+            end
+            |> TeamMember.create_team_members()
+
+            {:ok, team}
+        end
     end
   end
 end

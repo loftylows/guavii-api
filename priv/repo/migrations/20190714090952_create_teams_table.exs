@@ -10,5 +10,7 @@ defmodule ApiGateway.Repo.Migrations.CreateTeamsTable do
 
       timestamps()
     end
+
+    create(index(:teams, [:workspace_id]))
   end
 end

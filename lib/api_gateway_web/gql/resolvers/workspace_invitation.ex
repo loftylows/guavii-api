@@ -1,22 +1,56 @@
 defmodule ApiGatewayWeb.Gql.Resolvers.WorkspaceInvitation do
-  def send_workspace_invitation(
-        _,
-        %{data: %{emails: emails}},
-        %{current_user: current_user}
-      )
-      when not is_nil(current_user) do
-    spawn(fn ->
-      {:ok, invitation_tokens_with_emails} =
-        ApiGateway.Models.WorkspaceInvitation.create_or_update_workspace_invitations(
-          %{emails: emails},
-          current_user
-        )
+  def send_workspace_invitations(_, _, %{context: %{current_user: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
 
-      for %{email: email, invitation_token: invitation_token} <- invitation_tokens_with_emails do
-        ApiGateway.Email.Transactional.send_new_workspace_invitation_email(
-          email,
-          invitation_token
-        )
+  def send_workspace_invitations(
+        _,
+        %{data: %{invitation_info_items: invitation_info_items}},
+        %{context: %{current_user: current_user}}
+      ) do
+    spawn(fn ->
+      ApiGateway.Models.Workspace.get_workspace(current_user.workspace_id)
+      |> case do
+        nil ->
+          ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+
+        workspace ->
+          emails =
+            for %{email: email} <- invitation_info_items do
+              IO.puts("email:")
+              IO.inspect(email)
+              email
+            end
+
+          already_registered_users =
+            ApiGateway.Models.Account.User.get_users(%{
+              email_in: emails,
+              workspace_id: workspace.id
+            })
+
+          # Don't send invites to those who are already members
+          invitation_info_filtered =
+            Enum.filter(invitation_info_items, fn %{email: email} ->
+              not Enum.any?(already_registered_users, fn user -> user.email == email end)
+            end)
+
+          {:ok, invitation_tokens_with_emails_and_names} =
+            ApiGateway.Models.WorkspaceInvitation.create_or_update_workspace_invitations(
+              invitation_info_filtered,
+              current_user
+            )
+
+          for %{email: email, name: name, invitation_token: invitation_token} <-
+                invitation_tokens_with_emails_and_names do
+            ApiGateway.Email.Transactional.send_workspace_invitation_email(%{
+              invite_token: invitation_token,
+              recipient: email,
+              workspace_name: workspace.title,
+              workspace_subdomain: workspace.workspace_subdomain,
+              inviter_full_name: current_user.full_name,
+              invitee_name: name
+            })
+          end
       end
     end)
 

@@ -89,7 +89,6 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   # Enums #
   ####################
   enum :workspace_member_role do
-    value(:primary_owner, as: "PRIMARY_OWNER")
     value(:owner, as: "OWNER")
     value(:admin, as: "ADMIN")
     value(:member, as: "MEMBER")
@@ -144,7 +143,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :name, non_null(:string)
   end
 
-  object :document_last_update do
+  object :last_update do
     field :date, non_null(:iso_date_time)
 
     field :user, :user, resolve: dataloader(ApiGateway.Dataloader)
@@ -629,19 +628,13 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :title, non_null(:string)
     field :content, non_null(:string)
     field :is_pinned, non_null(:boolean)
-    field :last_update, :document_last_update
+    field :last_update, :last_update
 
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
 
     # TODO: Add resolver
-    connection field :active_users, node_type: :user do
-      arg(:where, :user_where_input)
-
-      resolve(fn
-        _pagination_args, %{source: _document} ->
-          nil
-          # ... return {:ok, a_connection}
-      end)
+    field :active_users, non_null_list(:user) do
+      resolve(fn _, _, _ -> {:ok, []} end)
     end
 
     field :inserted_at, non_null(:iso_date_time), name: "created_at"
@@ -880,6 +873,8 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :due_date_range, :date_range
     field :attachments, non_null_list(:string)
     field :list_order_rank, non_null(:float)
+
+    field :last_update, :last_update
 
     field :kanban_lane, non_null(:kanban_lane), resolve: dataloader(ApiGateway.Dataloader)
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)

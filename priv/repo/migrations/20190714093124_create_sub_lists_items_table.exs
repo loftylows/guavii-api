@@ -5,7 +5,7 @@ defmodule ApiGateway.Repo.Migrations.CreateSubListsItemsTable do
     create table(:sub_list_items) do
       add(:title, :string, null: false)
       add(:completed, :boolean, null: false, default: false)
-      add :due_date, :utc_datetime
+      add(:due_date, :utc_datetime)
 
       add(:user_id, references("users", on_delete: :nilify_all))
       add(:sub_list_id, references("sub_lists", on_delete: :delete_all), null: false)
@@ -13,5 +13,10 @@ defmodule ApiGateway.Repo.Migrations.CreateSubListsItemsTable do
 
       timestamps()
     end
+
+    create(index(:sub_list_items, [:sub_list_id]))
+    create(index(:sub_list_items, [:project_id]))
+    create(index(:sub_list_items, [:completed]))
+    create(index(:sub_list_items, [:due_date]))
   end
 end

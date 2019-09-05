@@ -7,18 +7,20 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
   alias ApiGateway.Models.Account.User
+  alias ApiGateway.Models.Workspace
   alias __MODULE__
 
   # 7 days
   @invite_expiration_in_seconds 60 * 60 * 24 * 7
+  @valid_workspace_roles Workspace.get_assignable_workspace_roles()
 
   schema "workspace_invitations" do
     field :email, :string
     field :invitation_token_hashed, :string
     field :accepted, :boolean, read_after_writes: true
+    field :workspace_role, :string, read_after_writes: true
 
     belongs_to :workspace, ApiGateway.Models.Workspace
-    belongs_to :team, ApiGateway.Models.Team
     belongs_to :invited_by, ApiGateway.Models.Account.User
 
     timestamps()
@@ -28,14 +30,13 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
     :email,
     :invitation_token_hashed,
     :accepted,
-    :team_id,
+    :workspace_role,
     :workspace_id,
     :invited_by_id
   ]
   @required_fields_create [
     :email,
     :invitation_token_hashed,
-    :team_id,
     :workspace_id
   ]
 
@@ -46,7 +47,7 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
     workspace_invitation
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields_create)
-    |> foreign_key_constraint(:team_id)
+    |> validate_inclusion(:workspace_role, @valid_workspace_roles)
     |> foreign_key_constraint(:invited_by_id)
     |> foreign_key_constraint(:workspace_id)
     |> unique_constraint(:email)
@@ -59,7 +60,7 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
       ) do
     workspace_invitation
     |> cast(attrs, @permitted_fields)
-    |> foreign_key_constraint(:team_id)
+    |> validate_inclusion(:workspace_role, @valid_workspace_roles)
     |> foreign_key_constraint(:invited_by_id)
     |> foreign_key_constraint(:workspace_id)
     |> unique_constraint(:email)
@@ -142,8 +143,6 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
   end
 
   def get_workspace_invitations(filters \\ %{}) do
-    IO.inspect(filters)
-
     ApiGateway.Models.WorkspaceInvitation |> add_query_filters(filters) |> Repo.all()
   end
 
@@ -153,7 +152,7 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
     |> Repo.insert()
   end
 
-  def create_or_update_workspace_invitation(%{email: email} = data, %User{id: current_user_id})
+  def create_or_update_workspace_invitation(%{email: email} = data, %User{} = user)
       when is_binary(email) do
     {:ok, {invitation_token, invitation_token_hashed}} = create_invite_token()
 
@@ -161,14 +160,14 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
       nil ->
         %WorkspaceInvitation{}
         |> Map.put(:invitation_token_hashed, invitation_token_hashed)
-        |> Map.put(:invited_by_id, current_user_id)
+        |> Map.put(:invited_by_id, user.id)
         |> changeset_create(data)
 
       workspace_invitation ->
         data = %{
           accepted: false,
           invitation_token_hashed: invitation_token_hashed,
-          invited_by_id: current_user_id
+          invited_by_id: user.id
         }
 
         workspace_invitation
@@ -179,24 +178,34 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
     {:ok, invitation_token}
   end
 
-  def create_or_update_workspace_invitations(%{emails: emails} = data, %User{id: current_user_id})
-      when is_list(emails) do
-    invitation_tokens_with_emails =
-      for email <- emails do
+  def create_or_update_workspace_invitations(
+        invitation_info_items,
+        %User{} = user
+      )
+      when is_list(invitation_info_items) do
+    invitation_tokens_with_emails_and_names =
+      for %{email: email, name: name} = invite_info <- invitation_info_items do
         {:ok, {invitation_token, invitation_token_hashed}} = create_invite_token()
+
+        workspace_role =
+          Map.get(invite_info, :workspace_role, Workspace.get_default_workspace_role())
 
         case get_workspace_invitation_by_email(email) do
           nil ->
-            %WorkspaceInvitation{}
-            |> Map.put(:invitation_token_hashed, invitation_token_hashed)
-            |> Map.put(:invited_by_id, current_user_id)
-            |> changeset_create(data)
+            %WorkspaceInvitation{
+              email: email,
+              invitation_token_hashed: invitation_token_hashed,
+              invited_by_id: user.id,
+              workspace_role: workspace_role,
+              workspace_id: user.workspace_id
+            }
+            |> changeset_create()
 
           workspace_invitation ->
             data = %{
               accepted: false,
               invitation_token_hashed: invitation_token_hashed,
-              invited_by_id: current_user_id
+              invited_by_id: user.id
             }
 
             workspace_invitation
@@ -204,14 +213,31 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
         end
         |> Repo.insert_or_update()
 
-        %{email: email, invitation_token: invitation_token}
+        %{
+          email: email,
+          name: name,
+          workspace_role: workspace_role,
+          invitation_token: invitation_token
+        }
       end
 
-    {:ok, invitation_tokens_with_emails}
+    {:ok, invitation_tokens_with_emails_and_names}
   end
 
   def update_workspace_invitation(%{id: id, data: data}) do
     case get_workspace_invitation(id) do
+      nil ->
+        {:error, "Not found"}
+
+      workspace_invitation ->
+        workspace_invitation
+        |> changeset_update(data)
+        |> Repo.update()
+    end
+  end
+
+  def update_workspace_invitation(%{email: email, data: data}) do
+    case get_workspace_invitation_by_email(email) do
       nil ->
         {:error, "Not found"}
 

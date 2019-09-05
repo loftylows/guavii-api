@@ -25,4 +25,9 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionInputTypes do
     field :team_member_id, :uuid
     field :team_id, :uuid
   end
+
+  input_object :document_subscription_where_input do
+    field :document_id, :uuid
+    field :project_id, :uuid
+  end
 end
