@@ -21,8 +21,18 @@ defmodule ApiGatewayWeb.Plug.CurrentUser do
         conn
 
       user_id ->
-        conn
-        |> assign(:current_user, Models.Account.User.get_user(user_id))
+        Models.Account.User.get_user(user_id)
+        |> case do
+          nil ->
+            conn
+
+          user ->
+            billing_status_map = Models.Account.User.get_user_billing_status_options_map()
+            is_active_user? = user.billing_status === billing_status_map.active
+
+            conn
+            |> assign(:current_user, if(is_active_user?, do: user, else: nil))
+        end
     end
   end
 end

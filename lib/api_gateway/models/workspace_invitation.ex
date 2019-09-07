@@ -204,6 +204,7 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
           workspace_invitation ->
             data = %{
               accepted: false,
+              workspace_role: workspace_role,
               invitation_token_hashed: invitation_token_hashed,
               invited_by_id: user.id
             }

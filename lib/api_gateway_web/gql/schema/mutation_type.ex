@@ -73,6 +73,15 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       resolve(&Resolvers.Team.delete_team/3)
     end
 
+    @desc "Update a team using provided data"
+    field :update_team_member, non_null(:team_member) do
+      arg(:data, non_null(:team_member_update_input))
+      arg(:where, non_null(:team_member_where_unique_input))
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.TeamMember.update_team_member/3)
+    end
+
     @desc "Create a project using provided data"
     field :create_project, non_null(:project) do
       arg(:data, non_null(:project_create_input))
@@ -451,6 +460,13 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       arg(:data, non_null(:register_users_with_team_input))
 
       resolve(&Resolvers.Team.register_users_with_team/3)
+    end
+
+    @desc "Send an workspace invitation using provided data"
+    field :remove_user_from_team, non_null(:team) do
+      arg(:where, non_null(:team_member_where_unique_input))
+
+      resolve(&Resolvers.Team.remove_user_from_team/3)
     end
 
     @desc "Register a user and a workspace together using provided data"

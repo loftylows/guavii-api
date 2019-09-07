@@ -63,6 +63,10 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :description, :string
   end
 
+  input_object :team_member_update_input do
+    field :role, :team_member_role
+  end
+
   input_object :project_create_input do
     field :title, non_null(:string)
     field :description, :string

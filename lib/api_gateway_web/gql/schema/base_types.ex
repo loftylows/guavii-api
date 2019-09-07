@@ -427,8 +427,6 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
       resolve(fn _, _, _ -> {:ok, 0} end)
     end
 
-    # field :members, non_null_list(:user), resolve: dataloader(ApiGateway.Dataloader)
-
     connection field :members, node_type: :user do
       arg(:where, :user_where_input)
 

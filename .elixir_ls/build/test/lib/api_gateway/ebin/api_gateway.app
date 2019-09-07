@@ -79,6 +79,7 @@
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.SubListItem',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.SubListItemComment',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.Team',
+                        'Elixir.ApiGatewayWeb.Gql.Resolvers.TeamMember',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.User',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.Workspace',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.WorkspaceInvitation',

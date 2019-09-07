@@ -163,8 +163,47 @@ defmodule ApiGateway.Models.TeamMember do
       team_member ->
         team_member
         |> changeset_update(data)
-        |> Repo.update()
+        |> _update_team_member_helper(team_member)
     end
+  end
+
+  defp _update_team_member_helper(
+         %Ecto.Changeset{valid?: true, changes: %{role: role}} = changeset,
+         %TeamMember{} = team_member
+       ) do
+    member_roles = get_team_member_roles_map()
+    admin_role = member_roles.admin
+
+    case role != admin_role and team_member.role == admin_role do
+      false ->
+        changeset
+        |> Repo.update()
+
+      true ->
+        TeamMember.get_team_members(%{team_id: team_member.team_id})
+        |> case do
+          [] ->
+            {:error, "User input error"}
+
+          team_members when is_list(team_members) and length(team_members) == 1 ->
+            {:error, "Must be at least one admin on a team"}
+
+          team_members ->
+            admin_members = Enum.filter(team_members, fn member -> member.role == admin_role end)
+
+            if length(admin_members) == 1 do
+              {:error, "Must be at least one admin on a team"}
+            else
+              changeset
+              |> Repo.update()
+            end
+        end
+    end
+  end
+
+  defp _update_team_member_helper(%Ecto.Changeset{} = changeset, %TeamMember{}) do
+    changeset
+    |> Repo.update()
   end
 
   @doc "id must be a valid 'uuid' or an error will raise"

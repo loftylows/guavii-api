@@ -79,6 +79,19 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Team do
     end
   end
 
+  def remove_user_from_team(_, %{where: %{id: id}}, _) do
+    case Models.Team.remove_user_from_team(id) do
+      {:ok, team} ->
+        {:ok, team}
+
+      {:error, error} when is_binary(error) ->
+        Errors.user_input_error(error)
+
+      {:error, _} ->
+        Errors.user_input_error("User input error.")
+    end
+  end
+
   ####################
   # Relation resolvers #
   ####################

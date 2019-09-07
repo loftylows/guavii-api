@@ -73,8 +73,17 @@ defmodule ApiGateway.Models.Account.User do
     "DEACTIVATED"
   ]
 
+  @user_billing_status_map %{
+    active: "ACTIVE",
+    deactivated: "DEACTIVATED"
+  }
+
   def get_user_billing_status_options do
     @user_billing_status
+  end
+
+  def get_user_billing_status_options_map do
+    @user_billing_status_map
   end
 
   def changeset_create(%User{} = user, attrs \\ %{}) do

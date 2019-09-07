@@ -192,4 +192,70 @@ defmodule ApiGateway.Models.Team do
         end
     end
   end
+
+  def remove_user_from_team(id) when is_binary(id) do
+    TeamMember.get_team_member(id)
+    |> case do
+      nil ->
+        {:error, "User input error"}
+
+      team_member ->
+        TeamMember.get_team_members(%{team_id: team_member.team_id})
+        |> case do
+          [] ->
+            {:error, "User input error"}
+
+          team_members when is_list(team_members) and length(team_members) == 1 ->
+            {:error, "Must be at least one member on a team"}
+
+          team_members ->
+            member_roles_map = TeamMember.get_team_member_roles_map()
+            admin_role = member_roles_map.admin
+
+            team_member
+            |> case do
+              %TeamMember{role: ^admin_role} ->
+                admin_members =
+                  Enum.filter(team_members, fn member -> member.role == member_roles_map.admin end)
+
+                if length(admin_members) == 1 do
+                  {:error, "Cannot remove last admin from team"}
+                else
+                  get_team(team_member.team_id)
+                  |> case do
+                    nil ->
+                      {:error, "User input error"}
+
+                    team ->
+                      TeamMember.delete_team_member(id)
+                      |> case do
+                        {:error, _} ->
+                          {:error, "Team member does not exist."}
+
+                        _ ->
+                          team
+                      end
+                  end
+                end
+
+              _ ->
+                get_team(team_member.team_id)
+                |> case do
+                  nil ->
+                    {:error, "User input error"}
+
+                  team ->
+                    TeamMember.delete_team_member(id)
+                    |> case do
+                      {:error, _} ->
+                        {:error, "Team member does not exist."}
+
+                      _ ->
+                        {:ok, team}
+                    end
+                end
+            end
+        end
+    end
+  end
 end
