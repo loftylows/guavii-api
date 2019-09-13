@@ -233,7 +233,7 @@ defmodule ApiGateway.Models.Team do
                           {:error, "Team member does not exist."}
 
                         _ ->
-                          team
+                          {:ok, team}
                       end
                   end
                 end

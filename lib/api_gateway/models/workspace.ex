@@ -8,6 +8,7 @@ defmodule ApiGateway.Models.Workspace do
   alias ApiGateway.Ecto.CommonFilterHelpers
   alias ApiGateway.Models.InternalSubdomain
   alias ApiGateway.Models.ArchivedWorkspaceSubdomain
+  alias __MODULE__
 
   schema "workspaces" do
     field :title, :string
@@ -109,10 +110,39 @@ defmodule ApiGateway.Models.Workspace do
   # CRUD funcs #
   ####################
   @doc "workspace_id must be a valid 'uuid' or an error will raise"
-  def get_workspace(workspace_id), do: Repo.get(ApiGateway.Models.Workspace, workspace_id)
+  def get_workspace(workspace_id), do: Repo.get(Workspace, workspace_id)
 
-  def get_workspace_by_subdomain(subdomain) do
-    Repo.get_by(ApiGateway.Models.Workspace, workspace_subdomain: subdomain)
+  @type get_workspace_by_subdomain_opts :: [key: boolean]
+  @spec get_workspace_by_subdomain(String.t(), get_workspace_by_subdomain_opts) ::
+          Workspace.t() | nil
+  def get_workspace_by_subdomain(subdomain, opts \\ []) do
+    Keyword.get(opts, :include_archived_matches, false)
+    |> case do
+      bool when not is_boolean(bool) ->
+        nil
+
+      false ->
+        Workspace
+        |> Repo.get_by(workspace_subdomain: subdomain)
+
+      true ->
+        Workspace
+        |> Repo.get_by(workspace_subdomain: subdomain)
+        |> case do
+          %Workspace{} = workspace ->
+            workspace
+
+          nil ->
+            ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
+            |> case do
+              nil ->
+                nil
+
+              archived_subdomain ->
+                get_workspace(archived_subdomain.workspace_id)
+            end
+        end
+    end
   end
 
   def get_workspaces(filters \\ %{}) do
@@ -155,6 +185,11 @@ defmodule ApiGateway.Models.Workspace do
           subdomain ->
             case check_subdomain_taken(subdomain) do
               false ->
+                ArchivedWorkspaceSubdomain.create_archived_workspace_subdomain(%{
+                  subdomain: workspace.workspace_subdomain,
+                  workspace_id: workspace.id
+                })
+
                 Repo.update(changeset)
 
               true ->
@@ -181,6 +216,11 @@ defmodule ApiGateway.Models.Workspace do
           subdomain ->
             case check_subdomain_taken(subdomain) do
               false ->
+                ArchivedWorkspaceSubdomain.create_archived_workspace_subdomain(%{
+                  subdomain: workspace.workspace_subdomain,
+                  workspace_id: workspace.id
+                })
+
                 Repo.update(changeset)
 
               true ->

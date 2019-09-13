@@ -18,6 +18,8 @@ defmodule ApiGatewayWeb.Router.RouteHelpers do
       website_host: @website_host,
       site_full_base_url: "#{default_transport_protocol}://#{@website_host}",
       get_started_path: "#{get_started_path}",
+      get_started_account_invite: "#{get_started_path}/account-invite",
+      get_started_workspace_invite: "#{get_started_path}/workspace-invite",
       forgot_password_path: "#{get_started_path}/forgot",
       reset_password_path: "#{get_started_path}/forgot/reset",
       find_my_workspaces_path: "#{get_started_path}/find-my-workspaces",

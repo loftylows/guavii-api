@@ -100,7 +100,7 @@ defmodule ApiGateway.Email.Transactional do
     action_url =
       RouteHelpers.build_website_url_to_string(%WebsiteUrl{
         query_params: query_params,
-        path: website_routes.get_started_path
+        path: website_routes.get_started_account_invite
       })
 
     template_params = %{
@@ -138,7 +138,7 @@ defmodule ApiGateway.Email.Transactional do
     action_url =
       RouteHelpers.build_website_url_to_string(%WebsiteUrl{
         query_params: query_params,
-        path: website_routes.get_started_path,
+        path: website_routes.get_started_workspace_invite,
         subdomain: workspace_subdomain
       })
 

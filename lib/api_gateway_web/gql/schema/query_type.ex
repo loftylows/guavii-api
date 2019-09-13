@@ -7,6 +7,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     @desc "Get a workspace using criteria"
     field :workspace, :workspace do
       arg(:where, non_null(:workspace_where_unique_input))
+      arg(:where_options, :workspace_where_unique_options_input)
 
       middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Workspace.get_workspace/3)
@@ -114,8 +115,22 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :check_logged_into_workspace, non_null(:boolean) do
       arg(:data, non_null(:check_logged_into_workspace_input))
 
-      # TODO: implement resolver
-      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
+      resolve(fn _, _, %{context: %{current_user: current_user}} ->
+        possible_statuses = ApiGateway.Models.Account.User.get_user_billing_status_options_map()
+        active_status = possible_statuses.active
+
+        current_user
+        |> case do
+          nil ->
+            {:ok, false}
+
+          %ApiGateway.Models.Account.User{billing_status: ^active_status} ->
+            {:ok, true}
+
+          _ ->
+            {:ok, false}
+        end
+      end)
     end
 
     @desc "Check workspace subdomain available"

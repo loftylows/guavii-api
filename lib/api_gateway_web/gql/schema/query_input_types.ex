@@ -50,6 +50,10 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :workspace_subdomain, :string
   end
 
+  input_object :workspace_where_unique_options_input do
+    field :include_archived_matches, :boolean
+  end
+
   input_object :workspace_where_input do
     field :id_in, list_of(:uuid)
     field :title_contains, :string
@@ -152,7 +156,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
-    field :has_due_date, :boolean
   end
 
   input_object :sub_list_where_unique_input do
@@ -189,7 +192,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
-    field :has_due_date, :boolean
   end
 
   input_object :sub_list_item_comment_where_unique_input do
@@ -253,7 +255,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
-    field :has_due_date, :boolean
   end
 
   input_object :kanban_card_comment_where_unique_input do
@@ -305,7 +306,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
-    field :has_due_date, :boolean
   end
 
   ####################
