@@ -25,6 +25,20 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
   end
 
   ########## input filters ##########
+  input_object :workspace_invitation_where_unique_input do
+    field :id, non_null(:uuid)
+  end
+
+  input_object :workspace_invitation_where_input do
+    field :id_in, list_of(:uuid)
+    field :accepted, :boolean
+    field :workspace_id, :uuid
+    field :invited_by_id, :uuid
+    field :created_at_gte, :iso_date_time
+    field :created_at_lte, :iso_date_time
+    field :distinct, :boolean
+  end
+
   input_object :user_where_unique_input do
     field :id, non_null(:string)
   end

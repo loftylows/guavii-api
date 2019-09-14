@@ -1,4 +1,26 @@
 defmodule ApiGatewayWeb.Gql.Resolvers.WorkspaceInvitation do
+  alias ApiGateway.Models.WorkspaceInvitation
+
+  def update_workspace_invitation(_, %{where: %{id: id}, data: data}, _) do
+    case WorkspaceInvitation.update_workspace_invitation(%{id: id, data: data}) do
+      {:ok, workspace_invitation} ->
+        {:ok, workspace_invitation}
+
+      {:error, "Not found"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User not found")
+    end
+  end
+
+  def delete_workspace_invitation(_, %{where: %{id: id}}, _) do
+    case WorkspaceInvitation.delete_workspace_invitation(id) do
+      {:ok, workspace_invitation} ->
+        {:ok, workspace_invitation}
+
+      {:error, "Not found"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User not found")
+    end
+  end
+
   def send_workspace_invitations(_, _, %{context: %{current_user: nil}}) do
     ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
   end

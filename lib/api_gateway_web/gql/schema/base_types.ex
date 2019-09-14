@@ -157,6 +157,18 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
   ####################
   # Connections #
   ####################
+  connection node_type: :workspace_invitation do
+    field :count, non_null(:integer) do
+      resolve(fn
+        _, %{source: conn} ->
+          {:ok, length(conn.edges)}
+      end)
+    end
+
+    edge do
+    end
+  end
+
   connection node_type: :workspace do
     field :count, non_null(:integer) do
       resolve(fn
@@ -413,6 +425,18 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :updated_at, non_null(:iso_date_time)
   end
 
+  object :workspace_invitation do
+    field :id, non_null(:id)
+    field :email, non_null(:string)
+    field :accepted, non_null(:boolean)
+    field :workspace_role, non_null(:workspace_member_role)
+    field :workspace, non_null(:workspace), resolve: dataloader(ApiGateway.Dataloader)
+    field :invited_by, :user, resolve: dataloader(ApiGateway.Dataloader)
+
+    field :inserted_at, non_null(:iso_date_time), name: "created_at"
+    field :updated_at, non_null(:iso_date_time)
+  end
+
   object :workspace do
     # interface(:node)
 
@@ -458,6 +482,18 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
         pagination_args, %{source: workspace} ->
           ApiGateway.Models.Project
           |> ApiGateway.Models.Project.add_query_filters(pagination_args[:where])
+          |> Ecto.Query.where(workspace_id: ^workspace.id)
+          |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
+      end)
+    end
+
+    connection field :workspace_invitations, node_type: :workspace_invitation do
+      arg(:where, :workspace_invitation_where_input)
+
+      resolve(fn
+        pagination_args, %{source: workspace} ->
+          ApiGateway.Models.WorkspaceInvitation
+          |> ApiGateway.Models.WorkspaceInvitation.add_query_filters(pagination_args[:where])
           |> Ecto.Query.where(workspace_id: ^workspace.id)
           |> Absinthe.Relay.Connection.from_query(&ApiGateway.Repo.all/1, pagination_args)
       end)

@@ -19,6 +19,7 @@ defmodule ApiGateway.Models.Workspace do
     has_many :members, ApiGateway.Models.Account.User
     has_many :teams, ApiGateway.Models.Team
     has_many :archived_workspace_subdomains, ApiGateway.Models.ArchivedWorkspaceSubdomain
+    has_many :workspace_invitations, ApiGateway.Models.WorkspaceInvitation
 
     timestamps()
   end

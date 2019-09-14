@@ -78,16 +78,6 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
     query
   end
 
-  @doc "team_id must be a valid 'uuid' or an error will be raised"
-  def maybe_team_id_assoc_filter(query, nil) do
-    query
-  end
-
-  def maybe_team_id_assoc_filter(query, team_id) do
-    query
-    |> Ecto.Query.where([p], p.team_id == ^team_id)
-  end
-
   @doc "workspace_id must be a valid 'uuid' or an error will be raised"
   def maybe_workspace_id_assoc_filter(query, nil) do
     query
@@ -119,7 +109,6 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_accepted_filter(filters[:accepted])
-    |> maybe_team_id_assoc_filter(filters[:team_id])
     |> maybe_workspace_id_assoc_filter(filters[:workspace_id])
     |> maybe_invited_by_id_assoc_filter(filters[:invited_by_id])
   end

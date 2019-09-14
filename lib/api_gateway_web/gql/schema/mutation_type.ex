@@ -6,6 +6,23 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     ####################
     # Main Node mutations #
     ####################
+    @desc "Update a workspace using provided data"
+    field :update_workspace_invitation, non_null(:workspace_invitation) do
+      arg(:where, non_null(:workspace_invitation_where_unique_input))
+      arg(:data, non_null(:workspace_invitation_update_input))
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.WorkspaceInvitation.update_workspace_invitation/3)
+    end
+
+    @desc "Delete a workspace invitation using provided data"
+    field :delete_workspace_invitation, non_null(:workspace_invitation) do
+      arg(:where, non_null(:workspace_invitation_where_unique_input))
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.WorkspaceInvitation.delete_workspace_invitation/3)
+    end
+
     @desc "Create a workspace using provided data"
     field :create_workspace, non_null(:workspace) do
       arg(:data, non_null(:workspace_create_input))

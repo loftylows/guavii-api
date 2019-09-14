@@ -13,6 +13,10 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :offset, non_null(:string)
   end
 
+  input_object :workspace_invitation_update_input do
+    field :workspace_role, :workspace_member_role
+  end
+
   input_object :workspace_create_input do
     field :title, non_null(:string)
     field :workspace_subdomain, non_null(:string)
