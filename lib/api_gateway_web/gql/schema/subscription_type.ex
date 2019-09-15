@@ -3,7 +3,7 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
 
   object :root_subscriptions do
     field :workspace_updated, :workspace do
-      arg(:team_id, non_null(:uuid))
+      arg(:workspace_id, non_null(:uuid))
 
       config(fn args, _ ->
         {:ok, topic: args.workspace_id}
@@ -16,14 +16,42 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
+    field :workspace_deleted, :workspace do
+      arg(:workspace_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.workspace_id}
+      end)
+
+      trigger(:delete_workspace,
+        topic: fn workspace ->
+          workspace.id
+        end
+      )
+    end
+
     field :user_updated, :user do
-      arg(:team_id, non_null(:uuid))
+      arg(:user_id, non_null(:uuid))
 
       config(fn args, _ ->
         {:ok, topic: args.user_id}
       end)
 
       trigger(:update_user,
+        topic: fn user ->
+          user.id
+        end
+      )
+    end
+
+    field :user_deleted, :user do
+      arg(:user_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.user_id}
+      end)
+
+      trigger(:delete_user,
         topic: fn user ->
           user.id
         end
@@ -40,6 +68,34 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       trigger(:update_team,
         topic: fn team ->
           team.id
+        end
+      )
+    end
+
+    field :team_deleted, :team do
+      arg(:team_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.team_id}
+      end)
+
+      trigger(:delete_team,
+        topic: fn team ->
+          team.id
+        end
+      )
+    end
+
+    field :team_member_created, :team_member do
+      arg(:team_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.team_id}
+      end)
+
+      trigger(:create_team_member,
+        topic: fn team_member ->
+          team_member.team_id
         end
       )
     end
@@ -73,6 +129,34 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
+    field :team_member_deleted, :team_member do
+      arg(:team_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.team_id}
+      end)
+
+      trigger(:create_team_member,
+        topic: fn team_member ->
+          team_member.team_id
+        end
+      )
+    end
+
+    field :project_created, :project do
+      arg(:team_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.team_id}
+      end)
+
+      trigger(:create_project,
+        topic: fn project ->
+          project.team_id
+        end
+      )
+    end
+
     field :project_updated, :project do
       arg(:project_id, non_null(:uuid))
 
@@ -83,6 +167,34 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       trigger(:update_project,
         topic: fn project ->
           project.id
+        end
+      )
+    end
+
+    field :project_deleted, :project do
+      arg(:team_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.team_id}
+      end)
+
+      trigger(:delete_project,
+        topic: fn project ->
+          project.team_id
+        end
+      )
+    end
+
+    field :kanban_lane_created, :kanban_lane do
+      arg(:kanban_board_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_board_id}
+      end)
+
+      trigger(:create_kanban_lane,
+        topic: fn kanban_lane ->
+          kanban_lane.kanban_board_id
         end
       )
     end
@@ -116,6 +228,34 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
+    field :kanban_lane_deleted, :kanban_lane do
+      arg(:kanban_board_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_board_id}
+      end)
+
+      trigger(:delete_kanban_lane,
+        topic: fn kanban_lane ->
+          kanban_lane.kanban_board_id
+        end
+      )
+    end
+
+    field :kanban_card_created, :kanban_card do
+      arg(:project_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.project_id}
+      end)
+
+      trigger(:create_kanban_card,
+        topic: fn kanban_card ->
+          kanban_card.project_id
+        end
+      )
+    end
+
     field :kanban_card_updated, :update_kanban_card_payload do
       arg(:where, non_null(:kanban_card_subscription_where_input))
 
@@ -141,6 +281,34 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       trigger(:update_kanban_card,
         topic: fn card_update ->
           card_update.kanban_card.project_id
+        end
+      )
+    end
+
+    field :kanban_card_deleted, :kanban_card do
+      arg(:project_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.project_id}
+      end)
+
+      trigger(:delete_kanban_card,
+        topic: fn kanban_card ->
+          kanban_card.project_id
+        end
+      )
+    end
+
+    field :kanban_card_todo_list_created, :kanban_card_todo_list do
+      arg(:kanban_card_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_card_id}
+      end)
+
+      trigger(:create_kanban_card_todo_list,
+        topic: fn kanban_card_todo_list ->
+          kanban_card_todo_list.kanban_card_id
         end
       )
     end
@@ -177,6 +345,34 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
+    field :kanban_card_todo_list_deleted, :kanban_card_todo_list do
+      arg(:kanban_card_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_card_id}
+      end)
+
+      trigger(:delete_kanban_card_todo_list,
+        topic: fn kanban_card_todo_list ->
+          kanban_card_todo_list.kanban_card_id
+        end
+      )
+    end
+
+    field :kanban_card_todo_created, :kanban_card_todo do
+      arg(:kanban_card_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_card_id}
+      end)
+
+      trigger(:create_kanban_card_todo,
+        topic: fn kanban_card_todo ->
+          kanban_card_todo.card_id
+        end
+      )
+    end
+
     field :kanban_card_todo_updated, :update_kanban_card_todo_payload do
       arg(
         :where,
@@ -205,6 +401,34 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       trigger(:update_kanban_card_todo,
         topic: fn payload ->
           payload.kanban_card_todo.project_id
+        end
+      )
+    end
+
+    field :kanban_card_todo_deleted, :kanban_card_todo do
+      arg(:kanban_card_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_card_id}
+      end)
+
+      trigger(:delete_kanban_card_todo,
+        topic: fn kanban_card_todo ->
+          kanban_card_todo.card_id
+        end
+      )
+    end
+
+    field :document_created, :document do
+      arg(:project_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.project_id}
+      end)
+
+      trigger(:create_document,
+        topic: fn document ->
+          document.project_id
         end
       )
     end
@@ -265,6 +489,20 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       trigger(:on_document_selection_change,
         topic: fn payload ->
           payload.id
+        end
+      )
+    end
+
+    field :document_deleted, :document do
+      arg(:project_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.project_id}
+      end)
+
+      trigger(:delete_document,
+        topic: fn document ->
+          document.project_id
         end
       )
     end
