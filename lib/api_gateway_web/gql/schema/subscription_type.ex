@@ -30,6 +30,20 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
+    field :user_joined_workspace, :register_user_from_workspace_invitation_payload do
+      arg(:workspace_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.workspace_id}
+      end)
+
+      trigger(:create_user,
+        topic: fn result ->
+          result.workspace.id
+        end
+      )
+    end
+
     field :user_updated, :user do
       arg(:user_id, non_null(:uuid))
 
@@ -185,6 +199,48 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
+    field :kanban_label_created, :kanban_label do
+      arg(:kanban_board_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_board_id}
+      end)
+
+      trigger(:create_kanban_label,
+        topic: fn kanban_label ->
+          kanban_label.kanban_board_id
+        end
+      )
+    end
+
+    field :kanban_label_updated, :kanban_label do
+      arg(:kanban_board_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_board_id}
+      end)
+
+      trigger(:update_kanban_label,
+        topic: fn kanban_label ->
+          kanban_label.kanban_board_id
+        end
+      )
+    end
+
+    field :kanban_label_deleted, :kanban_label do
+      arg(:kanban_board_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.kanban_board_id}
+      end)
+
+      trigger(:delete_kanban_label,
+        topic: fn kanban_label ->
+          kanban_label.kanban_board_id
+        end
+      )
+    end
+
     field :kanban_lane_created, :kanban_lane do
       arg(:kanban_board_id, non_null(:uuid))
 
@@ -286,15 +342,30 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
     end
 
     field :kanban_card_deleted, :kanban_card do
-      arg(:project_id, non_null(:uuid))
+      arg(:where, non_null(:kanban_card_subscription_where_input))
 
       config(fn args, _ ->
-        {:ok, topic: args.project_id}
+        case args.where do
+          %{kanban_card_id: kanban_card_id} ->
+            {:ok, topic: kanban_card_id}
+
+          %{project_id: project_id} ->
+            {:ok, topic: project_id}
+
+          _ ->
+            {:error, "User input error."}
+        end
       end)
 
       trigger(:delete_kanban_card,
         topic: fn kanban_card ->
           kanban_card.project_id
+        end
+      )
+
+      trigger(:delete_kanban_card,
+        topic: fn kanban_card ->
+          kanban_card.id
         end
       )
     end
@@ -406,15 +477,33 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
     end
 
     field :kanban_card_todo_deleted, :kanban_card_todo do
-      arg(:kanban_card_id, non_null(:uuid))
+      arg(
+        :where,
+        non_null(:kanban_card_todo_subscription_where_input)
+      )
 
       config(fn args, _ ->
-        {:ok, topic: args.kanban_card_id}
+        case args.where do
+          %{kanban_card_todo_id: kanban_card_todo_id} ->
+            {:ok, topic: kanban_card_todo_id}
+
+          %{project_id: project_id} ->
+            {:ok, topic: project_id}
+
+          _ ->
+            {:error, "User input error."}
+        end
       end)
 
       trigger(:delete_kanban_card_todo,
         topic: fn kanban_card_todo ->
           kanban_card_todo.card_id
+        end
+      )
+
+      trigger(:delete_kanban_card_todo,
+        topic: fn kanban_card_todo ->
+          kanban_card_todo.project_id
         end
       )
     end

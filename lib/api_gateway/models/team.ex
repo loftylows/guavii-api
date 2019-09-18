@@ -157,7 +157,7 @@ defmodule ApiGateway.Models.Team do
             user_ids = Enum.map(users, fn %{id: id} -> id end)
 
             users_ids_of_already_team_members =
-              TeamMember.get_team_members(%{user_id_in: user_ids})
+              TeamMember.get_team_members(%{user_id_in: user_ids, team_id: team.id})
               |> Enum.map(fn team_member -> team_member.user_id end)
 
             users_by_email_map =
@@ -175,18 +175,20 @@ defmodule ApiGateway.Models.Team do
               DateTime.utc_now()
               |> DateTime.truncate(:second)
 
-            for %{email: email} = info_item <- filtered_info_items do
-              role = Map.get(info_item, :team_role, TeamMember.get_default_team_member_role())
+            team_members =
+              for %{email: email} = info_item <- filtered_info_items do
+                role = Map.get(info_item, :team_role, TeamMember.get_default_team_member_role())
 
-              %{
-                role: role,
-                user_id: users_by_email_map[email].id,
-                team_id: team.id,
-                inserted_at: now,
-                updated_at: now
-              }
-            end
-            |> TeamMember.create_team_members()
+                %{
+                  role: role,
+                  user_id: users_by_email_map[email].id,
+                  team_id: team.id,
+                  inserted_at: now,
+                  updated_at: now
+                }
+              end
+
+            team_members |> TeamMember.create_team_members()
 
             {:ok, team}
         end
