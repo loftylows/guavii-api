@@ -511,28 +511,28 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       resolve(&Resolvers.User.register_user_and_workspace/3)
 
       middleware(fn resolution, _ ->
-        with %{value: %{user: user}} <- resolution do
+        with %{value: %{user: user, token: token}} <- resolution do
           ApiGateway.Models.Account.User.set_last_login_now(user.id)
 
           Map.update!(resolution, :context, fn ctx ->
-            Map.put(ctx, :login_info, %{user_id: user.id})
+            Map.put(ctx, :login_info, %{user_id: user.id, token: token})
           end)
         end
       end)
     end
 
     @desc "Logs a user into a workspace using provided data"
-    field :login_user_with_email_and_password, non_null(:user) do
+    field :login_user_with_email_and_password, non_null(:login_user_with_email_and_password) do
       arg(:data, non_null(:login_user_with_email_and_password_input))
 
       resolve(&Resolvers.User.login_user_with_email_and_password/3)
 
       middleware(fn resolution, _ ->
-        with %{value: %{id: id}} <- resolution do
+        with %{value: %{user: %{id: id}, token: token}} <- resolution do
           ApiGateway.Models.Account.User.set_last_login_now(id)
 
           Map.update!(resolution, :context, fn ctx ->
-            Map.put(ctx, :login_info, %{user_id: id})
+            Map.put(ctx, :login_info, %{user_id: id, token: token})
           end)
         end
       end)

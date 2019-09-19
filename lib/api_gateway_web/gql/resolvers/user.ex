@@ -1,5 +1,6 @@
 defmodule ApiGatewayWeb.Gql.Resolvers.User do
   alias ApiGateway.Models.Account.User
+  alias ApiGatewayWeb.Presence
 
   def get_user(_, %{where: %{id: user_id}}, _) do
     {:ok, User.get_user(user_id)}
@@ -58,9 +59,18 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   ####################
   # Other resolvers #
   ####################
-  # TODO: implement this func to check if a user is online
-  def is_online?(%User{} = _user) do
-    false
+  def is_online?(%User{} = user) do
+    Presence.get_by_key("workspace:#{user.workspace_id}", user.id)
+    |> case do
+      nil ->
+        false
+
+      [] ->
+        false
+
+      _item ->
+        true
+    end
   end
 
   def is_online?(_) do
@@ -110,10 +120,13 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error(reason)
 
       {:ok, payload} ->
-        {:ok, payload}
+        token = ApiGatewayWeb.Session.create_token(payload.user.id)
+
+        {:ok, Map.put(payload, :token, token)}
     end
   end
 
+  # Session Set: session is set after this
   def register_user_and_workspace(
         _,
         %{
@@ -140,11 +153,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error(reason)
 
       {:ok, payload} ->
-        {:ok, payload}
+        token = ApiGatewayWeb.Session.create_token(payload.user.id)
+        {:ok, Map.put(payload, :token, token)}
     end
   end
 
-  # make sure that the user is not already logged in with this guard
+  # Session Set: session is set after this
   def login_user_with_email_and_password(_, _, %{context: %{current_user: user}})
       when is_map(user) do
     ApiGatewayWeb.Gql.Utils.Errors.forbidden_error("You are already logged into this workspace")
@@ -175,8 +189,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Incorrect email/password combination.")
 
       {:ok, user} ->
-        ApiGateway.Models.Account.User.set_last_login_now(user.id)
-        {:ok, user}
+        token = ApiGatewayWeb.Session.create_token(user.id)
+
+        {:ok, %{user: user, token: token}}
     end
   end
 

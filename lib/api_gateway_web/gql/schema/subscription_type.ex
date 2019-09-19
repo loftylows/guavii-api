@@ -595,5 +595,21 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
         end
       )
     end
+
+    field :user_presence_joined_workspace, :uuid do
+      arg(:workspace_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.workspace_id}
+      end)
+    end
+
+    field :user_presence_left_workspace, :uuid do
+      arg(:workspace_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.workspace_id}
+      end)
+    end
   end
 end

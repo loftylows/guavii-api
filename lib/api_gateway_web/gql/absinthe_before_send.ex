@@ -13,6 +13,8 @@ defmodule ApiGatewayWeb.Gql.AbsintheBeforeSend do
 
   defp maybe_login(conn, %Absinthe.Blueprint{} = blueprint) do
     if login_info = blueprint.execution.context[:login_info] do
+      ApiGateway.Models.Account.User.set_last_login_now(login_info[:user_id])
+
       conn
       |> put_session(:user_id, login_info[:user_id])
     else

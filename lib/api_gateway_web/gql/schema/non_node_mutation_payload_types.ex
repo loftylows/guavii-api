@@ -1,6 +1,11 @@
 defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
   use Absinthe.Schema.Notation
 
+  object :login_user_with_email_and_password do
+    field :user, non_null(:user)
+    field :token, non_null(:string)
+  end
+
   object :account_invitation_send_payload do
     field :ok, non_null(:boolean)
   end
@@ -16,11 +21,13 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
   object :register_user_from_workspace_invitation_payload do
     field :user, non_null(:user)
     field :workspace, non_null(:workspace)
+    field :token, non_null(:string)
   end
 
   object :register_user_and_workspace_payload do
     field :user, non_null(:user)
     field :workspace, non_null(:workspace)
+    field :token, non_null(:string)
   end
 
   object :logout_user_payload do
