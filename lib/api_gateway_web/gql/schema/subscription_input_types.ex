@@ -30,4 +30,14 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionInputTypes do
     field :document_id, :uuid
     field :project_id, :uuid
   end
+
+  input_object :registered_users_with_team_subscription_where_input do
+    field :team_id, :uuid
+    field :user_id, :uuid
+  end
+
+  input_object :removed_user_from_team_subscription_where_input do
+    field :team_id, :uuid
+    field :user_id, :uuid
+  end
 end

@@ -11,10 +11,11 @@ defmodule ApiGateway.Repo.Migrations.CreateUsersTable do
       add(:location, :string)
       add(:birthday, :utc_datetime)
       add(:profile_pic_url, :string)
-      add(:last_login, :utc_datetime)
       add(:workspace_role, :string, null: false)
       add(:billing_status, :string, null: false, default: "ACTIVE")
       add(:password_hash, :string, null: false)
+      add(:last_went_offline, :utc_datetime)
+      add(:last_login, :utc_datetime)
 
       add(:time_zone, :map)
 

@@ -602,6 +602,8 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       config(fn args, _ ->
         {:ok, topic: args.workspace_id}
       end)
+
+      # Uses custom trigger(s) in socket handler
     end
 
     field :user_presence_left_workspace, :uuid do
@@ -610,6 +612,52 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       config(fn args, _ ->
         {:ok, topic: args.workspace_id}
       end)
+
+      # Uses custom trigger(s) in socket handler
+    end
+
+    field :registered_users_with_team, :register_users_with_team_payload do
+      arg(
+        :where,
+        non_null(:registered_users_with_team_subscription_where_input)
+      )
+
+      config(fn args, _ ->
+        case args.where do
+          %{team_id: team_id} ->
+            {:ok, topic: team_id}
+
+          %{user_id: user_id} ->
+            {:ok, topic: user_id}
+
+          _ ->
+            {:error, "User input error."}
+        end
+      end)
+
+      # Uses custom trigger(s) in mutation middleware
+    end
+
+    field :removed_user_from_team, :remove_user_from_team_payload do
+      arg(
+        :where,
+        non_null(:removed_user_from_team_subscription_where_input)
+      )
+
+      config(fn args, _ ->
+        case args.where do
+          %{team_id: team_id} ->
+            {:ok, topic: team_id}
+
+          %{user_id: user_id} ->
+            {:ok, topic: user_id}
+
+          _ ->
+            {:error, "User input error."}
+        end
+      end)
+
+      # Uses custom trigger(s) in mutation middleware
     end
   end
 end

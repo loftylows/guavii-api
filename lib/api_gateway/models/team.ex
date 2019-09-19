@@ -151,7 +151,7 @@ defmodule ApiGateway.Models.Team do
         User.get_users(%{email_in: users_emails, workspace_id: current_user.workspace_id})
         |> case do
           [] ->
-            {:ok, team}
+            {:ok, %{team: team, team_members: []}}
 
           users ->
             user_ids = Enum.map(users, fn %{id: id} -> id end)
@@ -188,9 +188,9 @@ defmodule ApiGateway.Models.Team do
                 }
               end
 
-            team_members |> TeamMember.create_team_members()
+            team_members = TeamMember.create_team_members(team.id, team_members)
 
-            {:ok, team}
+            {:ok, %{team: team, team_members: team_members}}
         end
     end
   end
@@ -199,13 +199,13 @@ defmodule ApiGateway.Models.Team do
     TeamMember.get_team_member(id)
     |> case do
       nil ->
-        {:error, "User input error"}
+        {:error, "User input error1"}
 
       team_member ->
         TeamMember.get_team_members(%{team_id: team_member.team_id})
         |> case do
           [] ->
-            {:error, "User input error"}
+            {:error, "User input error2"}
 
           team_members when is_list(team_members) and length(team_members) == 1 ->
             {:error, "Must be at least one member on a team"}
@@ -226,7 +226,7 @@ defmodule ApiGateway.Models.Team do
                   get_team(team_member.team_id)
                   |> case do
                     nil ->
-                      {:error, "User input error"}
+                      {:error, "User input error3"}
 
                     team ->
                       TeamMember.delete_team_member(id)
@@ -235,7 +235,7 @@ defmodule ApiGateway.Models.Team do
                           {:error, "Team member does not exist."}
 
                         _ ->
-                          {:ok, team}
+                          {:ok, %{team: team, team_member: team_member}}
                       end
                   end
                 end
@@ -244,7 +244,7 @@ defmodule ApiGateway.Models.Team do
                 get_team(team_member.team_id)
                 |> case do
                   nil ->
-                    {:error, "User input error"}
+                    {:error, "User input error4"}
 
                   team ->
                     TeamMember.delete_team_member(id)
@@ -253,7 +253,7 @@ defmodule ApiGateway.Models.Team do
                         {:error, "Team member does not exist."}
 
                       _ ->
-                        {:ok, team}
+                        {:ok, %{team: team, team_member: team_member}}
                     end
                 end
             end

@@ -471,19 +471,73 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       resolve(&Resolvers.WorkspaceInvitation.send_workspace_invitations/3)
     end
 
-    @desc "Send an workspace invitation using provided data"
-    field :register_users_with_team, non_null(:team) do
+    @desc "Register users with team using provided data"
+    field :register_users_with_team, non_null(:register_users_with_team_payload) do
       arg(:where, non_null(:team_where_unique_input))
       arg(:data, non_null(:register_users_with_team_input))
 
       resolve(&Resolvers.Team.register_users_with_team/3)
+
+      # custom trigger to call associated subscriptions
+      middleware(fn resolution, _ ->
+        IO.inspect(resolution.value)
+
+        resolution.value
+        |> case do
+          nil ->
+            nil
+
+          %{team: team, team_members: team_members} = value ->
+            Absinthe.Subscription.publish(
+              ApiGatewayWeb.Endpoint,
+              value,
+              registered_users_with_team: team.id
+            )
+
+            for team_member <- team_members do
+              Absinthe.Subscription.publish(
+                ApiGatewayWeb.Endpoint,
+                value,
+                registered_users_with_team: team_member.user_id
+              )
+            end
+        end
+
+        resolution
+      end)
     end
 
-    @desc "Send an workspace invitation using provided data"
-    field :remove_user_from_team, non_null(:team) do
+    @desc "Remove user from team using provided data"
+    field :remove_user_from_team, non_null(:remove_user_from_team_payload) do
       arg(:where, non_null(:team_member_where_unique_input))
 
       resolve(&Resolvers.Team.remove_user_from_team/3)
+
+      # custom trigger to call associated subscriptions
+      middleware(fn resolution, _ ->
+        IO.inspect(resolution.value)
+
+        resolution.value
+        |> case do
+          nil ->
+            nil
+
+          %{team: team, team_member: team_member} = value ->
+            Absinthe.Subscription.publish(
+              ApiGatewayWeb.Endpoint,
+              value,
+              removed_user_from_team: team.id
+            )
+
+            Absinthe.Subscription.publish(
+              ApiGatewayWeb.Endpoint,
+              value,
+              removed_user_from_team: team_member.user_id
+            )
+        end
+
+        resolution
+      end)
     end
 
     @desc "Register a user and a workspace together using provided data"

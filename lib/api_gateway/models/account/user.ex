@@ -18,11 +18,12 @@ defmodule ApiGateway.Models.Account.User do
     field :birthday, :utc_datetime
     field :location, :string
     field :profile_pic_url, :string
-    field :last_login, :utc_datetime
     field :workspace_role, :string
     field :billing_status, :string, read_after_writes: true
     field :password, :string, virtual: true
     field :password_hash, :string
+    field :last_went_offline, :utc_datetime
+    field :last_login, :utc_datetime
 
     embeds_one :time_zone, TimeZone, on_replace: :update do
       field :offset, :string
@@ -48,6 +49,7 @@ defmodule ApiGateway.Models.Account.User do
     :billing_status,
     :workspace_id,
     :password,
+    :last_went_offline,
     :last_login
   ]
   @required_fields_create [
@@ -306,6 +308,10 @@ defmodule ApiGateway.Models.Account.User do
 
   def set_last_login_now(id) do
     update_user(%{id: id, data: %{last_login: DateTime.utc_now()}})
+  end
+
+  def set_last_went_offline_now(id) do
+    update_user(%{id: id, data: %{last_went_offline: DateTime.utc_now()}})
   end
 
   ####################

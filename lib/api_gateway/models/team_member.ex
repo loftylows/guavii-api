@@ -93,7 +93,7 @@ defmodule ApiGateway.Models.TeamMember do
     |> Ecto.Query.where([x], x.team_id == ^team_id)
   end
 
-  @doc "user_id must be a valid 'uuid' or an error will be raised"
+  @doc "user_ids must be a valid 'uuid' or an error will be raised"
   def maybe_user_id_in_assoc_filter(query, nil) do
     query
   end
@@ -134,12 +134,12 @@ defmodule ApiGateway.Models.TeamMember do
   # CRUD funcs #
   ####################
   @doc "id must be a valid 'uuid' or an error will be raised"
-  def get_team_member(id), do: Repo.get(ApiGateway.Models.TeamMember, id)
+  def get_team_member(id), do: Repo.get(TeamMember, id)
 
   def get_team_members(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.TeamMember |> add_query_filters(filters) |> Repo.all()
+    TeamMember |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_team_member(data) when is_map(data) do
@@ -148,11 +148,15 @@ defmodule ApiGateway.Models.TeamMember do
     |> Repo.insert()
   end
 
-  def create_team_members(data_items) when is_list(data_items) do
+  def create_team_members(team_id, data_items) when is_list(data_items) and is_binary(team_id) do
     IO.inspect(data_items)
 
     TeamMember
     |> Repo.insert_all(data_items)
+
+    user_ids = Enum.map(data_items, fn data -> data.user_id end)
+
+    TeamMember.get_team_members(%{user_id_in: user_ids, team_id: team_id})
   end
 
   def update_team_member(%{id: id, data: data}) do

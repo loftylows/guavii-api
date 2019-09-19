@@ -1,5 +1,6 @@
 defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
   use Absinthe.Schema.Notation
+  import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
 
   object :login_user_with_email_and_password do
     field :user, non_null(:user)
@@ -16,6 +17,12 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
 
   object :register_users_with_team_payload do
     field :team, non_null(:team)
+    field :team_members, non_null_list(:team_member)
+  end
+
+  object :remove_user_from_team_payload do
+    field :team, non_null(:team)
+    field :team_member, non_null(:team_member)
   end
 
   object :register_user_from_workspace_invitation_payload do

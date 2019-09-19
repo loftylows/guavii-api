@@ -38,8 +38,6 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
   scalar :email, description: "Email address" do
     parse(fn val ->
-      IO.inspect(val)
-
       case val do
         %Absinthe.Blueprint.Input.Null{} ->
           {:ok, nil}
@@ -516,9 +514,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :location, :string
     field :time_zone, :time_zone
     field :profile_pic_url, :string
-    field :last_login, :iso_date_time
     field :workspace_role, non_null(:workspace_member_role)
     field :billing_status, non_null(:user_billing_status)
+    field :last_went_offline, :iso_date_time
+    field :last_login, :iso_date_time
 
     field :is_online, non_null(:boolean) do
       resolve(fn
