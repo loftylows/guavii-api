@@ -494,13 +494,16 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
               registered_users_with_team: team.id
             )
 
-            for team_member <- team_members do
-              Absinthe.Subscription.publish(
-                ApiGatewayWeb.Endpoint,
-                value,
-                registered_users_with_team: team_member.user_id
-              )
-            end
+            notifications =
+              for team_member <- team_members do
+                {:registered_users_with_team, team_member.user_id}
+              end
+
+            Absinthe.Subscription.publish(
+              ApiGatewayWeb.Endpoint,
+              value,
+              notifications
+            )
         end
 
         resolution

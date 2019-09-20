@@ -62,8 +62,8 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
         %Absinthe.Blueprint.Input.Null{} ->
           {:ok, nil}
 
-        _ ->
-          case Ecto.UUID.cast(val.value) do
+        %{value: value} ->
+          case Ecto.UUID.cast(value) do
             {:ok, uuid} ->
               {:ok, uuid}
 
@@ -665,9 +665,11 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
 
     field :project, non_null(:project), resolve: dataloader(ApiGateway.Dataloader)
 
-    # TODO: Add resolver
     field :active_users, non_null_list(:user) do
-      resolve(fn _, _, _ -> {:ok, []} end)
+      resolve(fn
+        %ApiGateway.Models.Document{} = document, _, _ ->
+          {:ok, ApiGatewayWeb.Gql.Resolvers.Document.active_users(document)}
+      end)
     end
 
     field :inserted_at, non_null(:iso_date_time), name: "created_at"

@@ -90,6 +90,7 @@
                         'Elixir.ApiGatewayWeb.Gql.Schema.MutationInputTypes',
                         'Elixir.ApiGatewayWeb.Gql.Schema.MutationType',
                         'Elixir.ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes',
+                        'Elixir.ApiGatewayWeb.Gql.Schema.NonNodeSubscriptionPayloadTypes',
                         'Elixir.ApiGatewayWeb.Gql.Schema.QueryInputTypes',
                         'Elixir.ApiGatewayWeb.Gql.Schema.QueryType',
                         'Elixir.ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs',

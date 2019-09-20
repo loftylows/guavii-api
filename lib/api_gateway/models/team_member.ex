@@ -137,8 +137,6 @@ defmodule ApiGateway.Models.TeamMember do
   def get_team_member(id), do: Repo.get(TeamMember, id)
 
   def get_team_members(filters \\ %{}) do
-    IO.inspect(filters)
-
     TeamMember |> add_query_filters(filters) |> Repo.all()
   end
 
@@ -149,8 +147,6 @@ defmodule ApiGateway.Models.TeamMember do
   end
 
   def create_team_members(team_id, data_items) when is_list(data_items) and is_binary(team_id) do
-    IO.inspect(data_items)
-
     TeamMember
     |> Repo.insert_all(data_items)
 

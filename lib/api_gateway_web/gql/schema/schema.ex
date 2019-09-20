@@ -10,6 +10,7 @@ defmodule ApiGatewayWeb.Gql.Schema.Schema do
   import_types(ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes)
   import_types(ApiGatewayWeb.Gql.Schema.MutationType)
   import_types(ApiGatewayWeb.Gql.Schema.SubscriptionInputTypes)
+  import_types(ApiGatewayWeb.Gql.Schema.NonNodeSubscriptionPayloadTypes)
   import_types(ApiGatewayWeb.Gql.Schema.SubscriptionType)
 
   def context(ctx) do

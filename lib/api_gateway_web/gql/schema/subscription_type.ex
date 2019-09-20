@@ -616,6 +616,26 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       # Uses custom trigger(s) in socket handler
     end
 
+    field :user_presence_joined_document, :user_presence_joined_document_payload do
+      arg(:document_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.document_id}
+      end)
+
+      # Uses custom trigger(s) in socket handler
+    end
+
+    field :user_presence_left_document, :user_presence_left_document_payload do
+      arg(:document_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.document_id}
+      end)
+
+      # Uses custom trigger(s) in socket handler
+    end
+
     field :registered_users_with_team, :register_users_with_team_payload do
       arg(
         :where,

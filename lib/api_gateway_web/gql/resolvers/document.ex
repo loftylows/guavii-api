@@ -1,4 +1,7 @@
 defmodule ApiGatewayWeb.Gql.Resolvers.Document do
+  alias ApiGatewayWeb.Presence
+  alias ApiGateway.Models.Account.User
+
   def get_document(_, %{where: %{id: document_id}}, _) do
     {:ok, ApiGateway.Models.Document.get_document(document_id)}
   end
@@ -125,6 +128,20 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
 
       {:error, "Not found"} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Document not found")
+    end
+  end
+
+  @spec active_users(ApiGateway.Models.Document.t()) :: [ApiGateway.Models.Account.User.t()]
+  def active_users(%ApiGateway.Models.Document{} = document) do
+    Presence.list("document:#{document.id}")
+    |> case do
+      [] ->
+        []
+
+      presences ->
+        user_ids = Enum.map(presences, fn {user_id, _meta} -> user_id end)
+
+        User.get_users(%{id_in: user_ids})
     end
   end
 end

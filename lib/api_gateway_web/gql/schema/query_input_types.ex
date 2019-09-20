@@ -40,7 +40,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
   end
 
   input_object :user_where_unique_input do
-    field :id, non_null(:string)
+    field :id, non_null(:uuid)
   end
 
   input_object :user_where_input do
