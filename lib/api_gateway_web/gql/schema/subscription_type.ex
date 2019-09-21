@@ -45,15 +45,30 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
     end
 
     field :user_updated, :user do
-      arg(:user_id, non_null(:uuid))
+      arg(:where, non_null(:user_subscription_where_input))
 
       config(fn args, _ ->
-        {:ok, topic: args.user_id}
+        case args.where do
+          %{user_id: user_id} ->
+            {:ok, topic: user_id}
+
+          %{workspace_id: workspace_id} ->
+            {:ok, topic: workspace_id}
+
+          _ ->
+            {:error, "User input error."}
+        end
       end)
 
       trigger(:update_user,
         topic: fn user ->
           user.id
+        end
+      )
+
+      trigger(:update_user,
+        topic: fn user ->
+          user.workspace_id
         end
       )
     end
@@ -554,7 +569,7 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
-    field :document_content_updated, :document do
+    field :document_content_updated, :update_document_content_payload do
       arg(:document_id, non_null(:uuid))
 
       config(fn args, _ ->
@@ -562,8 +577,8 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       end)
 
       trigger(:update_document_content,
-        topic: fn document ->
-          document.id
+        topic: fn payload ->
+          payload.document.id
         end
       )
     end

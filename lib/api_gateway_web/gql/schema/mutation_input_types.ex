@@ -101,10 +101,11 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
 
   input_object :document_update_content_input do
     field :content, non_null(:string)
+    field :range, non_null(:string)
   end
 
   input_object :on_document_selection_change_input do
-    field :range, non_null(:string)
+    field :range, :string
   end
 
   input_object :project_todo_list_create_input do

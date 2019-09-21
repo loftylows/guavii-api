@@ -142,7 +142,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Update a document content using provided data"
-    field :update_document_content, non_null(:document) do
+    field :update_document_content, non_null(:update_document_content_payload) do
       arg(:data, non_null(:document_update_content_input))
       arg(:where, non_null(:document_where_unique_input))
 

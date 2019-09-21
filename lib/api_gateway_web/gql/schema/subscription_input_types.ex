@@ -1,6 +1,11 @@
 defmodule ApiGatewayWeb.Gql.Schema.SubscriptionInputTypes do
   use Absinthe.Schema.Notation
 
+  input_object :user_subscription_where_input do
+    field :user_id, :uuid
+    field :workspace_id, :uuid
+  end
+
   input_object :kanban_lane_subscription_where_input do
     field :kanban_lane_id, :uuid
     field :kanban_board_id, :uuid

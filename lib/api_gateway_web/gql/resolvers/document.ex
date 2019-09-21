@@ -84,12 +84,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Document do
 
   def update_document_content(
         _,
-        %{data: %{content: content}, where: %{id: id}},
+        %{data: %{content: content, range: range}, where: %{id: id}},
         %{context: %{current_user: user}}
       ) do
     case ApiGateway.Models.Document.update_document(%{id: id, data: %{content: content}}, user.id) do
       {:ok, document} ->
-        {:ok, document}
+        {:ok, %{user: user, document: document, range: range}}
 
       {:error, %{errors: errors}} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset(

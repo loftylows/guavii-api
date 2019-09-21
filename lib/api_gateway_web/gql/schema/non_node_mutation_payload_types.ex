@@ -99,7 +99,13 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
 
   object :on_document_selection_change_payload do
     field :id, non_null(:uuid)
-    field :range, non_null(:string)
+    field :range, :string
     field :user, non_null(:user)
+  end
+
+  object :update_document_content_payload do
+    field :user, non_null(:user)
+    field :range, non_null(:string)
+    field :document, non_null(:document)
   end
 end
