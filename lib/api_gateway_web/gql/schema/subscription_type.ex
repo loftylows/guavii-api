@@ -130,10 +130,10 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
     end
 
     field :team_member_updated, :team_member do
-      arg(:team_member_subscription_where_input, non_null(:team_member_subscription_where_input))
+      arg(:where, non_null(:team_member_subscription_where_input))
 
       config(fn args, _ ->
-        case args.kanban_lane_subscription_where_input do
+        case args.where do
           %{team_member_id: team_member_id} ->
             {:ok, topic: team_member_id}
 
