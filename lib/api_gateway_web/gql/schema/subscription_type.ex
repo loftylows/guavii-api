@@ -1,5 +1,6 @@
 defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
   use Absinthe.Schema.Notation
+  import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
 
   object :root_subscriptions do
     field :workspace_updated, :workspace do
@@ -607,6 +608,20 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       trigger(:delete_document,
         topic: fn document ->
           document.project_id
+        end
+      )
+    end
+
+    field :workspace_ownership_transferred, non_null_list(:user) do
+      arg(:workspace_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.workspace_id}
+      end)
+
+      trigger(:transfer_workspace_ownership,
+        topic: fn [user | _tail] ->
+          user.workspace_id
         end
       )
     end

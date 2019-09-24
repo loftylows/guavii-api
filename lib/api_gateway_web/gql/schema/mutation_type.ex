@@ -1,5 +1,7 @@
 defmodule ApiGatewayWeb.Gql.Schema.MutationType do
   use Absinthe.Schema.Notation
+  import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
+
   alias ApiGatewayWeb.Gql.Resolvers
 
   object :root_mutations do
@@ -38,6 +40,15 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
 
       middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.Workspace.update_workspace/3)
+    end
+
+    @desc "Update a workspace using provided data"
+    field :transfer_workspace_ownership, non_null_list(:user) do
+      arg(:data, non_null(:transfer_workspace_ownership_input))
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.IsWorkspaceOwner)
+      resolve(&Resolvers.User.transfer_workspace_ownership_role/3)
     end
 
     @desc "Delete a workspace"

@@ -30,60 +30,62 @@ defmodule ApiGatewayWeb.Gql.Resolvers.WorkspaceInvitation do
         %{data: %{invitation_info_items: invitation_info_items}},
         %{context: %{current_user: current_user}}
       ) do
-    spawn(fn ->
+    invitation_info_items
+    |> case do
       invitation_info_items
-      |> case do
-        invitation_info_items
-        when is_list(invitation_info_items) and length(invitation_info_items) > 15 ->
-          ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Invitation limit hit.")
+      when is_list(invitation_info_items) and length(invitation_info_items) > 15 ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Invitation limit hit.")
 
-        invitation_info_items ->
-          ApiGateway.Models.Workspace.get_workspace(current_user.workspace_id)
-          |> case do
-            nil ->
-              ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+      invitation_info_items ->
+        ApiGateway.Models.Workspace.get_workspace(current_user.workspace_id)
+        |> case do
+          nil ->
+            ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
 
-            workspace ->
-              emails =
-                for %{email: email} <- invitation_info_items do
-                  IO.puts("email:")
-                  IO.inspect(email)
-                  email
+          workspace ->
+            emails =
+              for %{email: email} <- invitation_info_items do
+                IO.puts("email:")
+                IO.inspect(email)
+                email
+              end
+
+            already_registered_users =
+              ApiGateway.Models.Account.User.get_users(%{
+                email_in: emails,
+                workspace_id: workspace.id
+              })
+
+            # Don't send invites to those who are already members
+            invitation_info_filtered =
+              Enum.filter(invitation_info_items, fn %{email: email} ->
+                not Enum.any?(already_registered_users, fn user -> user.email == email end)
+              end)
+
+            ApiGateway.Models.WorkspaceInvitation.create_or_update_workspace_invitations(
+              invitation_info_filtered,
+              current_user
+            )
+            |> case do
+              {:error, reason} ->
+                ApiGatewayWeb.Gql.Utils.Errors.user_input_error(reason)
+
+              {:ok, invitation_tokens_with_emails_and_names} ->
+                for %{email: email, name: name, invitation_token: invitation_token} <-
+                      invitation_tokens_with_emails_and_names do
+                  ApiGateway.Email.Transactional.send_workspace_invitation_email(%{
+                    invite_token: invitation_token,
+                    recipient: email,
+                    workspace_name: workspace.title,
+                    workspace_subdomain: workspace.workspace_subdomain,
+                    inviter_full_name: current_user.full_name,
+                    invitee_name: name
+                  })
                 end
 
-              already_registered_users =
-                ApiGateway.Models.Account.User.get_users(%{
-                  email_in: emails,
-                  workspace_id: workspace.id
-                })
-
-              # Don't send invites to those who are already members
-              invitation_info_filtered =
-                Enum.filter(invitation_info_items, fn %{email: email} ->
-                  not Enum.any?(already_registered_users, fn user -> user.email == email end)
-                end)
-
-              {:ok, invitation_tokens_with_emails_and_names} =
-                ApiGateway.Models.WorkspaceInvitation.create_or_update_workspace_invitations(
-                  invitation_info_filtered,
-                  current_user
-                )
-
-              for %{email: email, name: name, invitation_token: invitation_token} <-
-                    invitation_tokens_with_emails_and_names do
-                ApiGateway.Email.Transactional.send_workspace_invitation_email(%{
-                  invite_token: invitation_token,
-                  recipient: email,
-                  workspace_name: workspace.title,
-                  workspace_subdomain: workspace.workspace_subdomain,
-                  inviter_full_name: current_user.full_name,
-                  invitee_name: name
-                })
-              end
-          end
-      end
-    end)
-
-    {:ok, %{ok: true}}
+                {:ok, %{ok: true}}
+            end
+        end
+    end
   end
 end

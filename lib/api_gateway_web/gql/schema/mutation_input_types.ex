@@ -29,6 +29,11 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :description, :string
   end
 
+  input_object :transfer_workspace_ownership_input do
+    field :owner_id, non_null(:uuid)
+    field :member_id, non_null(:uuid)
+  end
+
   input_object :user_create_input do
     field :email, non_null(:string)
     field :full_name, non_null(:string)

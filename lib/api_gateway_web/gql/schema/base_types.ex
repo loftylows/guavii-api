@@ -442,6 +442,7 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :title, non_null(:string)
     field :workspace_subdomain, non_null(:string)
     field :description, :string
+    field :member_cap, non_null(:integer)
     field :storage_cap, non_null(:integer)
 
     # TODO: write a resolver to check amazon s3 for this method and calculate total space

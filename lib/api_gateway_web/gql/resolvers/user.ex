@@ -77,6 +77,21 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
     false
   end
 
+  def transfer_workspace_ownership_role(
+        _,
+        %{data: %{owner_id: owner_id, member_id: member_id}},
+        _
+      ) do
+    ApiGateway.Models.Account.User.transfer_workspace_ownership_role(owner_id, member_id)
+    |> case do
+      {:error, reason} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error(reason)
+
+      {:ok, {user_1, user_2}} ->
+        {:ok, [user_1, user_2]}
+    end
+  end
+
   def check_user_email_unused_in_workspace(
         _,
         %{data: %{email: email, workspace_id: workspace_id}},

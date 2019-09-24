@@ -63,6 +63,7 @@
                         'Elixir.ApiGatewayWeb.Gettext',
                         'Elixir.ApiGatewayWeb.Gql.AbsintheBeforeSend',
                         'Elixir.ApiGatewayWeb.Gql.CommonMiddleware.Authenticated',
+                        'Elixir.ApiGatewayWeb.Gql.CommonMiddleware.IsWorkspaceOwner',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.AccountInvitation',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.Document',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.FindMyWorkspaces',

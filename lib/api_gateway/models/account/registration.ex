@@ -39,10 +39,23 @@ defmodule ApiGateway.Models.Account.Registration do
                 workspace_role =
                   Map.get(invite, :workspace_role, Workspace.get_default_workspace_role())
 
+                active_members = Workspace.get_current_active_workspace_member_count(workspace.id)
+
+                active_member_cap_exceeded = active_members + 1 >= workspace.member_cap
+
+                billing_status =
+                  if active_member_cap_exceeded do
+                    # TODO: send notifications (email) top user and owner/admin about this case
+                    User.get_deactivated_billing_status()
+                  else
+                    User.get_default_user_billing_status()
+                  end
+
                 user_info
                 |> Map.put(:email, email)
                 |> Map.put(:workspace_role, workspace_role)
                 |> Map.put(:workspace_id, workspace.id)
+                |> Map.put(:billing_status, billing_status)
                 |> User.create_user()
                 |> case do
                   {:error, %{errors: _}} = error ->

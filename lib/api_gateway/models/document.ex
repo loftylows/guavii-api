@@ -105,7 +105,8 @@ defmodule ApiGateway.Models.Document do
     end
   end
 
-  def update_document(%{id: id, data: data}, user_id) when is_binary(user_id) do
+  def update_document(%{id: id, data: %{content: _content} = data}, user_id)
+      when is_binary(user_id) do
     case get_document(id) do
       nil ->
         {:error, "Not found"}
@@ -118,6 +119,29 @@ defmodule ApiGateway.Models.Document do
         document
         |> changeset(data)
         |> put_assoc(:last_update, last_update)
+        |> Repo.update()
+        |> case do
+          {:error, _} = error ->
+            error
+
+          {:ok, document} ->
+            document =
+              document
+              |> Repo.preload(:last_update)
+
+            {:ok, document}
+        end
+    end
+  end
+
+  def update_document(%{id: id, data: data}, user_id) when is_binary(user_id) do
+    case get_document(id) do
+      nil ->
+        {:error, "Not found"}
+
+      document ->
+        document
+        |> changeset(data)
         |> Repo.update()
         |> case do
           {:error, _} = error ->

@@ -5,6 +5,7 @@ defmodule ApiGateway.Models.Account.User do
   import Ecto.Changeset
 
   alias ApiGateway.Repo
+  alias Ecto.Multi
   alias ApiGateway.Ecto.CommonFilterHelpers
   alias ApiGateway.Models.Workspace
   alias __MODULE__
@@ -86,6 +87,24 @@ defmodule ApiGateway.Models.Account.User do
 
   def get_user_billing_status_options_map do
     @user_billing_status_map
+  end
+
+  def get_default_user_billing_status do
+    statuses = get_user_billing_status_options_map()
+
+    statuses.active
+  end
+
+  def get_active_billing_status do
+    options = get_user_billing_status_options_map()
+
+    options.active
+  end
+
+  def get_deactivated_billing_status do
+    options = get_user_billing_status_options_map()
+
+    options.deactivated
   end
 
   def changeset_create(%User{} = user, attrs \\ %{}) do
@@ -185,10 +204,8 @@ defmodule ApiGateway.Models.Account.User do
 
   def maybe_workspace_id_assoc_filter(query, workspace_id) do
     query
-    |> Ecto.Query.join(:inner, [user], workspace in Workspace,
-      on: user.workspace_id == ^workspace_id
-    )
-    |> Ecto.Query.select([user, workspace], user)
+    |> Ecto.Query.where([user], user.workspace_id == ^workspace_id)
+    |> Ecto.Query.select([workspace], workspace)
   end
 
   def add_query_filters(query, nil) do
@@ -211,12 +228,29 @@ defmodule ApiGateway.Models.Account.User do
     |> maybe_workspace_id_assoc_filter(filters[:workspace_id])
   end
 
+  def maybe_preload_workspace(query, nil) do
+    query
+  end
+
+  def maybe_preload_workspace(query, false) do
+    query
+  end
+
+  def maybe_preload_workspace(query, true) do
+    query |> Ecto.Query.preload(:workspace)
+  end
+
+  def maybe_preload_workspace(query, _) do
+    query
+  end
+
   ####################
   # CRUD #
   ####################
   @doc "workspace_id must be a valid 'uuid' or an error will raise"
-  def get_user(user_id) do
+  def get_user(user_id, opts \\ []) do
     User
+    |> maybe_preload_workspace(Keyword.get(opts, :preload_workspace, false))
     |> Repo.get(user_id)
   end
 
@@ -251,6 +285,80 @@ defmodule ApiGateway.Models.Account.User do
     |> Repo.insert()
   end
 
+  def update_user(%{id: id, data: %{workspace_role: workspace_role} = data}) do
+    # Only let workspace role be set by next leg of this function
+    data = Map.delete(data, :billing_status)
+
+    roles = Workspace.get_workspace_roles_map()
+    owner_role = roles.owner
+
+    workspace_role
+    |> case do
+      ^owner_role ->
+        {:error, "Forbidden"}
+
+      _ ->
+        case get_user(id) do
+          nil ->
+            {:error, "Not found"}
+
+          user ->
+            (user.workspace_role ==
+               owner_role)
+            |> case do
+              true ->
+                {:error, "Forbidden"}
+
+              false ->
+                user
+                |> changeset_update(data)
+                |> Repo.update()
+            end
+        end
+    end
+  end
+
+  def update_user(%{id: id, data: %{billing_status: billing_status} = data}) do
+    data = Map.delete(data, :workspace_role)
+
+    case get_user(id, preload_workspace: true) do
+      nil ->
+        {:error, "Not found"}
+
+      user ->
+        options = get_user_billing_status_options_map()
+        deactivated_status = options.deactivated
+
+        (billing_status == get_active_billing_status() and
+           user.billing_status ==
+             deactivated_status)
+        |> case do
+          false ->
+            user
+            |> changeset_update(data)
+            |> Repo.update()
+
+          true ->
+            active_member_count =
+              Workspace.get_current_active_workspace_member_count(user.workspace_id)
+
+            active_member_count + 1 >=
+              user.workspace.member_cap
+              |> case do
+                true ->
+                  {:error,
+                   "Workspace active member count reached. Increase workspace member cap to continue"}
+
+                false ->
+                  user
+                  |> changeset_update(data)
+                  |> Repo.update()
+              end
+        end
+    end
+  end
+
+  # TODO: Make a check that "workspace_role" isn't set in this function
   def update_user(%{id: id, data: data}) do
     case get_user(id) do
       nil ->
@@ -261,6 +369,48 @@ defmodule ApiGateway.Models.Account.User do
         |> changeset_update(data)
         |> Repo.update()
     end
+  end
+
+  @spec transfer_workspace_ownership_role(String.t(), String.t()) ::
+          {:ok, {User.t(), User.t()}} | {:error, String.t()}
+  def transfer_workspace_ownership_role(user_id_1, user_id_2) do
+    user_1 = User.get_user(user_id_1)
+    user_2 = User.get_user(user_id_2)
+    yup = Workspace.get_workspace_roles_map()
+
+    owner_role = yup.owner
+
+    case {user_1, user_2} do
+      {%User{workspace_role: ^owner_role}, %User{workspace_role: ^owner_role}} ->
+        {:error, "User input error"}
+
+      {%User{} = user_1, %User{} = user_2} ->
+        if user_1.workspace_role != owner_role and user_2.workspace_role != owner_role do
+          {:error, "User input error"}
+        else
+          switch_workspace_roles_multi(user_1, user_2)
+          |> Repo.transaction()
+          |> case do
+            {:ok, %{user_1: user_1, user_2: user_2}} ->
+              {:ok, {user_1, user_2}}
+
+            {:error, _, _, _} ->
+              {:error, "User input error"}
+          end
+        end
+
+      _ ->
+        {:error, "User input error"}
+    end
+  end
+
+  defp switch_workspace_roles_multi(
+         %User{workspace_role: workspaces_role_1} = user_1,
+         %User{workspace_role: workspaces_role_2} = user_2
+       ) do
+    Multi.new()
+    |> Multi.update(:user_1, User.changeset_update(user_1, %{workspace_role: workspaces_role_2}))
+    |> Multi.update(:user_2, User.changeset_update(user_2, %{workspace_role: workspaces_role_1}))
   end
 
   @doc "id must be a valid 'uuid' or an error will raise"

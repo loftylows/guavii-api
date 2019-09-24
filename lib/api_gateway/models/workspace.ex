@@ -8,12 +8,14 @@ defmodule ApiGateway.Models.Workspace do
   alias ApiGateway.Ecto.CommonFilterHelpers
   alias ApiGateway.Models.InternalSubdomain
   alias ApiGateway.Models.ArchivedWorkspaceSubdomain
+  alias ApiGateway.Models.Account.User
   alias __MODULE__
 
   schema "workspaces" do
     field :title, :string
     field :workspace_subdomain, :string
     field :description, :string
+    field :member_cap, :integer, read_after_writes: true
     field :storage_cap, :integer, read_after_writes: true
 
     has_many :members, ApiGateway.Models.Account.User
@@ -34,6 +36,8 @@ defmodule ApiGateway.Models.Workspace do
     :title,
     :workspace_subdomain
   ]
+
+  @max_member_count 5_000
 
   def get_workspace_roles do
     [
@@ -60,6 +64,9 @@ defmodule ApiGateway.Models.Workspace do
 
   def get_default_workspace_role, do: get_workspace_roles_map().member
 
+  @spec get_workspace_max_member_count :: 5000
+  def get_workspace_max_member_count, do: @max_member_count
+
   ####################
   # Changeset funcs #
   ####################
@@ -68,6 +75,8 @@ defmodule ApiGateway.Models.Workspace do
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields_create)
     |> validate_format(:workspace_subdomain, Utils.Regex.get_subdomain_regex())
+    |> validate_number(:storage_cap, greater_than: 0)
+    |> validate_number(:member_cap, greater_than: 0)
     |> unique_constraint(:workspace_subdomain)
   end
 
@@ -76,6 +85,8 @@ defmodule ApiGateway.Models.Workspace do
     |> cast(attrs, @permitted_fields)
     |> validate_required(@required_fields_create)
     |> validate_format(:workspace_subdomain, Utils.Regex.get_subdomain_regex())
+    |> validate_number(:storage_cap, greater_than: 0)
+    |> validate_number(:member_cap, greater_than: 0)
     |> unique_constraint(:workspace_subdomain)
   end
 
@@ -258,5 +269,24 @@ defmodule ApiGateway.Models.Workspace do
     archived = ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
 
     if internal || archived, do: true, else: false
+  end
+
+  @spec get_current_workspace_member_count(String.t()) :: integer()
+  def get_current_workspace_member_count(workspace_id) do
+    User
+    |> Ecto.Query.where([user], user.workspace_id == ^workspace_id)
+    |> Ecto.Query.select([user], count(user.id))
+    |> Repo.one!()
+  end
+
+  @spec get_current_active_workspace_member_count(String.t()) :: integer()
+  def get_current_active_workspace_member_count(workspace_id) do
+    active_status = User.get_active_billing_status()
+
+    User
+    |> Ecto.Query.where([user], user.workspace_id == ^workspace_id)
+    |> Ecto.Query.where([user], user.billing_status == ^active_status)
+    |> Ecto.Query.select([user], count(user.id))
+    |> Repo.one!()
   end
 end

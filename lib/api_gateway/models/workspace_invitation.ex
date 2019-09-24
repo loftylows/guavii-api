@@ -143,28 +143,46 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
 
   def create_or_update_workspace_invitation(%{email: email} = data, %User{} = user)
       when is_binary(email) do
-    {:ok, {invitation_token, invitation_token_hashed}} = create_invite_token()
+    member_count = Workspace.get_current_workspace_member_count(user.workspace_id)
 
-    case get_workspace_invitation_by_email(email) do
+    Workspace.get_workspace(user.workspace_id)
+    |> case do
       nil ->
-        %WorkspaceInvitation{}
-        |> Map.put(:invitation_token_hashed, invitation_token_hashed)
-        |> Map.put(:invited_by_id, user.id)
-        |> changeset_create(data)
+        {:error, "User input error"}
 
-      workspace_invitation ->
-        data = %{
-          accepted: false,
-          invitation_token_hashed: invitation_token_hashed,
-          invited_by_id: user.id
-        }
+      _workspace ->
+        member_cap = Workspace.get_workspace_max_member_count()
 
-        workspace_invitation
-        |> changeset_update(data)
+        (member_count > member_cap)
+        |> case do
+          true ->
+            {:error, "Workspace member cap will be exceeded. Cap is #{member_cap} members"}
+
+          false ->
+            {:ok, {invitation_token, invitation_token_hashed}} = create_invite_token()
+
+            case get_workspace_invitation_by_email(email) do
+              nil ->
+                %WorkspaceInvitation{}
+                |> Map.put(:invitation_token_hashed, invitation_token_hashed)
+                |> Map.put(:invited_by_id, user.id)
+                |> changeset_create(data)
+
+              workspace_invitation ->
+                data = %{
+                  accepted: false,
+                  invitation_token_hashed: invitation_token_hashed,
+                  invited_by_id: user.id
+                }
+
+                workspace_invitation
+                |> changeset_update(data)
+            end
+            |> Repo.insert_or_update()
+
+            {:ok, invitation_token}
+        end
     end
-    |> Repo.insert_or_update()
-
-    {:ok, invitation_token}
   end
 
   def create_or_update_workspace_invitations(
@@ -172,46 +190,63 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
         %User{} = user
       )
       when is_list(invitation_info_items) do
-    invitation_tokens_with_emails_and_names =
-      for %{email: email, name: name} = invite_info <- invitation_info_items do
-        {:ok, {invitation_token, invitation_token_hashed}} = create_invite_token()
+    Workspace.get_workspace(user.workspace_id)
+    |> case do
+      nil ->
+        {:error, "User input error"}
 
-        workspace_role =
-          Map.get(invite_info, :workspace_role, Workspace.get_default_workspace_role())
+      _workspace ->
+        member_count = Workspace.get_current_workspace_member_count(user.workspace_id)
 
-        case get_workspace_invitation_by_email(email) do
-          nil ->
-            %WorkspaceInvitation{
-              email: email,
-              invitation_token_hashed: invitation_token_hashed,
-              invited_by_id: user.id,
-              workspace_role: workspace_role,
-              workspace_id: user.workspace_id
-            }
-            |> changeset_create()
+        member_cap = Workspace.get_workspace_max_member_count()
 
-          workspace_invitation ->
-            data = %{
-              accepted: false,
-              workspace_role: workspace_role,
-              invitation_token_hashed: invitation_token_hashed,
-              invited_by_id: user.id
-            }
+        case member_count >= member_cap do
+          true ->
+            {:error, "Workspace member cap will be exceeded. Cap is #{member_cap} members"}
 
-            workspace_invitation
-            |> changeset_update(data)
+          false ->
+            invitation_tokens_with_emails_and_names =
+              for %{email: email, name: name} = invite_info <- invitation_info_items do
+                {:ok, {invitation_token, invitation_token_hashed}} = create_invite_token()
+
+                workspace_role =
+                  Map.get(invite_info, :workspace_role, Workspace.get_default_workspace_role())
+
+                case get_workspace_invitation_by_email(email) do
+                  nil ->
+                    %WorkspaceInvitation{
+                      email: email,
+                      invitation_token_hashed: invitation_token_hashed,
+                      invited_by_id: user.id,
+                      workspace_role: workspace_role,
+                      workspace_id: user.workspace_id
+                    }
+                    |> changeset_create()
+
+                  workspace_invitation ->
+                    data = %{
+                      accepted: false,
+                      workspace_role: workspace_role,
+                      invitation_token_hashed: invitation_token_hashed,
+                      invited_by_id: user.id
+                    }
+
+                    workspace_invitation
+                    |> changeset_update(data)
+                end
+                |> Repo.insert_or_update()
+
+                %{
+                  email: email,
+                  name: name,
+                  workspace_role: workspace_role,
+                  invitation_token: invitation_token
+                }
+              end
+
+            {:ok, invitation_tokens_with_emails_and_names}
         end
-        |> Repo.insert_or_update()
-
-        %{
-          email: email,
-          name: name,
-          workspace_role: workspace_role,
-          invitation_token: invitation_token
-        }
-      end
-
-    {:ok, invitation_tokens_with_emails_and_names}
+    end
   end
 
   def update_workspace_invitation(%{id: id, data: data}) do
