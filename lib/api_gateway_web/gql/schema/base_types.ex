@@ -445,6 +445,10 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     field :member_cap, non_null(:integer)
     field :storage_cap, non_null(:integer)
 
+    field :current_active_member_count, non_null(:integer) do
+      resolve(&ApiGatewayWeb.Gql.Resolvers.Workspace.current_active_member_count/3)
+    end
+
     # TODO: write a resolver to check amazon s3 for this method and calculate total space
     field :current_storage_amount, non_null(:integer) do
       resolve(fn _, _, _ -> {:ok, 0} end)

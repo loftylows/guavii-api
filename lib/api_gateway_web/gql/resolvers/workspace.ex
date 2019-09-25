@@ -102,6 +102,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Workspace do
     end
   end
 
+  def current_active_member_count(%ApiGateway.Models.Workspace{} = workspace, _, _) do
+    count = ApiGateway.Models.Workspace.get_current_active_workspace_member_count(workspace.id)
+
+    {:ok, count}
+  end
+
   ####################
   # Other resolvers #
   ####################

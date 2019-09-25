@@ -342,18 +342,18 @@ defmodule ApiGateway.Models.Account.User do
             active_member_count =
               Workspace.get_current_active_workspace_member_count(user.workspace_id)
 
-            active_member_count + 1 >=
-              user.workspace.member_cap
-              |> case do
-                true ->
-                  {:error,
-                   "Workspace active member count reached. Increase workspace member cap to continue"}
+            (active_member_count + 1 >=
+               user.workspace.member_cap)
+            |> case do
+              true ->
+                {:error,
+                 "Workspace active member count reached. Increase workspace member cap to continue"}
 
-                false ->
-                  user
-                  |> changeset_update(data)
-                  |> Repo.update()
-              end
+              false ->
+                user
+                |> changeset_update(data)
+                |> Repo.update()
+            end
         end
     end
   end
@@ -430,12 +430,15 @@ defmodule ApiGateway.Models.Account.User do
         {:error, "Cannot find workspace"}
 
       workspace ->
+        active_status = get_active_billing_status()
+        deactivated_status = get_deactivated_billing_status()
+
         User
         |> Ecto.Query.where([u], u.email == ^email)
         |> Ecto.Query.where([u], u.workspace_id == ^workspace.id)
         |> Repo.one()
         |> case do
-          %User{password_hash: password_hash} = user ->
+          %User{password_hash: password_hash, billing_status: ^active_status} = user ->
             password
             |> Argon2.verify_pass(password_hash)
             |> case do
@@ -450,7 +453,13 @@ defmodule ApiGateway.Models.Account.User do
                 end
             end
 
+          %User{billing_status: ^deactivated_status} ->
+            {:error, :deactivated}
+
           nil ->
+            {:error, :unauthorized}
+
+          _ ->
             {:error, :unauthorized}
         end
     end

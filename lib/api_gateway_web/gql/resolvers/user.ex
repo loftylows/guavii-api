@@ -173,12 +173,6 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
     end
   end
 
-  # Session Set: session is set after this
-  def login_user_with_email_and_password(_, _, %{context: %{current_user: user}})
-      when is_map(user) do
-    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error("You are already logged into this workspace")
-  end
-
   # make sure that the user is logging into a workspace because 'current_subdomain' should be set
   def login_user_with_email_and_password(_, _, %{context: %{current_subdomain: nil}}) do
     ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
@@ -199,6 +193,11 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
       {:error, "Cannot find workspace"} ->
         # TODO: maybe change the error message to the default forbidden message
         ApiGatewayWeb.Gql.Utils.Errors.forbidden_error("Workspace unavailable")
+
+      {:error, :deactivated} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error(
+          "Your workspace account has been deactivated by your workspace admin/owner."
+        )
 
       {:error, _} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Incorrect email/password combination.")
