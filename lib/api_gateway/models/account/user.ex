@@ -371,14 +371,14 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
-  @spec transfer_workspace_ownership_role(String.t(), String.t()) ::
-          {:ok, {User.t(), User.t()}} | {:error, String.t()}
-  def transfer_workspace_ownership_role(user_id_1, user_id_2) do
+  @spec transfer_workspace_ownership_role(String.t(), String.t(), String.t()) ::
+          {:ok, {User.t(), User.t()}} | {:error, String.t()} | {:error, :incorrect_password}
+  def transfer_workspace_ownership_role(user_id_1, user_id_2, password) do
     user_1 = User.get_user(user_id_1)
     user_2 = User.get_user(user_id_2)
-    yup = Workspace.get_workspace_roles_map()
+    roles = Workspace.get_workspace_roles_map()
 
-    owner_role = yup.owner
+    owner_role = roles.owner
 
     case {user_1, user_2} do
       {%User{workspace_role: ^owner_role}, %User{workspace_role: ^owner_role}} ->
@@ -388,14 +388,35 @@ defmodule ApiGateway.Models.Account.User do
         if user_1.workspace_role != owner_role and user_2.workspace_role != owner_role do
           {:error, "User input error"}
         else
-          switch_workspace_roles_multi(user_1, user_2)
-          |> Repo.transaction()
+          Enum.find([user_1, user_2], fn user -> user.workspace_role == roles.owner end)
           |> case do
-            {:ok, %{user_1: user_1, user_2: user_2}} ->
-              {:ok, {user_1, user_2}}
-
-            {:error, _, _, _} ->
+            nil ->
               {:error, "User input error"}
+
+            owner ->
+              authenticate_by_email_password_and_workspace_id(
+                owner.email,
+                password,
+                owner.workspace_id
+              )
+              |> case do
+                {:error, _} ->
+                  {:error, :incorrect_password}
+
+                _ ->
+                  non_owner =
+                    Enum.find([user_1, user_2], fn user -> user.workspace_role != roles.owner end)
+
+                  switch_workspace_roles_multi(owner, non_owner)
+                  |> Repo.transaction()
+                  |> case do
+                    {:ok, %{user_1: user_1, user_2: user_2}} ->
+                      {:ok, {user_1, user_2}}
+
+                    {:error, _, _, _} ->
+                      {:error, "User input error"}
+                  end
+              end
           end
         end
 
@@ -405,12 +426,14 @@ defmodule ApiGateway.Models.Account.User do
   end
 
   defp switch_workspace_roles_multi(
-         %User{workspace_role: workspaces_role_1} = user_1,
-         %User{workspace_role: workspaces_role_2} = user_2
+         %User{workspace_role: workspaces_role_1} = owner,
+         %User{workspace_role: workspaces_role_2} = user
        ) do
+    roles_map = Workspace.get_workspace_roles_map()
+
     Multi.new()
-    |> Multi.update(:user_1, User.changeset_update(user_1, %{workspace_role: workspaces_role_2}))
-    |> Multi.update(:user_2, User.changeset_update(user_2, %{workspace_role: workspaces_role_1}))
+    |> Multi.update(:user_1, User.changeset_update(owner, %{workspace_role: roles_map.admin}))
+    |> Multi.update(:user_2, User.changeset_update(user, %{workspace_role: workspaces_role_1}))
   end
 
   @doc "id must be a valid 'uuid' or an error will raise"
@@ -426,6 +449,47 @@ defmodule ApiGateway.Models.Account.User do
 
   def authenticate_by_email_password(email, password, subdomain, opts \\ []) do
     case Workspace.get_workspace_by_subdomain(subdomain) do
+      nil ->
+        {:error, "Cannot find workspace"}
+
+      workspace ->
+        active_status = get_active_billing_status()
+        deactivated_status = get_deactivated_billing_status()
+
+        User
+        |> Ecto.Query.where([u], u.email == ^email)
+        |> Ecto.Query.where([u], u.workspace_id == ^workspace.id)
+        |> Repo.one()
+        |> case do
+          %User{password_hash: password_hash, billing_status: ^active_status} = user ->
+            password
+            |> Argon2.verify_pass(password_hash)
+            |> case do
+              false ->
+                {:error, :unauthorized}
+
+              true ->
+                if Keyword.get(opts, :set_login_time, false) do
+                  update_user(%{id: user.id, data: %{last_login: DateTime.utc_now()}})
+                else
+                  {:ok, user}
+                end
+            end
+
+          %User{billing_status: ^deactivated_status} ->
+            {:error, :deactivated}
+
+          nil ->
+            {:error, :unauthorized}
+
+          _ ->
+            {:error, :unauthorized}
+        end
+    end
+  end
+
+  def authenticate_by_email_password_and_workspace_id(email, password, workspace_id, opts \\ []) do
+    case Workspace.get_workspace(workspace_id) do
       nil ->
         {:error, "Cannot find workspace"}
 

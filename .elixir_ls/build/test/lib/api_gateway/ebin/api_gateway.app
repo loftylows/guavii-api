@@ -23,6 +23,7 @@
                         'Elixir.ApiGateway.Models.Account.User.TimeZone',
                         'Elixir.ApiGateway.Models.AccountInvitation',
                         'Elixir.ApiGateway.Models.ArchivedWorkspaceSubdomain',
+                        'Elixir.ApiGateway.Models.Chat',
                         'Elixir.ApiGateway.Models.Document',
                         'Elixir.ApiGateway.Models.DocumentLastUpdate',
                         'Elixir.ApiGateway.Models.FindMyWorkspacesInvitation',

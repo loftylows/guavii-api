@@ -79,11 +79,18 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
 
   def transfer_workspace_ownership_role(
         _,
-        %{data: %{owner_id: owner_id, member_id: member_id}},
+        %{data: %{owner_id: owner_id, member_id: member_id, password: password}},
         _
       ) do
-    ApiGateway.Models.Account.User.transfer_workspace_ownership_role(owner_id, member_id)
+    ApiGateway.Models.Account.User.transfer_workspace_ownership_role(
+      owner_id,
+      member_id,
+      password
+    )
     |> case do
+      {:error, :incorrect_password} ->
+        ApiGatewayWeb.Gql.Utils.Errors.forbidden_error("Incorrect password")
+
       {:error, reason} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error(reason)
 
