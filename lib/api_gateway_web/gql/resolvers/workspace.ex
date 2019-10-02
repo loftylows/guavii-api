@@ -41,6 +41,36 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Workspace do
     end
   end
 
+  def update_workspace(_, %{data: %{workspace_subdomain: subdomain} = data, where: %{id: id}}, _) do
+    case ApiGateway.Models.Workspace.update_workspace(%{id: id, data: data}) do
+      {:ok, workspace} ->
+        # Send out subscription if workspace subdomain changed
+        if subdomain == workspace.workspace_subdomain do
+          Absinthe.Subscription.publish(
+            ApiGatewayWeb.Endpoint,
+            workspace,
+            workspace_subdomain_updated: workspace.id
+          )
+        end
+
+        {:ok, workspace}
+
+      {:error, %{errors: errors}} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset("User input error", errors)
+
+      {:error, "Not found"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Workspace not found")
+
+      {:error, "Subdomain taken"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error(
+          "Workspace subdomain is taken or temporarily archived."
+        )
+
+      {:error, _} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User input error")
+    end
+  end
+
   def update_workspace(_, %{data: data, where: %{id: id}}, _) do
     case ApiGateway.Models.Workspace.update_workspace(%{id: id, data: data}) do
       {:ok, workspace} ->
@@ -114,7 +144,7 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Workspace do
   def check_workspace_subdomain_available(_, %{data: %{subdomain: subdomain}}, _) do
     is_available? =
       subdomain
-      |> ApiGateway.Models.Workspace.get_workspace_by_subdomain()
+      |> ApiGateway.Models.Workspace.get_workspace_by_subdomain(include_archived_matches: true)
       |> is_nil()
 
     # TODO: check weather subdomain is in protected subdomain list

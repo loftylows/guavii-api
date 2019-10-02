@@ -17,6 +17,16 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
+    field :workspace_subdomain_updated, :workspace do
+      arg(:workspace_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.workspace_id}
+      end)
+
+      # Uses custom trigger(s) in mutation
+    end
+
     field :workspace_deleted, :workspace do
       arg(:workspace_id, non_null(:uuid))
 

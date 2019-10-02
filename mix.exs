@@ -50,7 +50,8 @@ defmodule ApiGateway.MixProject do
       {:dataloader, "~> 1.0.0"},
       {:bamboo, "~> 1.2"},
       {:bamboo_postmark, "~> 0.6"},
-      {:redbird, "~> 0.4.0"}
+      {:redbird, "~> 0.4.0"},
+      {:quantum, "~> 2.3"}
     ]
   end
 

@@ -6,6 +6,7 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
+  alias __MODULE__
 
   schema "archived_workspace_subdomains" do
     field :subdomain, :string
@@ -24,8 +25,13 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
     :workspace_id
   ]
 
+  # 15 days in seconds
+  @archived_domain_lifespan_in_seconds 1.296e+6 |> Kernel.trunc()
+
+  def get_archived_domain_lifespan_in_seconds, do: @archived_domain_lifespan_in_seconds
+
   def changeset_create(
-        %ApiGateway.Models.ArchivedWorkspaceSubdomain{} = archived_workspace_subdomain,
+        %ArchivedWorkspaceSubdomain{} = archived_workspace_subdomain,
         attrs \\ %{}
       ) do
     archived_workspace_subdomain
@@ -36,7 +42,7 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
   end
 
   def changeset_update(
-        %ApiGateway.Models.ArchivedWorkspaceSubdomain{} = archived_workspace_subdomain,
+        %ArchivedWorkspaceSubdomain{} = archived_workspace_subdomain,
         attrs \\ %{}
       ) do
     archived_workspace_subdomain
@@ -79,21 +85,21 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
   ####################
   @doc "archived_workspace_subdomain_id must be a valid 'uuid' or an error will raise"
   def get_archived_workspace_subdomain(archived_workspace_subdomain_id) do
-    Repo.get(ApiGateway.Models.ArchivedWorkspaceSubdomain, archived_workspace_subdomain_id)
+    Repo.get(ArchivedWorkspaceSubdomain, archived_workspace_subdomain_id)
   end
 
   def get_archived_workspace_subdomain_by_subdomain(subdomain) do
-    Repo.get_by(ApiGateway.Models.ArchivedWorkspaceSubdomain, subdomain: subdomain)
+    Repo.get_by(ArchivedWorkspaceSubdomain, subdomain: subdomain)
   end
 
   def get_archived_workspace_subdomains(filters \\ %{}) do
     IO.inspect(filters)
 
-    ApiGateway.Models.ArchivedWorkspaceSubdomain |> add_query_filters(filters) |> Repo.all()
+    ArchivedWorkspaceSubdomain |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_archived_workspace_subdomain(data) when is_map(data) do
-    %ApiGateway.Models.ArchivedWorkspaceSubdomain{}
+    %ArchivedWorkspaceSubdomain{}
     |> changeset_create(data)
     |> Repo.insert()
   end
@@ -119,5 +125,21 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
       archived_workspace_subdomain ->
         Repo.delete(archived_workspace_subdomain)
     end
+  end
+
+  @doc """
+  Deletes out of date archived domain items in the db according to
+  the set archived domain lifespan
+  """
+  def delete_out_of_date_archived_domains do
+    date_now = DateTime.truncate(DateTime.utc_now(), :second)
+
+    date_15_days_earlier =
+      (DateTime.to_unix(date_now) - get_archived_domain_lifespan_in_seconds())
+      |> DateTime.from_unix()
+
+    ArchivedWorkspaceSubdomain
+    |> Ecto.Query.where([x], x.inserted_at < ^date_15_days_earlier)
+    |> Repo.delete_all()
   end
 end

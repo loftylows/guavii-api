@@ -124,7 +124,7 @@ defmodule ApiGateway.Models.Workspace do
   @doc "workspace_id must be a valid 'uuid' or an error will raise"
   def get_workspace(workspace_id), do: Repo.get(Workspace, workspace_id)
 
-  @type get_workspace_by_subdomain_opts :: [key: boolean]
+  @type get_workspace_by_subdomain_opts :: [include_archived_matches: boolean]
   @spec get_workspace_by_subdomain(String.t(), get_workspace_by_subdomain_opts) ::
           Workspace.t() | nil
   def get_workspace_by_subdomain(subdomain, opts \\ []) do
