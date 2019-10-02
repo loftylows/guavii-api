@@ -4,6 +4,12 @@ defmodule ApiGateway.Models.Account.Registration do
   alias ApiGateway.Models.Workspace
   alias ApiGateway.Models.Account.User
 
+  @type user_info :: %{full_name: String.t(), password: String.t()}
+  @type workspace_info :: %{title: String.t(), subdomain: String.t()}
+
+  @spec register_user_from_workspace_invitation(String.t(), String.t(), user_info, String.t()) ::
+          {:error, String.t() | %{errors: any}}
+          | {:ok, %{user: User.t(), workspace: Workspace.t()}}
   def register_user_from_workspace_invitation(
         token,
         base_64_url_encoded_email,
@@ -45,7 +51,7 @@ defmodule ApiGateway.Models.Account.Registration do
 
                 billing_status =
                   if active_member_cap_exceeded do
-                    # TODO: send notifications (email) top user and owner/admin about this case
+                    # TODO: send notifications (email) to user and owner/admin about this case
                     User.get_deactivated_billing_status()
                   else
                     User.get_default_user_billing_status()
@@ -81,6 +87,9 @@ defmodule ApiGateway.Models.Account.Registration do
     end
   end
 
+  @spec register_user_and_workspace(String.t(), String.t(), user_info, workspace_info) ::
+          {:error, String.t() | %{errors: any}}
+          | {:ok, %{user: User.t(), workspace: Workspace.t()}}
   def register_user_and_workspace(token, base_64_url_encoded_email, user_info, workspace_info) do
     base_64_url_encoded_email
     |> Base.url_decode64(padding: false)

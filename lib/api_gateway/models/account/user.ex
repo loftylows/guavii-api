@@ -81,26 +81,31 @@ defmodule ApiGateway.Models.Account.User do
     deactivated: "DEACTIVATED"
   }
 
+  @spec get_user_billing_status_options :: [String.t()]
   def get_user_billing_status_options do
     @user_billing_status
   end
 
+  @spec get_user_billing_status_options_map :: %{active: String.t(), deactivated: String.t()}
   def get_user_billing_status_options_map do
     @user_billing_status_map
   end
 
+  @spec get_default_user_billing_status :: String.t()
   def get_default_user_billing_status do
     statuses = get_user_billing_status_options_map()
 
     statuses.active
   end
 
+  @spec get_active_billing_status :: String.t()
   def get_active_billing_status do
     options = get_user_billing_status_options_map()
 
     options.active
   end
 
+  @spec get_deactivated_billing_status :: String.t()
   def get_deactivated_billing_status do
     options = get_user_billing_status_options_map()
 
@@ -144,6 +149,7 @@ defmodule ApiGateway.Models.Account.User do
   ####################
   # Query helpers #
   ####################
+  @spec maybe_email_in_filter(Ecto.Query.t(), [String.t()]) :: Ecto.Query.t()
   def maybe_email_in_filter(query, list \\ [])
 
   def maybe_email_in_filter(query, list) when is_list(list) and length(list) > 0 do
@@ -154,6 +160,7 @@ defmodule ApiGateway.Models.Account.User do
     query
   end
 
+  @spec maybe_full_name_contains_filter(Ecto.Query.t(), String.t()) :: Ecto.Query.t()
   def maybe_full_name_contains_filter(query, field \\ "")
 
   def maybe_full_name_contains_filter(query, field) when is_binary(field) do
@@ -165,6 +172,7 @@ defmodule ApiGateway.Models.Account.User do
     query
   end
 
+  @spec maybe_billing_status_filter(Ecto.Query.t(), String.t()) :: Ecto.Query.t()
   def maybe_billing_status_filter(query, nil) do
     query
   end
@@ -173,6 +181,7 @@ defmodule ApiGateway.Models.Account.User do
     query |> Ecto.Query.where([user], user.billing_status == ^billing_status)
   end
 
+  @spec maybe_last_login_filter(Ecto.Query.t(), any) :: Ecto.Query.t()
   def maybe_last_login_filter(query, date) when is_nil(date) do
     query
   end
@@ -254,12 +263,14 @@ defmodule ApiGateway.Models.Account.User do
     |> Repo.get(user_id)
   end
 
+  @spec get_user_by_email_and_workspace_id(String.t(), String.t()) :: User.t()
   def get_user_by_email_and_workspace_id(email, workspace_id) do
     User
     |> Ecto.Query.where([user], email: ^email, workspace_id: ^workspace_id)
     |> Repo.one!()
   end
 
+  @spec get_user_by_email_and_subdomain(String.t(), String.t()) :: User.t()
   def get_user_by_email_and_subdomain(email, subdomain) do
     case Workspace.get_workspace_by_subdomain(subdomain) do
       nil ->
@@ -358,7 +369,6 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
-  # TODO: Make a check that "workspace_role" isn't set in this function
   def update_user(%{id: id, data: data}) do
     case get_user(id) do
       nil ->
@@ -425,9 +435,10 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
+  @spec switch_workspace_roles_multi(User.t(), User.t()) :: Ecto.Multi.t()
   defp switch_workspace_roles_multi(
          %User{workspace_role: workspaces_role_1} = owner,
-         %User{workspace_role: workspaces_role_2} = user
+         %User{workspace_role: _workspaces_role_2} = user
        ) do
     roles_map = Workspace.get_workspace_roles_map()
 
@@ -447,6 +458,13 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
+  @spec authenticate_by_email_password(
+          String.t(),
+          String.t(),
+          String.t(),
+          set_login_time: true | false
+        ) ::
+          {:ok, User.t()} | {:error, :unauthorized | :deactivated | String.t()}
   def authenticate_by_email_password(email, password, subdomain, opts \\ []) do
     case Workspace.get_workspace_by_subdomain(subdomain) do
       nil ->
@@ -488,6 +506,13 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
+  @spec authenticate_by_email_password_and_workspace_id(
+          String.t(),
+          String.t(),
+          String.t(),
+          set_login_time: true | false
+        ) ::
+          {:ok, User.t()} | {:error, :unauthorized | :deactivated | String.t()}
   def authenticate_by_email_password_and_workspace_id(email, password, workspace_id, opts \\ []) do
     case Workspace.get_workspace(workspace_id) do
       nil ->
@@ -529,10 +554,12 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
+  @spec set_last_login_now(String.t()) :: {:ok, User.t()} | {:error, any}
   def set_last_login_now(id) do
     update_user(%{id: id, data: %{last_login: DateTime.utc_now()}})
   end
 
+  @spec set_last_went_offline_now(String.t()) :: {:ok, User.t()} | {:error, any}
   def set_last_went_offline_now(id) do
     update_user(%{id: id, data: %{last_went_offline: DateTime.utc_now()}})
   end
@@ -540,6 +567,7 @@ defmodule ApiGateway.Models.Account.User do
   ####################
   # Utils #
   ####################
+  @spec maybe_put_pass_hash(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp maybe_put_pass_hash(
          %Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset
        ) do
