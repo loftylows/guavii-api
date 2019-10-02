@@ -142,12 +142,8 @@ defmodule ApiGatewayWeb.Gql.Resolvers.Workspace do
   # Other resolvers #
   ####################
   def check_workspace_subdomain_available(_, %{data: %{subdomain: subdomain}}, _) do
-    is_available? =
-      subdomain
-      |> ApiGateway.Models.Workspace.get_workspace_by_subdomain(include_archived_matches: true)
-      |> is_nil()
+    is_available? = not ApiGateway.Models.Workspace.check_subdomain_taken(subdomain)
 
-    # TODO: check weather subdomain is in protected subdomain list
     {:ok, is_available?}
   end
 end

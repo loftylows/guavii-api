@@ -263,7 +263,7 @@ defmodule ApiGateway.Models.Workspace do
     end
   end
 
-  defp check_subdomain_taken(subdomain) do
+  def check_subdomain_taken(subdomain) do
     internal = InternalSubdomain.get_internal_subdomain_by_subdomain(subdomain)
 
     archived = ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
