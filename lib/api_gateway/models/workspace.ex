@@ -268,7 +268,29 @@ defmodule ApiGateway.Models.Workspace do
 
     archived = ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
 
-    if internal || archived, do: true, else: false
+    workspace = get_workspace_by_subdomain(subdomain, include_archived_matches: true)
+
+    if internal || archived || workspace, do: true, else: false
+  end
+
+  def check_subdomain_available(subdomain) do
+    internal = InternalSubdomain.get_internal_subdomain_by_subdomain(subdomain)
+
+    archived = ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
+
+    workspace = get_workspace_by_subdomain(subdomain)
+
+    case {internal, archived, workspace} do
+      {nil, nil, nil} ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  def check_workspace_exists_by_subdomain(subdomain) do
+    if get_workspace_by_subdomain(subdomain), do: true, else: false
   end
 
   @spec get_current_workspace_member_count(String.t()) :: integer()

@@ -60,8 +60,10 @@ defmodule ApiGatewayWeb.Gql.Resolvers.ForgotPasswordInvitation do
       {:error, :user, _} ->
         ApiGatewayWeb.Gql.Utils.Errors.internal_error()
 
-      {:ok, _user} = result ->
-        result
+      {:ok, user} ->
+        token = ApiGatewayWeb.Session.create_token(user.id)
+
+        {:ok, %{user: user, token: token}}
     end
   end
 end

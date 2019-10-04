@@ -211,7 +211,7 @@ defmodule ApiGateway.Models.ForgotPasswordInvitation do
 
       {:ok, _} ->
         %{id: user_id, data: %{password: password}}
-        |> User.update_user()
+        |> User.update_user_password_from_token()
         |> case do
           {:error, reason_or_changeset_error} ->
             {:error, :user, reason_or_changeset_error}

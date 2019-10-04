@@ -140,6 +140,13 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.Workspace.check_workspace_subdomain_available/3)
     end
 
+    @desc "Check workspace subdomain available"
+    field :check_workspace_exists_by_subdomain, non_null(:boolean) do
+      arg(:data, non_null(:check_workspace_exists_by_subdomain_input))
+
+      resolve(&Resolvers.Workspace.check_workspace_exists_by_subdomain/3)
+    end
+
     @desc """
     Check whether a provided app invitation token is valid.
     May be invalid if already used, past the expiration date or not genuine.

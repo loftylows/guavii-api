@@ -84,6 +84,22 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
       )
     end
 
+    field :user_password_updated, :user do
+      arg(:user_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.user_id}
+      end)
+
+      trigger(:update_user_password,
+        topic: fn user ->
+          user.id
+        end
+      )
+
+      # Uses another custom trigger in 'reset_password_from_forgot_password_invite' middleware
+    end
+
     field :user_deleted, :user do
       arg(:user_id, non_null(:uuid))
 

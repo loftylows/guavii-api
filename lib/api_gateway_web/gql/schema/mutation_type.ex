@@ -47,7 +47,6 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       arg(:data, non_null(:transfer_workspace_ownership_input))
 
       middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      middleware(ApiGatewayWeb.Gql.CommonMiddleware.IsWorkspaceOwner)
       resolve(&Resolvers.User.transfer_workspace_ownership_role/3)
     end
 
@@ -68,12 +67,13 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
       resolve(&Resolvers.User.update_user/3)
     end
 
-    @desc "Delete a user"
-    field :delete_user, non_null(:user) do
+    @desc "Update a user using provided data"
+    field :update_user_password, non_null(:user) do
+      arg(:data, non_null(:user_update_password_input))
       arg(:where, non_null(:user_where_unique_input))
 
       middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      resolve(&Resolvers.User.delete_user/3)
+      resolve(&Resolvers.User.update_user_password/3)
     end
 
     @desc "Create a team using provided data"
@@ -479,6 +479,7 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     field :send_workspace_invitations, non_null(:workspace_invitations_send_payload) do
       arg(:data, non_null(:workspace_invitations_send_input))
 
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.WorkspaceInvitation.send_workspace_invitations/3)
     end
 
@@ -627,10 +628,27 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
     end
 
     @desc "Reset account password from reset password email invite"
-    field :reset_password_from_forgot_password_invite, non_null(:user) do
+    field :reset_password_from_forgot_password_invite,
+          non_null(:reset_password_from_forgot_password_payload) do
       arg(:data, non_null(:reset_password_from_forgot_password_invite_input))
 
       resolve(&Resolvers.ForgotPasswordInvitation.reset_password_from_forgot_password_invite/3)
+
+      middleware(fn resolution, _ ->
+        with %{value: %{user: user}} <- resolution do
+          ApiGateway.Models.Account.User.set_last_login_now(user.id)
+
+          Absinthe.Subscription.publish(
+            ApiGatewayWeb.Endpoint,
+            user,
+            user_password_updated: user.id
+          )
+
+          Map.update!(resolution, :context, fn ctx ->
+            Map.put(ctx, :login_info, %{user_id: user.id})
+          end)
+        end
+      end)
     end
 
     @desc "Send an email to help a user find their workspaces"

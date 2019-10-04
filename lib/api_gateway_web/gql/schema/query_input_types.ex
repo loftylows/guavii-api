@@ -14,6 +14,10 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :subdomain, non_null(:string)
   end
 
+  input_object :check_workspace_exists_by_subdomain_input do
+    field :subdomain, non_null(:string)
+  end
+
   input_object :check_user_invite_token_valid_input do
     field :token, non_null(:string)
     field :email, non_null(:email)

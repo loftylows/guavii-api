@@ -166,7 +166,7 @@ defmodule ApiGateway.Email.Transactional do
 
     query_params = %{
       token: token,
-      user_id: user_id
+      userId: user_id
     }
 
     action_url =

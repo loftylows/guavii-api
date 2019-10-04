@@ -46,6 +46,27 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
     end
   end
 
+  def update_user_password(_, %{data: data, where: %{id: id}}, %{
+        context: %{current_user: current_user}
+      }) do
+    case User.update_user_password(%{id: id, data: data}, current_user) do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, %{errors: errors}} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset("User input error", errors)
+
+      {:error, "Not found"} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User not found")
+
+      {:error, :forbidden} ->
+        ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+
+      {:error, _} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User input error")
+    end
+  end
+
   def delete_user(_, %{where: %{id: id}}, _) do
     case User.delete_user(id) do
       {:ok, user} ->

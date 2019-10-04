@@ -296,6 +296,45 @@ defmodule ApiGateway.Models.Account.User do
     |> Repo.insert()
   end
 
+  def update_user_password(
+        %{id: id, data: %{old_password: old_password, new_password: new_password}},
+        %User{} = current_user
+      ) do
+    (current_user.id == id)
+    |> case do
+      false ->
+        {:error, :forbidden}
+
+      true ->
+        authenticate_by_email_password(
+          current_user.email,
+          old_password,
+          current_user.workspace_id
+        )
+        |> case do
+          {:error, _} ->
+            {:error, :forbidden}
+
+          {:ok, user} ->
+            user
+            |> changeset_update(%{password: new_password})
+            |> Repo.update()
+        end
+    end
+  end
+
+  def update_user_password_from_token(%{id: id, data: %{password: password}}) do
+    case get_user(id) do
+      nil ->
+        {:error, "Not found"}
+
+      user ->
+        user
+        |> changeset_update(%{password: password})
+        |> Repo.update()
+    end
+  end
+
   def update_user(%{id: id, data: %{workspace_role: workspace_role} = data}) do
     # Only let workspace role be set by next leg of this function
     data = Map.delete(data, :billing_status)

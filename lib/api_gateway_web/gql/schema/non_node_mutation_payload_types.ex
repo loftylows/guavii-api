@@ -108,4 +108,9 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
     field :range, non_null(:string)
     field :document, non_null(:document)
   end
+
+  object :reset_password_from_forgot_password_payload do
+    field :user, non_null(:user)
+    field :token, non_null(:string)
+  end
 end

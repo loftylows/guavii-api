@@ -63,6 +63,11 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
     field :billing_status, :user_billing_status
   end
 
+  input_object :user_update_password_input do
+    field :old_password, non_null(:string)
+    field :new_password, non_null(:string)
+  end
+
   input_object :team_create_input do
     field :title, non_null(:string)
     field :description, :string
