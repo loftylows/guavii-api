@@ -56,7 +56,7 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
       {:error, %{errors: errors}} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error_from_changeset("User input error", errors)
 
-      {:error, "Not found"} ->
+      {:error, :user_not_found} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User not found")
 
       {:error, :password_error} ->

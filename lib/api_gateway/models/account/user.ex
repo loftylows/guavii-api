@@ -315,18 +315,18 @@ defmodule ApiGateway.Models.Account.User do
 
   def update_user_password(
         %{id: id, data: %{old_password: old_password, new_password: new_password}},
-        %User{} = current_user
+        %User{} = _current_user
       ) do
-    (current_user.id == id)
+    get_user(id)
     |> case do
-      false ->
-        {:error, :forbidden}
+      nil ->
+        {:error, :user_not_found}
 
-      true ->
+      user ->
         authenticate_by_email_password_and_workspace_id(
-          current_user.email,
+          user.email,
           old_password,
-          current_user.workspace_id
+          user.workspace_id
         )
         |> case do
           {:error, _} ->
