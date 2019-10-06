@@ -16,7 +16,7 @@ config :api_gateway, ApiGateway.Repo,
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
 config :api_gateway, ApiGatewayWeb.Endpoint,
-  http: [port: 4000],
+  http: [port: System.get_env("PORT")],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,

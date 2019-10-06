@@ -41,7 +41,7 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
   ]
 
   def changeset_create(
-        %ApiGateway.Models.WorkspaceInvitation{} = workspace_invitation,
+        %WorkspaceInvitation{} = workspace_invitation,
         attrs \\ %{}
       ) do
     workspace_invitation
@@ -55,7 +55,7 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
   end
 
   def changeset_update(
-        %ApiGateway.Models.WorkspaceInvitation{} = workspace_invitation,
+        %WorkspaceInvitation{} = workspace_invitation,
         attrs \\ %{}
       ) do
     workspace_invitation
@@ -118,25 +118,25 @@ defmodule ApiGateway.Models.WorkspaceInvitation do
   ####################
   @doc "workspace_invitation_id must be a valid 'uuid' or an error will raise"
   def get_workspace_invitation(workspace_invitation_id) do
-    Repo.get(ApiGateway.Models.WorkspaceInvitation, workspace_invitation_id)
+    Repo.get(WorkspaceInvitation, workspace_invitation_id)
   end
 
   def get_workspace_invitation_by_email(email) do
-    Repo.get_by(ApiGateway.Models.WorkspaceInvitation, email: email)
+    Repo.get_by(WorkspaceInvitation, email: email)
   end
 
   def get_workspace_invitation_by_invitation_token_hashed(invitation_token_hashed) do
-    Repo.get_by(ApiGateway.Models.WorkspaceInvitation,
+    Repo.get_by(WorkspaceInvitation,
       invitation_token_hashed: invitation_token_hashed
     )
   end
 
   def get_workspace_invitations(filters \\ %{}) do
-    ApiGateway.Models.WorkspaceInvitation |> add_query_filters(filters) |> Repo.all()
+    WorkspaceInvitation |> add_query_filters(filters) |> Repo.all()
   end
 
   def create_workspace_invitation(data, %User{id: current_user_id}) when is_map(data) do
-    %ApiGateway.Models.WorkspaceInvitation{}
+    %WorkspaceInvitation{}
     |> changeset_create(Map.put(data, :invited_by_id, current_user_id))
     |> Repo.insert()
   end

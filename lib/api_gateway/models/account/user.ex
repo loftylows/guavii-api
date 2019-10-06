@@ -49,10 +49,14 @@ defmodule ApiGateway.Models.Account.User do
     :workspace_role,
     :billing_status,
     :workspace_id,
-    :password,
     :last_went_offline,
     :last_login
   ]
+
+  @update_password_permitted_fields [
+    :password
+  ]
+
   @required_fields_create [
     :full_name,
     :workspace_role,
@@ -129,6 +133,19 @@ defmodule ApiGateway.Models.Account.User do
   def changeset_update(%User{} = user, attrs \\ %{}) do
     user
     |> cast(attrs, @permitted_fields)
+    |> cast_embed(:time_zone, with: &time_zone_changeset/2)
+    |> validate_required(@required_fields_update)
+    |> validate_format(:email, Utils.Regex.get_email_regex())
+    |> validate_inclusion(:workspace_role, Workspace.get_workspace_roles())
+    |> validate_inclusion(:billing_status, get_user_billing_status_options())
+    |> maybe_put_pass_hash()
+    |> foreign_key_constraint(:workspace_id)
+    |> unique_constraint(:email, name: :unique_workspace_email_index)
+  end
+
+  def changeset_update_password(%User{} = user, attrs \\ %{}) do
+    user
+    |> cast(attrs, @update_password_permitted_fields)
     |> cast_embed(:time_zone, with: &time_zone_changeset/2)
     |> validate_required(@required_fields_update)
     |> validate_format(:email, Utils.Regex.get_email_regex())
@@ -306,18 +323,18 @@ defmodule ApiGateway.Models.Account.User do
         {:error, :forbidden}
 
       true ->
-        authenticate_by_email_password(
+        authenticate_by_email_password_and_workspace_id(
           current_user.email,
           old_password,
           current_user.workspace_id
         )
         |> case do
           {:error, _} ->
-            {:error, :forbidden}
+            {:error, :password_error}
 
           {:ok, user} ->
             user
-            |> changeset_update(%{password: new_password})
+            |> changeset_update_password(%{password: new_password})
             |> Repo.update()
         end
     end
@@ -330,13 +347,13 @@ defmodule ApiGateway.Models.Account.User do
 
       user ->
         user
-        |> changeset_update(%{password: password})
+        |> changeset_update_password(%{password: password})
         |> Repo.update()
     end
   end
 
   def update_user(%{id: id, data: %{workspace_role: workspace_role} = data}) do
-    # Only let workspace role be set by next leg of this function
+    # Only let billing status be set by next leg of this function
     data = Map.delete(data, :billing_status)
 
     roles = Workspace.get_workspace_roles_map()

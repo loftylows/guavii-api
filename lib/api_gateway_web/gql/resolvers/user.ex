@@ -59,6 +59,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
       {:error, "Not found"} ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("User not found")
 
+      {:error, :password_error} ->
+        ApiGatewayWeb.Gql.Utils.Errors.forbidden_error("Incorrect password")
+
       {:error, :forbidden} ->
         ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
 
@@ -126,7 +129,7 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
         _
       ) do
     is_unused? =
-      %{email_in: email, workspace_id: workspace_id}
+      %{email_in: [email], workspace_id: workspace_id}
       |> ApiGateway.Models.Account.User.get_users()
       |> Enum.empty?()
 

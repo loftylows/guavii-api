@@ -10,8 +10,17 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :api_gateway, ApiGatewayWeb.Endpoint,
-  url: [host: "example.com", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  url: [host: System.get_env("HOST"), port: 443],
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  force_ssl: [hsts: true],
+  https: [
+    :inet6,
+    port: 443,
+    cipher_suite: :strong,
+    # TODO: add these file paths in env variables
+    keyfile: System.get_env("SOME_APP_SSL_KEY_PATH"),
+    certfile: System.get_env("SOME_APP_SSL_CERT_PATH")
+  ]
 
 # Do not print debug messages in production and purge them from code at compile time
 config :logger, level: :info, compile_time_purge_level: info

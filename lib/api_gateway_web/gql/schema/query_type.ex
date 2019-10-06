@@ -147,17 +147,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.Workspace.check_workspace_exists_by_subdomain/3)
     end
 
-    @desc """
-    Check whether a provided app invitation token is valid.
-    May be invalid if already used, past the expiration date or not genuine.
-    """
-    field :check_user_invite_token_valid, non_null(:boolean) do
-      arg(:data, non_null(:check_user_invite_token_valid_input))
-
-      # TODO: implement resolver
-      # resolve(&Resolvers.KanbanCard.get_kanban_card/3)
-    end
-
     @desc "Find current logged in user"
     field :current_user, :user do
       resolve(fn _, _, %{context: %{current_user: user}} -> {:ok, user} end)

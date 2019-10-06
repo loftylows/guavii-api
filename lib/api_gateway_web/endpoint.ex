@@ -33,6 +33,7 @@ defmodule ApiGatewayWeb.Endpoint do
   plug Plug.Session,
     store: :redis,
     key: "_api_gateway_key",
+    # TODO: CHange this and read it from env variables
     signing_salt: "cSLtGnQqy",
     http_only: true,
     # 7 days

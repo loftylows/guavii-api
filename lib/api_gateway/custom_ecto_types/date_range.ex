@@ -49,4 +49,20 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
   end
 
   def dump(_), do: :error
+
+  def equal?(date_range_1, date_range_2) do
+    {DateTime.compare(date_range_1.start, date_range_2.start),
+     DateTime.compare(date_range_1.end, date_range_2.end)}
+    |> case do
+      {:eq, :eq} ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  def embed_as(_format) do
+    :dump
+  end
 end
