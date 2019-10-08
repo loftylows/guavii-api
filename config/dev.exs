@@ -75,5 +75,11 @@ config :api_gateway, ApiGateway.Mailer,
   adapter: Bamboo.PostmarkAdapter,
   api_key: System.get_env("TRANSACTIONAL_EMAIL_API_TOKEN")
 
+# Exredis is used by the 'redbird' library
 config :exredis,
   url: System.get_env("REDIS_URL")
+
+config :redix_pool,
+  redis_url: System.get_env("REDIS_URL"),
+  pool_size: 10,
+  pool_max_overflow: 10

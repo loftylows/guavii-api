@@ -51,7 +51,8 @@ defmodule ApiGateway.MixProject do
       {:bamboo, "~> 1.2"},
       {:bamboo_postmark, "~> 0.6"},
       {:redbird, "~> 0.4.0"},
-      {:quantum, "~> 2.3"}
+      {:quantum, "~> 2.3"},
+      {:redix_pool, "~> 0.1.0"}
     ]
   end
 

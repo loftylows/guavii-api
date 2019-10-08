@@ -6,12 +6,14 @@ defmodule ApiGateway.Models.Chat do
 
   alias ApiGateway.Repo
   alias ApiGateway.Ecto.CommonFilterHelpers
-  alias ApiGateway.Models.Account.User
+  # alias ApiGateway.Models.Account.User
   alias __MODULE__
 
   schema "chats" do
-    has_many :messages, ApiGateway.Models.Message
-    has_many :users, ApiGateway.Models.Account.User
+    # TODO: uncomment these fields
+
+    # has_many :messages, ApiGateway.Models.Message
+    # has_many :users, ApiGateway.Models.Account.User
 
     belongs_to :workspace, ApiGateway.Models.Workspace
 

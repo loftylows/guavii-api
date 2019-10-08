@@ -113,4 +113,8 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
     field :user, non_null(:user)
     field :token, non_null(:string)
   end
+
+  object :create_new_media_chat_payload do
+    field :chat_id, non_null(:uuid)
+  end
 end

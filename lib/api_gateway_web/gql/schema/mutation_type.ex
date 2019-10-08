@@ -657,5 +657,12 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
 
       resolve(&Resolvers.FindMyWorkspaces.send_find_my_workspaces_invitation/3)
     end
+
+    @desc "Create new media chat room with provided data"
+    field :create_new_media_chat, non_null(:create_new_media_chat_payload) do
+      arg(:data, non_null(:create_new_media_chat_input))
+
+      resolve(&Resolvers.MediaChat.create_new_media_chat/3)
+    end
   end
 end

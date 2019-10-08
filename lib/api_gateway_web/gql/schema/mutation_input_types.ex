@@ -353,4 +353,8 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
   input_object :send_find_my_workspaces_email_input do
     field :email, non_null(:string)
   end
+
+  input_object :create_new_media_chat_input do
+    field :invitees, non_null_list(:uuid)
+  end
 end
