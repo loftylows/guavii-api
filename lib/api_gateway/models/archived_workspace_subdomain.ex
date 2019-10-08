@@ -134,7 +134,7 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
   def delete_out_of_date_archived_domains do
     date_now = DateTime.truncate(DateTime.utc_now(), :second)
 
-    date_15_days_earlier =
+    {:ok, date_15_days_earlier} =
       (DateTime.to_unix(date_now) - get_archived_domain_lifespan_in_seconds())
       |> DateTime.from_unix()
 
