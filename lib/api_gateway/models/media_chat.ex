@@ -7,7 +7,7 @@ defmodule ApiGateway.Models.MediaChat do
   def create_new_media_chat(%{invitees: invitees}, current_user) do
     chat_id = Ecto.UUID.generate()
 
-    (["SADD", chat_id] ++ [current_user.id | invitees])
+    (["SADD", "media_chat:#{chat_id}"] ++ [current_user.id | invitees])
     |> Redis.command!()
 
     ["EXPIRE", chat_id, "60"]
