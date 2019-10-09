@@ -1,4 +1,6 @@
 defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
+  alias ApiGateway.CustomStructs.DateRange
+
   @behaviour Ecto.Type
   def type, do: :map
 
@@ -11,7 +13,7 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
       when is_binary(startDate) and is_binary(endDate) do
     case {DateTime.from_iso8601(startDate), DateTime.from_iso8601(endDate)} do
       {{:ok, date_time_start, _}, {:ok, date_time_end, _}} ->
-        {:ok, %ApiGateway.CustomStructs.DateRange{start: date_time_start, end: date_time_end}}
+        {:ok, %DateRange{start: date_time_start, end: date_time_end}}
 
       _ ->
         {:error, "Start and end dates must be iso8601 strings"}
@@ -19,7 +21,7 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
   end
 
   def cast(%{start: %DateTime{}, end: %DateTime{}} = date_range) do
-    {:ok, struct!(ApiGateway.CustomStructs.DateRange, date_range)}
+    {:ok, struct!(DateRange, date_range)}
   end
 
   # Everything else is a failure though
@@ -34,7 +36,7 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
   def load(%{"start" => startDate, "end" => endDate}) do
     case {DateTime.from_iso8601(startDate), DateTime.from_iso8601(endDate)} do
       {{:ok, date_time_start, _}, {:ok, date_time_end, _}} ->
-        {:ok, %ApiGateway.CustomStructs.DateRange{start: date_time_start, end: date_time_end}}
+        {:ok, %DateRange{start: date_time_start, end: date_time_end}}
 
       _ ->
         {:error, "Start and end dates must be iso8601 strings"}
@@ -44,15 +46,17 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
   # When dumping data to the database, we *expect* an DateRange struct
   # but any value could be inserted into the schema struct at runtime,
   # so we need to guard against them.
-  def dump(%ApiGateway.CustomStructs.DateRange{} = date_range) do
+  def dump(%DateRange{} = date_range) do
     {:ok, Map.from_struct(date_range)}
   end
 
   def dump(_), do: :error
 
-  def equal?(date_range_1, date_range_2) do
-    {DateTime.compare(date_range_1.start, date_range_2.start),
-     DateTime.compare(date_range_1.end, date_range_2.end)}
+  def equal?(%DateRange{start: start_1, end: end_date_1}, %DateRange{
+        start: start_2,
+        end: end_date_2
+      }) do
+    {DateTime.compare(start_1, start_2), DateTime.compare(end_date_1, end_date_2)}
     |> case do
       {:eq, :eq} ->
         true
@@ -60,6 +64,18 @@ defmodule ApiGateway.CustomEctoTypes.EctoDateRange do
       _ ->
         false
     end
+  end
+
+  def equal?(nil, %DateRange{}) do
+    false
+  end
+
+  def equal?(%DateRange{}, nil) do
+    false
+  end
+
+  def equal?(nil, nil) do
+    true
   end
 
   def embed_as(_format) do

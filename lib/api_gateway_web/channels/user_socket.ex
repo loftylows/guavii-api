@@ -7,6 +7,9 @@ defmodule ApiGatewayWeb.Channels.UserSocket do
   channel "workspace:*", ApiGatewayWeb.Channels.Workspace
   channel "document:*", ApiGatewayWeb.Channels.ActiveDocumentUsers
 
+  channel "#{ApiGatewayWeb.Channels.MediaChat.get_channel_topic_prefix()}*",
+          ApiGatewayWeb.Channels.MediaChat
+
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
   # verification, you can put default assigns into
@@ -57,5 +60,6 @@ defmodule ApiGatewayWeb.Channels.UserSocket do
   #     ApiGatewayWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
-  def id(_socket), do: nil
+  # TODO: use this to disconnect all sockets for a given user when the user should be forced to reconnect
+  def id(socket), do: "user_socket:#{socket.assigns.user.id}"
 end

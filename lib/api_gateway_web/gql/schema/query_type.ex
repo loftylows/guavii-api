@@ -158,5 +158,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
 
       resolve(&Resolvers.FindMyWorkspaces.find_my_workspaces/3)
     end
+
+    @desc "Check whether a user can enter a chat based on provided data"
+    field :check_user_can_enter_media_chat, non_null(:boolean) do
+      arg(:data, non_null(:check_user_can_enter_media_chat_input))
+
+      resolve(&Resolvers.MediaChat.check_user_can_enter_media_chat/3)
+    end
   end
 end

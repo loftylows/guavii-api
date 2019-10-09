@@ -515,9 +515,9 @@ defmodule ApiGateway.Models.Account.User do
   end
 
   @spec authenticate_by_email_password(
-          String.t(),
-          String.t(),
-          String.t(),
+          email :: String.t(),
+          password :: String.t(),
+          subdomain :: String.t(),
           set_login_time: true | false
         ) ::
           {:ok, User.t()} | {:error, :unauthorized | :deactivated | String.t()}
@@ -563,9 +563,9 @@ defmodule ApiGateway.Models.Account.User do
   end
 
   @spec authenticate_by_email_password_and_workspace_id(
-          String.t(),
-          String.t(),
-          String.t(),
+          email :: String.t(),
+          password :: String.t(),
+          workspace_id :: String.t(),
           set_login_time: true | false
         ) ::
           {:ok, User.t()} | {:error, :unauthorized | :deactivated | String.t()}
@@ -610,7 +610,7 @@ defmodule ApiGateway.Models.Account.User do
     end
   end
 
-  @spec set_last_login_now(String.t()) :: {:ok, User.t()} | {:error, any}
+  @spec set_last_login_now(user_id :: Ecto.UUID.t()) :: {:ok, User.t()} | {:error, any}
   def set_last_login_now(id) do
     update_user(%{id: id, data: %{last_login: DateTime.utc_now()}})
   end

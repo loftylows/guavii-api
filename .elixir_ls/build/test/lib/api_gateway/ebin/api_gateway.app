@@ -58,6 +58,7 @@
                         'Elixir.ApiGatewayWeb',
                         'Elixir.ApiGatewayWeb.ChannelCase',
                         'Elixir.ApiGatewayWeb.Channels.ActiveDocumentUsers',
+                        'Elixir.ApiGatewayWeb.Channels.MediaChat',
                         'Elixir.ApiGatewayWeb.Channels.UserSocket',
                         'Elixir.ApiGatewayWeb.Channels.Workspace',
                         'Elixir.ApiGatewayWeb.ConnCase',
