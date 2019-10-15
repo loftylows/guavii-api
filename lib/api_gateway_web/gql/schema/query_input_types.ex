@@ -337,4 +337,8 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
   input_object :check_user_can_enter_media_chat_input do
     field :chat_id, non_null(:uuid)
   end
+
+  input_object :get_media_chat_info_input do
+    field :chat_id, non_null(:uuid)
+  end
 end

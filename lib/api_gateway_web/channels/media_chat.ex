@@ -5,6 +5,7 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
 
   alias ApiGatewayWeb.Presence
   alias ApiGateway.Models.MediaChat
+  alias ApiGateway.Models.Account.User
 
   @channel_topic_prefix "media_chat:"
   @forbidden_error_code "FORBIDDEN"
@@ -17,8 +18,8 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
     user_id = socket.assigns.user.id
 
     can_join? =
-      MediaChat.user_in_chat_invitees?(user_id, chat_id) and
-        is_nil(socket.assigns.media_chat_id)
+      MediaChat.user_is_chat_member?(chat_id, user_id) and
+        is_nil(Map.get(socket.assigns, :media_chat_id))
 
     can_join?
     |> case do
@@ -30,6 +31,16 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
           Presence.track(socket, user_id, %{
             online_at: inspect(System.system_time(:second))
           })
+
+        spawn(fn ->
+          current_user = User.get_user(user_id)
+
+          Absinthe.Subscription.publish(
+            ApiGatewayWeb.Endpoint,
+            current_user,
+            user_joined_media_chat: chat_id
+          )
+        end)
 
         MediaChat.persist_chat(chat_id)
 
@@ -128,7 +139,8 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
 
     Presence.list(@channel_topic_prefix <> socket.assigns.media_chat_id)
     |> case do
-      [] ->
+      # if the presence list is now empty then delete the chat key from redis
+      presence_map when presence_map == %{} ->
         MediaChat.delete_chat(socket.assigns.media_chat_id)
 
       _ ->

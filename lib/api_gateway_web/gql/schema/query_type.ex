@@ -140,7 +140,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.Workspace.check_workspace_subdomain_available/3)
     end
 
-    @desc "Check workspace subdomain available"
+    @desc "Check workspace exists"
     field :check_workspace_exists_by_subdomain, non_null(:boolean) do
       arg(:data, non_null(:check_workspace_exists_by_subdomain_input))
 
@@ -164,6 +164,13 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       arg(:data, non_null(:check_user_can_enter_media_chat_input))
 
       resolve(&Resolvers.MediaChat.check_user_can_enter_media_chat/3)
+    end
+
+    @desc "Get requested media chat's information"
+    field :get_media_chat_info, non_null(:get_media_chat_info_payload) do
+      arg(:data, non_null(:get_media_chat_info_input))
+
+      resolve(&Resolvers.MediaChat.get_media_chat_info/3)
     end
   end
 end

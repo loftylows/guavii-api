@@ -234,6 +234,19 @@ defmodule ApiGateway.Models.Account.User do
     |> Ecto.Query.select([workspace], workspace)
   end
 
+  def maybe_select_only_id(query, nil) do
+    query
+  end
+
+  def maybe_select_only_id(query, false) do
+    query
+  end
+
+  def maybe_select_only_id(query, true) do
+    query
+    |> Ecto.Query.select([user], user.id)
+  end
+
   def add_query_filters(query, nil) do
     query
   end
@@ -252,6 +265,7 @@ defmodule ApiGateway.Models.Account.User do
     |> maybe_last_login_gte_filter(filters[:last_login_gte])
     |> maybe_last_login_lte_filter(filters[:last_login_lte])
     |> maybe_workspace_id_assoc_filter(filters[:workspace_id])
+    |> maybe_select_only_id(filters[:select_only_id])
   end
 
   def maybe_preload_workspace(query, nil) do
