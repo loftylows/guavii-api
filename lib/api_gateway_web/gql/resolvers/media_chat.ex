@@ -45,7 +45,12 @@ defmodule ApiGatewayWeb.Gql.Resolvers.MediaChat do
       {:error, :forbidden} ->
         ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
 
-      reply ->
+      {:error, :caller_or_recipient_is_nil} ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error(
+          "Either the caller or recipient can not be found"
+        )
+
+      {:ok, reply} ->
         {:ok, reply}
     end
   end

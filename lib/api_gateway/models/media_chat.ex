@@ -63,6 +63,37 @@ defmodule ApiGateway.Models.MediaChat do
   def get_chat_member_ids(chat_id) do
     IO.inspect(chat_id)
 
+    get_chat_member_tuple_items(chat_id)
+    |> Enum.map(fn {_, user_id} -> user_id end)
+  end
+
+  @spec get_grouped_chat_member_ids(chat_id :: Ecto.UUID.t()) :: %{
+          caller_id: Ecto.UUID.t(),
+          recipient_id: Ecto.UUID.t(),
+          invitee_ids: [Ecto.UUID.t()]
+        }
+  def get_grouped_chat_member_ids(chat_id) do
+    get_chat_member_tuple_items(chat_id)
+    |> Enum.reduce(%{invitee_ids: []}, fn {key, user_id}, accumulator ->
+      cond do
+        key == @redis_chat_caller_key ->
+          Map.put(accumulator, :caller_id, user_id)
+
+        key == @redis_chat_recipient_key ->
+          Map.put(accumulator, :recipient_id, user_id)
+
+        String.starts_with?(key, @redis_chat_invitee_key_prefix) ->
+          invitee_ids = Map.get(accumulator, :invitee_ids, [])
+
+          Map.put(accumulator, :invitee_ids, [user_id | invitee_ids])
+      end
+    end)
+  end
+
+  @spec get_chat_member_ids(chat_id :: Ecto.UUID.t()) :: [
+          {redis_chat_info_key :: String.t(), Ecto.UUID.t()}
+        ]
+  def get_chat_member_tuple_items(chat_id) do
     ["HGETALL", chat_id_to_redis_key(chat_id)]
     |> Redis.command!()
     |> parse_hgetall_response()
@@ -81,7 +112,6 @@ defmodule ApiGateway.Models.MediaChat do
           false
       end
     end)
-    |> Enum.map(fn {_, user_id} -> user_id end)
   end
 
   @spec persist_chat(chat_id :: Ecto.UUID.t()) :: 1 | 0
@@ -119,11 +149,15 @@ defmodule ApiGateway.Models.MediaChat do
   end
 
   @type get_media_chat_info_reply :: %{
-          required(:user_can_enter_chat) => boolean,
-          required(:users) => [User.t()]
+          required(:caller) => User.t(),
+          required(:recipient) => User.t(),
+          required(:invitees) => [User.t()],
+          required(:active_user_ids) => [Ecto.UUID.t()]
         }
   @spec get_media_chat_info(chat_id :: Ecto.UUID.t(), current_user :: User.t()) ::
-          get_media_chat_info_reply | {:error, :forbidden}
+          {:ok, get_media_chat_info_reply}
+          | {:error, :forbidden}
+          | {:error, :caller_or_recipient_is_nil}
   def get_media_chat_info(chat_id, current_user) do
     user_is_chat_member?(chat_id, current_user.id)
     |> case do
@@ -131,27 +165,28 @@ defmodule ApiGateway.Models.MediaChat do
         {:error, :forbidden}
 
       true ->
-        user_id_list = get_chat_member_ids(chat_id)
+        %{caller_id: caller_id, recipient_id: recipient_id, invitee_ids: invitee_ids} =
+          get_grouped_chat_member_ids(chat_id)
 
-        IO.inspect(user_id_list)
-        users = User.get_users(%{id_in: user_id_list})
+        caller = User.get_user(caller_id)
+        recipient = User.get_user(recipient_id)
+        invitees = if invitee_ids === [], do: [], else: User.get_users(%{id_in: invitee_ids})
 
-        users
-        |> Enum.find(fn user -> user.id == current_user.id end)
-        |> is_nil()
-        |> Kernel.not()
-        |> case do
-          false ->
-            %{user_can_enter_chat: false, users: [], activeUserIds: []}
+        active_user_ids =
+          Presence.list(ApiGatewayWeb.Channels.MediaChat.get_channel_topic_prefix() <> chat_id)
+          |> Enum.into([], fn {user_id, _} -> user_id end)
 
-          true ->
-            active_user_ids =
-              Presence.list(
-                ApiGatewayWeb.Channels.MediaChat.get_channel_topic_prefix() <> chat_id
-              )
-              |> Enum.into([], fn {user_id, _} -> user_id end)
+        if is_nil(caller) or is_nil(recipient) do
+          {:error, :caller_or_recipient_is_nil}
+        else
+          res = %{
+            caller: caller,
+            recipient: recipient,
+            invitees: invitees,
+            active_user_ids: active_user_ids
+          }
 
-            %{user_can_enter_chat: true, users: users, active_user_ids: active_user_ids}
+          {:ok, res}
         end
     end
   end

@@ -4,8 +4,9 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeQueryPayloadTypes do
   import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
 
   object :get_media_chat_info_payload do
-    field :user_can_enter_chat, non_null(:boolean)
-    field :users, non_null_list(:user)
+    field :caller, non_null(:user)
+    field :recipient, non_null(:user)
+    field :invitees, non_null_list(:user)
     field :active_user_ids, non_null_list(:uuid)
   end
 end
