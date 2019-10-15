@@ -33,7 +33,7 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
           })
 
         spawn(fn ->
-          current_user = User.get_user(user_id)
+          current_user = User.get_user!(user_id)
 
           Absinthe.Subscription.publish(
             ApiGatewayWeb.Endpoint,

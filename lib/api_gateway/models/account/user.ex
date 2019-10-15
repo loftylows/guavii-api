@@ -294,6 +294,12 @@ defmodule ApiGateway.Models.Account.User do
     |> Repo.get(user_id)
   end
 
+  def get_user!(user_id, opts \\ []) do
+    User
+    |> maybe_preload_workspace(Keyword.get(opts, :preload_workspace, false))
+    |> Repo.get!(user_id)
+  end
+
   @spec get_user_by_email_and_workspace_id(String.t(), String.t()) :: User.t()
   def get_user_by_email_and_workspace_id(email, workspace_id) do
     User
