@@ -32,16 +32,6 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
             online_at: inspect(System.system_time(:second))
           })
 
-        spawn(fn ->
-          current_user = User.get_user!(user_id)
-
-          Absinthe.Subscription.publish(
-            ApiGatewayWeb.Endpoint,
-            current_user,
-            user_joined_media_chat: chat_id
-          )
-        end)
-
         MediaChat.persist_chat(chat_id)
 
         {:ok, assign(socket, :media_chat_id, chat_id)}
