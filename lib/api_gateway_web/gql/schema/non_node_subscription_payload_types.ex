@@ -10,4 +10,9 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeSubscriptionPayloadTypes do
     field :user, :user
     field :document, non_null(:document)
   end
+
+  object :media_chat_call_received_payload do
+    field :chat_id, non_null(:uuid)
+    field :invited_by, non_null(:user)
+  end
 end

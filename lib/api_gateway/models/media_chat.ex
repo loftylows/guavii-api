@@ -10,28 +10,28 @@ defmodule ApiGateway.Models.MediaChat do
   @redis_key_max_expiration_string "#{@redis_key_max_expiration}"
   @redis_key_prefix "media_chat"
   @redis_chat_caller_key "caller_id"
-  @redis_chat_recipient_key "recipient_id"
   @redis_chat_invitee_key_prefix "invitee"
 
-  @spec create_new_chat(%{required(:recipient_id) => Ecto.UUID.t()}, User.t()) ::
+  @spec create_new_chat(%{required(:invitee_ids) => [Ecto.UUID.t()]}, current_user :: User.t()) ::
           {:ok, chat_id :: Ecto.UUID.t(), redis_key :: String.t()} | :invalid_user_invited
-  def create_new_chat(%{recipient_id: recipient_id}, current_user) do
-    User.get_user(recipient_id)
+  def create_new_chat(%{invitee_ids: invitee_ids}, current_user) do
+    User.get_users(%{id_in: invitee_ids, select_only_id: true})
     |> case do
-      nil ->
+      users when length(users) != length(invitee_ids) ->
         :invalid_user_invited
 
       _ ->
         {chat_id, redis_key} = create_chat_id()
 
-        [
-          "HMSET",
-          redis_key,
-          @redis_chat_caller_key,
-          current_user.id,
-          @redis_chat_recipient_key,
-          recipient_id
-        ]
+        ([
+           "HMSET",
+           redis_key,
+           @redis_chat_caller_key,
+           current_user.id
+         ] ++
+           Enum.reduce(invitee_ids, [], fn user_id, acc ->
+             [user_id_to_redis_chat_invitee_key(user_id) | [user_id | acc]]
+           end))
         |> Redis.command!()
 
         ["EXPIRE", redis_key, @redis_key_expiration_string]
@@ -69,7 +69,6 @@ defmodule ApiGateway.Models.MediaChat do
 
   @spec get_grouped_chat_member_ids(chat_id :: Ecto.UUID.t()) :: %{
           caller_id: Ecto.UUID.t(),
-          recipient_id: Ecto.UUID.t(),
           invitee_ids: [Ecto.UUID.t()]
         }
   def get_grouped_chat_member_ids(chat_id) do
@@ -79,9 +78,6 @@ defmodule ApiGateway.Models.MediaChat do
         key == @redis_chat_caller_key ->
           Map.put(accumulator, :caller_id, user_id)
 
-        key == @redis_chat_recipient_key ->
-          Map.put(accumulator, :recipient_id, user_id)
-
         String.starts_with?(key, @redis_chat_invitee_key_prefix) ->
           invitee_ids = Map.get(accumulator, :invitee_ids, [])
 
@@ -90,7 +86,7 @@ defmodule ApiGateway.Models.MediaChat do
     end)
   end
 
-  @spec get_chat_member_ids(chat_id :: Ecto.UUID.t()) :: [
+  @spec get_chat_member_tuple_items(chat_id :: Ecto.UUID.t()) :: [
           {redis_chat_info_key :: String.t(), Ecto.UUID.t()}
         ]
   def get_chat_member_tuple_items(chat_id) do
@@ -100,9 +96,6 @@ defmodule ApiGateway.Models.MediaChat do
     |> Enum.filter(fn {key, _} ->
       cond do
         key == @redis_chat_caller_key ->
-          true
-
-        key == @redis_chat_recipient_key ->
           true
 
         String.starts_with?(key, @redis_chat_invitee_key_prefix) ->
@@ -137,20 +130,18 @@ defmodule ApiGateway.Models.MediaChat do
   def user_is_chat_member?(chat_id, user_id) do
     redis_chat_key = chat_id_to_redis_key(chat_id)
 
-    [caller_id, recipient_id, invitee_id] =
+    [caller_id, invitee_id] =
       [
         ["HGET", redis_chat_key, @redis_chat_caller_key],
-        ["HGET", redis_chat_key, @redis_chat_recipient_key],
         ["HGET", redis_chat_key, user_id_to_redis_chat_invitee_key(user_id)]
       ]
       |> Redis.pipeline!()
 
-    caller_id == user_id or recipient_id == user_id or invitee_id == user_id
+    caller_id == user_id or invitee_id == user_id
   end
 
   @type get_media_chat_info_reply :: %{
           required(:caller) => User.t(),
-          required(:recipient) => User.t(),
           required(:invitees) => [User.t()],
           required(:active_user_ids) => [Ecto.UUID.t()]
         }
@@ -165,23 +156,20 @@ defmodule ApiGateway.Models.MediaChat do
         {:error, :forbidden}
 
       true ->
-        %{caller_id: caller_id, recipient_id: recipient_id, invitee_ids: invitee_ids} =
-          get_grouped_chat_member_ids(chat_id)
+        %{caller_id: caller_id, invitee_ids: invitee_ids} = get_grouped_chat_member_ids(chat_id)
 
         caller = User.get_user(caller_id)
-        recipient = User.get_user(recipient_id)
         invitees = if invitee_ids === [], do: [], else: User.get_users(%{id_in: invitee_ids})
 
         active_user_ids =
           Presence.list(ApiGatewayWeb.Channels.MediaChat.get_channel_topic_prefix() <> chat_id)
           |> Enum.into([], fn {user_id, _} -> user_id end)
 
-        if is_nil(caller) or is_nil(recipient) do
+        if is_nil(caller) do
           {:error, :caller_or_recipient_is_nil}
         else
           res = %{
             caller: caller,
-            recipient: recipient,
             invitees: invitees,
             active_user_ids: active_user_ids
           }

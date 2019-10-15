@@ -735,5 +735,15 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
 
       # Uses custom trigger(s) in mutation middleware
     end
+
+    field :media_chat_call_received, :media_chat_call_received_payload do
+      arg(:user_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.user_id}
+      end)
+
+      # Uses custom trigger(s) in mutation middleware
+    end
   end
 end

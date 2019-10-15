@@ -355,6 +355,6 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
   end
 
   input_object :create_new_media_chat_input do
-    field :recipient_id, non_null(:uuid)
+    field :invitee_ids, non_null_list(:uuid)
   end
 end

@@ -7,10 +7,10 @@ defmodule ApiGatewayWeb.Gql.Resolvers.MediaChat do
 
   def create_new_media_chat(
         _,
-        %{data: %{recipient_id: recipient_id}},
+        %{data: %{invitee_ids: invitee_ids}},
         %{context: %{current_user: current_user}}
       ) do
-    Models.MediaChat.create_new_chat(%{recipient_id: recipient_id}, current_user)
+    Models.MediaChat.create_new_chat(%{invitee_ids: invitee_ids}, current_user)
     |> case do
       :invalid_user_invited ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Invalid user invited")
