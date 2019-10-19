@@ -51,7 +51,7 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
 
   def handle_in(
         @channel_topic_prefix <> chat_id,
-        %{"type" => "offer", "offer" => offer} = msg,
+        %{"type" => "offer", "offer" => offer, "userId" => user_id} = msg,
         socket
       ) do
     Logger.debug("Sending offer to chat_id: #{chat_id}")
@@ -61,14 +61,14 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
 
     # Logger.debug "offer #{user_id} #{inspect offer}"
 
-    do_broadcast(chat_id, "offer", %{type: "offer", offer: msg["offer"], chat_id: chat_id})
+    do_broadcast(chat_id, "offer", %{type: "offer", offer: msg["offer"], userId: user_id})
 
     {:noreply, socket}
   end
 
   def handle_in(
         @channel_topic_prefix <> chat_id,
-        %{"type" => "answer", "answer" => answer} = msg,
+        %{"type" => "answer", "answer" => answer, "userId" => user_id} = msg,
         socket
       ) do
     Logger.debug("Sending answer to chat_id: #{chat_id}")
@@ -78,31 +78,31 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
     String.split(answer["sdp"], "\r\n")
     |> Enum.each(&Logger.debug(&1))
 
-    do_broadcast(chat_id, "answer", %{type: "answer", answer: msg["answer"]})
+    do_broadcast(chat_id, "answer", %{type: "answer", answer: msg["answer"], userId: user_id})
 
     {:noreply, socket}
   end
 
   def handle_in(
         @channel_topic_prefix <> chat_id,
-        %{"type" => "leave"},
+        %{"type" => "leave", "userId" => user_id},
         socket
       ) do
     Logger.debug("Disconnecting from chat_id:  #{chat_id}")
 
-    do_broadcast(chat_id, "leave", %{type: "leave"})
+    do_broadcast(chat_id, "leave", %{type: "leave", userId: user_id})
 
     {:noreply, socket}
   end
 
   def handle_in(
         @channel_topic_prefix <> chat_id,
-        %{"type" => "candidate", "candidate" => candidate} = msg,
+        %{"type" => "candidate", "candidate" => candidate, "userId" => user_id} = msg,
         socket
       ) do
     Logger.debug("Sending candidate to chat_id: #{chat_id}: #{inspect(candidate)}")
 
-    do_broadcast(chat_id, "candidate", %{candidate: msg["candidate"]})
+    do_broadcast(chat_id, "candidate", %{candidate: msg["candidate"], userId: user_id})
 
     {:noreply, socket}
   end
