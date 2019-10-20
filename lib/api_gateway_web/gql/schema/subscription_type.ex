@@ -743,7 +743,17 @@ defmodule ApiGatewayWeb.Gql.Schema.SubscriptionType do
         {:ok, topic: args.user_id}
       end)
 
-      # Uses custom trigger(s) in mutation middleware
+      # Uses custom trigger(s) in caller channel join
+    end
+
+    field :media_chat_call_cancelled, :uuid do
+      arg(:chat_id, non_null(:uuid))
+
+      config(fn args, _ ->
+        {:ok, topic: args.chat_id}
+      end)
+
+      # Uses custom trigger(s) in media_chat channel
     end
   end
 end

@@ -1,6 +1,5 @@
 defmodule ApiGateway.Models.MediaChat do
   alias ApiGateway.Models.Account.User
-  alias ApiGatewayWeb.Presence
   alias RedixPool, as: Redis
 
   # seconds
@@ -11,9 +10,18 @@ defmodule ApiGateway.Models.MediaChat do
   @redis_key_prefix "media_chat"
   @redis_chat_caller_key "caller_id"
   @redis_chat_invitee_key_prefix "invitee"
+  @chat_invitee_limit 1
 
   @spec create_new_chat(%{required(:invitee_ids) => [Ecto.UUID.t()]}, current_user :: User.t()) ::
-          {:ok, chat_id :: Ecto.UUID.t(), redis_key :: String.t()} | :invalid_user_invited
+          {:ok, chat_id :: Ecto.UUID.t(), redis_key :: String.t()}
+          | :invalid_user_invited
+          | :invitee_limit_surpassed
+  def create_new_chat(%{invitee_ids: invitee_ids}, _)
+      when is_list(invitee_ids) and
+             (length(invitee_ids) < 1 or length(invitee_ids) > @chat_invitee_limit) do
+    :invitee_limit_surpassed
+  end
+
   def create_new_chat(%{invitee_ids: invitee_ids}, current_user) do
     User.get_users(%{id_in: invitee_ids, select_only_id: true})
     |> case do
@@ -47,10 +55,89 @@ defmodule ApiGateway.Models.MediaChat do
     |> Redis.command!()
   end
 
-  @spec add_user_to_chat(user_id :: Ecto.UUID.t(), chat_id :: Ecto.UUID.t()) :: 1 | 0
-  def add_user_to_chat(user_id, chat_id) do
-    ["HSET", chat_id_to_redis_key(chat_id), user_id_to_redis_chat_invitee_key(user_id), user_id]
-    |> Redis.command!()
+  @spec add_user_to_chat(
+          user_id :: Ecto.UUID.t(),
+          chat_id :: Ecto.UUID.t(),
+          current_user :: User.t()
+        ) ::
+          1 | 0 | :invitee_limit_surpassed
+  def add_user_to_chat(user_id, chat_id, current_user) do
+    chat_id
+    |> get_chat_member_ids()
+    |> length()
+    |> case do
+      amount when amount + 1 > @chat_invitee_limit ->
+        :invitee_limit_surpassed
+
+      _ ->
+        res =
+          [
+            "HSET",
+            chat_id_to_redis_key(chat_id),
+            user_id_to_redis_chat_invitee_key(user_id),
+            user_id
+          ]
+          |> Redis.command!()
+
+        Absinthe.Subscription.publish(
+          ApiGatewayWeb.Endpoint,
+          %{chat_id: chat_id, invited_by: current_user},
+          media_chat_call_received: user_id
+        )
+
+        res
+    end
+  end
+
+  @spec add_users_to_chat(
+          user_ids :: [Ecto.UUID.t()],
+          chat_id :: Ecto.UUID.t(),
+          current_user :: User.t()
+        ) ::
+          :ok | :invitee_limit_surpassed
+  def add_users_to_chat(user_ids, chat_id, current_user) do
+    chat_id
+    |> get_chat_member_ids()
+    |> length()
+    |> case do
+      amount when amount + length(user_ids) > @chat_invitee_limit ->
+        :invitee_limit_surpassed
+
+      _ ->
+        ([
+           "HMSET",
+           chat_id_to_redis_key(chat_id)
+         ] ++
+           Enum.reduce(user_ids, [], fn user_id, acc ->
+             [user_id_to_redis_chat_invitee_key(user_id) | [user_id | acc]]
+           end))
+        |> Redis.command!()
+
+        case length(user_ids) do
+          amount when amount > 2 ->
+            # Spawn process and then send out subscription to each user invited to the chat
+            spawn(fn ->
+              Enum.each(user_ids, fn user_id ->
+                Absinthe.Subscription.publish(
+                  ApiGatewayWeb.Endpoint,
+                  %{chat_id: chat_id, invited_by: current_user},
+                  media_chat_call_received: user_id
+                )
+              end)
+            end)
+
+          _ ->
+            Enum.each(user_ids, fn user_id ->
+              Absinthe.Subscription.publish(
+                ApiGatewayWeb.Endpoint,
+                %{chat_id: chat_id, invited_by: current_user},
+                media_chat_call_received: user_id
+              )
+            end)
+        end
+
+        :ok
+    end
   end
 
   @spec remove_user_from_chat(user_id :: Ecto.UUID.t(), chat_id :: Ecto.UUID.t()) :: 1 | 0
@@ -64,6 +151,14 @@ defmodule ApiGateway.Models.MediaChat do
     IO.inspect(chat_id)
 
     get_chat_member_tuple_items(chat_id)
+    |> Enum.map(fn {_, user_id} -> user_id end)
+  end
+
+  @spec get_chat_invitee_ids(chat_id :: Ecto.UUID.t()) :: [Ecto.UUID.t()]
+  def get_chat_invitee_ids(chat_id) do
+    IO.inspect(chat_id)
+
+    get_chat_invitee_tuple_items(chat_id)
     |> Enum.map(fn {_, user_id} -> user_id end)
   end
 
@@ -98,6 +193,24 @@ defmodule ApiGateway.Models.MediaChat do
         key == @redis_chat_caller_key ->
           true
 
+        String.starts_with?(key, @redis_chat_invitee_key_prefix) ->
+          true
+
+        true ->
+          false
+      end
+    end)
+  end
+
+  @spec get_chat_invitee_tuple_items(chat_id :: Ecto.UUID.t()) :: [
+          {redis_chat_info_key :: String.t(), Ecto.UUID.t()}
+        ]
+  def get_chat_invitee_tuple_items(chat_id) do
+    ["HGETALL", chat_id_to_redis_key(chat_id)]
+    |> Redis.command!()
+    |> parse_hgetall_response()
+    |> Enum.filter(fn {key, _} ->
+      cond do
         String.starts_with?(key, @redis_chat_invitee_key_prefix) ->
           true
 
@@ -161,17 +274,12 @@ defmodule ApiGateway.Models.MediaChat do
         caller = User.get_user(caller_id)
         invitees = if invitee_ids === [], do: [], else: User.get_users(%{id_in: invitee_ids})
 
-        active_user_ids =
-          Presence.list(ApiGatewayWeb.Channels.MediaChat.get_channel_topic_prefix() <> chat_id)
-          |> Enum.into([], fn {user_id, _} -> user_id end)
-
         if is_nil(caller) do
           {:error, :caller_or_recipient_is_nil}
         else
           res = %{
             caller: caller,
-            invitees: invitees,
-            active_user_ids: active_user_ids
+            invitees: invitees
           }
 
           {:ok, res}

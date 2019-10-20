@@ -5,6 +5,7 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
 
   alias ApiGatewayWeb.Presence
   alias ApiGateway.Models.MediaChat
+  alias ApiGateway.Models.Account.User
 
   @channel_topic_prefix "media_chat:"
   @forbidden_error_code "FORBIDDEN"
@@ -26,12 +27,33 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
         {:error, %{reason: @forbidden_error_code}}
 
       true ->
+        MediaChat.persist_chat(chat_id)
+
+        Presence.list(@channel_topic_prefix <> chat_id)
+        |> case do
+          # if the presence list is now empty then delete the chat key from redis
+          presence_map when presence_map == %{} ->
+            invitee_ids = ApiGateway.Models.MediaChat.get_chat_invitee_ids(chat_id)
+
+            # Spawn process and then send out subscription to each user invited to the chat
+            spawn(fn ->
+              Enum.each(invitee_ids, fn user_id ->
+                Absinthe.Subscription.publish(
+                  ApiGatewayWeb.Endpoint,
+                  %{chat_id: chat_id, invited_by: User.get_user!(user_id)},
+                  media_chat_call_received: user_id
+                )
+              end)
+            end)
+
+          _ ->
+            nil
+        end
+
         {:ok, _} =
           Presence.track(socket, user_id, %{
             online_at: inspect(System.system_time(:second))
           })
-
-        MediaChat.persist_chat(chat_id)
 
         {:ok, assign(socket, :media_chat_id, chat_id)}
     end
@@ -134,9 +156,29 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
       media_chat_id ->
         Presence.list(@channel_topic_prefix <> media_chat_id)
         |> case do
-          # if the presence list is now empty then delete the chat key from redis
+          # if the presence list is now empty then spawn a new process and check again in 10 seconds
           presence_map when presence_map == %{} ->
-            MediaChat.delete_chat(media_chat_id)
+            # wait for 10 seconds to see if any users connect/re-connect before ending the chat.
+            # do this in another process so this process doesn't block
+            spawn(fn ->
+              Process.sleep(10_000)
+
+              Presence.list(@channel_topic_prefix <> media_chat_id)
+              |> case do
+                # if the presence list is now empty then delete the chat key from redis
+                presence_map when presence_map == %{} ->
+                  MediaChat.delete_chat(media_chat_id)
+
+                  Absinthe.Subscription.publish(
+                    ApiGatewayWeb.Endpoint,
+                    media_chat_id,
+                    media_chat_call_cancelled: media_chat_id
+                  )
+
+                _ ->
+                  nil
+              end
+            end)
 
           _ ->
             nil

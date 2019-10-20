@@ -12,6 +12,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.MediaChat do
       ) do
     Models.MediaChat.create_new_chat(%{invitee_ids: invitee_ids}, current_user)
     |> case do
+      :invitee_limit_surpassed ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Invitee limit surpassed")
+
       :invalid_user_invited ->
         ApiGatewayWeb.Gql.Utils.Errors.user_input_error("Invalid user invited")
 
