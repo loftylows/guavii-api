@@ -83,6 +83,7 @@
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.Project',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.ProjectTodo',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.ProjectTodoList',
+                        'Elixir.ApiGatewayWeb.Gql.Resolvers.Session',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.SubList',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.SubListItem',
                         'Elixir.ApiGatewayWeb.Gql.Resolvers.SubListItemComment',

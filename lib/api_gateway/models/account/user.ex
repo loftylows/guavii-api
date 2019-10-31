@@ -327,6 +327,48 @@ defmodule ApiGateway.Models.Account.User do
     |> Repo.all()
   end
 
+  @spec get_workspace_users_query(%{workspace_id: Ecto.UUID.t()}) :: Ecto.Queryable.t()
+  def get_workspace_users_query(filters) do
+    User
+    |> add_query_filters(filters)
+  end
+
+  @doc "Users may be searched by 'full_name' or 'email' within a particular workspace"
+  @spec search_workspace_users(
+          workspace_id :: Ecto.UUID.t(),
+          search_string :: String.t()
+        ) :: [User.t()]
+  def search_workspace_users(workspace_id, search_string) do
+    User
+    |> Ecto.Query.where(
+      [user],
+      ilike(user.full_name, ^"%#{String.replace(search_string, "%", "\\%")}%")
+    )
+    |> Ecto.Query.or_where(
+      [user],
+      ilike(user.email, ^"%#{String.replace(search_string, "%", "\\%")}%")
+    )
+    |> maybe_workspace_id_assoc_filter(workspace_id)
+    |> Repo.all()
+  end
+
+  @spec search_workspace_users_query(
+          workspace_id :: Ecto.UUID.t(),
+          search_string :: String.t()
+        ) :: Ecto.Queryable.t()
+  def search_workspace_users_query(workspace_id, search_string) do
+    User
+    |> Ecto.Query.where(
+      [user],
+      ilike(user.full_name, ^"%#{String.replace(search_string, "%", "\\%")}%")
+    )
+    |> Ecto.Query.or_where(
+      [user],
+      ilike(user.email, ^"%#{String.replace(search_string, "%", "\\%")}%")
+    )
+    |> maybe_workspace_id_assoc_filter(workspace_id)
+  end
+
   def create_user(data) when is_map(data) do
     %User{}
     |> changeset_create(data)

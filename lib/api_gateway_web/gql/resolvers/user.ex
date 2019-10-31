@@ -14,6 +14,36 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
     {:ok, User.get_users()}
   end
 
+  def workspace_users(
+        %{where: data} = pagination_args,
+        _
+      ) do
+    ApiGateway.Models.Account.User.get_workspace_users_query(data)
+    |> Absinthe.Relay.Connection.from_query(
+      &ApiGateway.Repo.all/1,
+      Map.drop(pagination_args, [:where])
+    )
+  end
+
+  def workspace_users(_, _) do
+    ApiGatewayWeb.Gql.Utils.Errors.user_input_error()
+  end
+
+  def search_workspace_users(
+        %{where: %{workspace_id: workspace_id, search_string: search_string}} = pagination_args,
+        _
+      ) do
+    ApiGateway.Models.Account.User.search_workspace_users_query(workspace_id, search_string)
+    |> Absinthe.Relay.Connection.from_query(
+      &ApiGateway.Repo.all/1,
+      Map.drop(pagination_args, [:where])
+    )
+  end
+
+  def search_workspace_users(_, _) do
+    ApiGatewayWeb.Gql.Utils.Errors.user_input_error()
+  end
+
   def create_user(_, %{data: data}, _) do
     case User.create_user(data) do
       {:ok, user} ->
@@ -246,6 +276,18 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   end
 
   def logout_user(_, _, _) do
+    {:ok, %{ok: true}}
+  end
+
+  def check_socket_token_valid(
+        _,
+        %{
+          data: %{
+            token: token
+          }
+        },
+        _
+      ) do
     {:ok, %{ok: true}}
   end
 end

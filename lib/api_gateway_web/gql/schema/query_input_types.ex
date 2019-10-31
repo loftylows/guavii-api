@@ -341,4 +341,13 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
   input_object :get_media_chat_info_input do
     field :chat_id, non_null(:uuid)
   end
+
+  input_object :check_socket_token_valid_input do
+    field :token, non_null(:string)
+  end
+
+  input_object :search_workspace_users_input do
+    field :workspace_id, non_null(:uuid)
+    field :search_string, non_null(:string)
+  end
 end

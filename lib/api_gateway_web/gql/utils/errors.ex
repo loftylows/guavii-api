@@ -7,7 +7,7 @@ defmodule ApiGatewayWeb.Gql.Utils.Errors do
   @doc """
   Provides an error with the given message and optionally provided details messages list
   """
-  def user_input_error(msg, invalid_args \\ [])
+  def user_input_error(msg \\ "User input error", invalid_args \\ [])
 
   def user_input_error(msg, invalid_args)
       when is_binary(msg) and is_list(invalid_args) and length(invalid_args) === 0 do

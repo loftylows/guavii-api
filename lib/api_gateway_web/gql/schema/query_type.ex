@@ -1,5 +1,6 @@
 defmodule ApiGatewayWeb.Gql.Schema.QueryType do
   use Absinthe.Schema.Notation
+  use Absinthe.Relay.Schema.Notation, :modern
   import ApiGatewayWeb.Gql.Schema.ScalarHelperFuncs, only: [non_null_list: 1]
   alias ApiGatewayWeb.Gql.Resolvers
 
@@ -29,12 +30,29 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.User.get_user/3)
     end
 
+    # TODO: Remove this! No customer user should be able to search get all users
     @desc "Get all users, optionally filtering"
     field :users, non_null_list(:user) do
       arg(:where, :user_where_input)
 
       middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.User.get_users/3)
+    end
+
+    @desc "Get workspace users, optionally filtering"
+    connection field :workspace_users, node_type: :user do
+      arg(:where, :user_where_input)
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.User.workspace_users/2)
+    end
+
+    @desc "Search workspace users by name or email"
+    connection field :search_workspace_users, node_type: :user do
+      arg(:where, :search_workspace_users_input)
+
+      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
+      resolve(&Resolvers.User.search_workspace_users/2)
     end
 
     @desc "Get a team using criteria"
@@ -171,6 +189,13 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       arg(:data, non_null(:get_media_chat_info_input))
 
       resolve(&Resolvers.MediaChat.get_media_chat_info/3)
+    end
+
+    @desc "Check socket token valid"
+    field :check_socket_token_valid, non_null(:boolean) do
+      arg(:data, non_null(:check_socket_token_valid_input))
+
+      resolve(&Resolvers.Session.verify_token/3)
     end
   end
 end

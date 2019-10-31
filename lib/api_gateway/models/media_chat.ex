@@ -45,6 +45,17 @@ defmodule ApiGateway.Models.MediaChat do
         ["EXPIRE", redis_key, @redis_key_expiration_string]
         |> Redis.command!()
 
+        # Spawn process and then send out subscription to each user invited to the chat
+        spawn(fn ->
+          Enum.each(invitee_ids, fn user_id ->
+            Absinthe.Subscription.publish(
+              ApiGatewayWeb.Endpoint,
+              %{chat_id: chat_id, invited_by: User.get_user!(user_id)},
+              media_chat_call_received: user_id
+            )
+          end)
+        end)
+
         {:ok, chat_id, redis_key}
     end
   end
@@ -256,7 +267,7 @@ defmodule ApiGateway.Models.MediaChat do
   @type get_media_chat_info_reply :: %{
           required(:caller) => User.t(),
           required(:invitees) => [User.t()],
-          required(:active_user_ids) => [Ecto.UUID.t()]
+          required(:chat_user_limit) => integer
         }
   @spec get_media_chat_info(chat_id :: Ecto.UUID.t(), current_user :: User.t()) ::
           {:ok, get_media_chat_info_reply}
@@ -279,7 +290,8 @@ defmodule ApiGateway.Models.MediaChat do
         else
           res = %{
             caller: caller,
-            invitees: invitees
+            invitees: invitees,
+            chat_user_limit: @chat_invitee_limit + 1
           }
 
           {:ok, res}
