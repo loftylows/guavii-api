@@ -33,7 +33,11 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
         %{where: %{workspace_id: workspace_id, search_string: search_string}} = pagination_args,
         _
       ) do
-    ApiGateway.Models.Account.User.search_workspace_users_query(workspace_id, search_string)
+    ApiGateway.Models.Account.User.search_workspace_users_query(
+      workspace_id,
+      search_string,
+      pagination_args[:order_by]
+    )
     |> Absinthe.Relay.Connection.from_query(
       &ApiGateway.Repo.all/1,
       Map.drop(pagination_args, [:where])

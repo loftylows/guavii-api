@@ -60,6 +60,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :last_login_gte, :iso_date_time
     field :last_login_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :users_order_by_input
+  end
+
+  input_object :users_order_by_input do
+    field :order_by, non_null(:users_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   @desc "Must provide either an ID or a workspace subdomain"
@@ -80,6 +86,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :workspaces_order_by_input
+  end
+
+  input_object :workspaces_order_by_input do
+    field :order_by, non_null(:workspaces_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :team_where_unique_input do
@@ -94,6 +106,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :teams_order_by_input
+  end
+
+  input_object :teams_order_by_input do
+    field :order_by, non_null(:teams_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :project_where_unique_input do
@@ -113,6 +131,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :projects_order_by_input
+  end
+
+  input_object :projects_order_by_input do
+    field :order_by, non_null(:projects_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :team_member_where_unique_input do
@@ -128,6 +152,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :team_members_order_by_input
+  end
+
+  input_object :team_members_order_by_input do
+    field :order_by, non_null(:team_members_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :document_where_unique_input do
@@ -142,6 +172,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :documents_order_by_input
+  end
+
+  input_object :documents_order_by_input do
+    field :order_by, non_null(:documents_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :project_todo_list_where_unique_input do
@@ -156,6 +192,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :project_todo_lists_order_by_input
+  end
+
+  input_object :project_todo_lists_order_by_input do
+    field :order_by, non_null(:project_todo_lists_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :project_todo_where_unique_input do
@@ -174,6 +216,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :project_todos_order_by_input
+  end
+
+  input_object :project_todos_order_by_input do
+    field :order_by, non_null(:project_todos_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :sub_list_where_unique_input do
@@ -188,6 +236,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :sub_lists_order_by_input
+  end
+
+  input_object :sub_lists_order_by_input do
+    field :order_by, non_null(:sub_lists_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :sub_list_item_where_unique_input do
@@ -210,6 +264,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :sub_list_items_order_by_input
+  end
+
+  input_object :sub_list_items_order_by_input do
+    field :order_by, non_null(:sub_list_items_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :sub_list_item_comment_where_unique_input do
@@ -225,6 +285,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :sub_list_item_comments_order_by_input
+  end
+
+  input_object :sub_list_item_comments_order_by_input do
+    field :order_by, non_null(:sub_list_item_comments_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :kanban_lane_where_unique_input do
@@ -240,6 +306,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :kanban_lanes_order_by_input
+  end
+
+  input_object :kanban_lanes_order_by_input do
+    field :order_by, non_null(:kanban_lanes_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :kanban_label_where_unique_input do
@@ -255,6 +327,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :kanban_labels_order_by_input
+  end
+
+  input_object :kanban_labels_order_by_input do
+    field :order_by, non_null(:kanban_labels_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :kanban_card_where_unique_input do
@@ -273,6 +351,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :kanban_cards_order_by_input
+  end
+
+  input_object :kanban_cards_order_by_input do
+    field :order_by, non_null(:kanban_cards_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :kanban_card_comment_where_unique_input do
@@ -288,6 +372,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :kanban_card_comments_order_by_input
+  end
+
+  input_object :kanban_card_comments_order_by_input do
+    field :order_by, non_null(:kanban_card_comments_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :kanban_card_todo_list_where_unique_input do
@@ -302,6 +392,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :kanban_card_todo_lists_order_by_input
+  end
+
+  input_object :kanban_card_todo_lists_order_by_input do
+    field :order_by, non_null(:kanban_card_todo_lists_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   input_object :kanban_card_todo_where_unique_input do
@@ -324,6 +420,12 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :created_at_gte, :iso_date_time
     field :created_at_lte, :iso_date_time
     field :distinct, :boolean
+    field :order_by, :kanban_card_todos_order_by_input
+  end
+
+  input_object :kanban_card_todos_order_by_input do
+    field :order_by, non_null(:kanban_card_todos_order_by)
+    field :direction, non_null(:order_by_direction)
   end
 
   ####################
@@ -349,5 +451,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
   input_object :search_workspace_users_input do
     field :workspace_id, non_null(:uuid)
     field :search_string, non_null(:string)
+    field :order_by, :users_order_by_input
   end
 end

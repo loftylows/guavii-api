@@ -103,6 +103,38 @@ defmodule ApiGateway.Models.Workspace do
     query
   end
 
+  def maybe_order_by(query, %{order_by: "ID", direction: direction})
+      when is_binary(direction) do
+    case direction do
+      "ASC" ->
+        query |> Ecto.Query.order_by(asc: :id)
+
+      "DESC" ->
+        query |> Ecto.Query.order_by(desc: :id)
+
+      _ ->
+        query
+    end
+  end
+
+  def maybe_order_by(query, %{order_by: "TITLE", direction: direction})
+      when is_binary(direction) do
+    case direction do
+      "ASC" ->
+        query |> Ecto.Query.order_by(asc: :title)
+
+      "DESC" ->
+        query |> Ecto.Query.order_by(desc: :title)
+
+      _ ->
+        query
+    end
+  end
+
+  def maybe_order_by(query, _) do
+    query
+  end
+
   def add_query_filters(query, nil) do
     query
   end
@@ -116,6 +148,7 @@ defmodule ApiGateway.Models.Workspace do
     |> CommonFilterHelpers.maybe_created_at_lte_filter(filters[:created_at_lte])
     |> CommonFilterHelpers.maybe_distinct(filters[:distinct])
     |> maybe_subdomain_in_filter(filters[:workspace_subdomain_in])
+    |> maybe_order_by(filters[:order_by])
   end
 
   ####################
@@ -158,9 +191,11 @@ defmodule ApiGateway.Models.Workspace do
   end
 
   def get_workspaces(filters \\ %{}) do
-    IO.inspect(filters)
+    Workspace |> add_query_filters(filters) |> Repo.all()
+  end
 
-    ApiGateway.Models.Workspace |> add_query_filters(filters) |> Repo.all()
+  def get_workspaces_query(filters \\ %{}) do
+    Workspace |> add_query_filters(filters)
   end
 
   def create_workspace(%{subdomain: subdomain} = data) when is_binary(subdomain) do
@@ -171,7 +206,7 @@ defmodule ApiGateway.Models.Workspace do
 
     case {internal_subdomain, archived_subdomain} do
       {nil, nil} ->
-        %ApiGateway.Models.Workspace{}
+        %Workspace{}
         |> changeset_create(Map.put(data, :workspace_subdomain, subdomain))
         |> Repo.insert()
 
@@ -244,7 +279,7 @@ defmodule ApiGateway.Models.Workspace do
 
   @doc "id must be a valid 'uuid' or an error will raise"
   def delete_workspace(id) do
-    case Repo.get(ApiGateway.Models.Workspace, id) do
+    case Repo.get(Workspace, id) do
       nil ->
         {:error, "Not found"}
 
@@ -254,7 +289,7 @@ defmodule ApiGateway.Models.Workspace do
   end
 
   def delete_workspace_by_subdomain(subdomain) do
-    case Repo.get_by(ApiGateway.Models.Workspace, workspace_subdomain: subdomain) do
+    case Repo.get_by(Workspace, workspace_subdomain: subdomain) do
       nil ->
         {:error, "Not found"}
 

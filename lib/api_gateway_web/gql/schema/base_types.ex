@@ -117,6 +117,125 @@ defmodule ApiGatewayWeb.Gql.Schema.BaseTypes do
     value(:private, as: "PRIVATE")
   end
 
+  enum :workspaces_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :users_order_by do
+    value(:id, as: "ID")
+    value(:full_name, as: "FULL_NAME")
+    value(:email, as: "EMAIL")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :teams_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :projects_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :team_members_order_by do
+    value(:id, as: "ID")
+    value(:role, as: "ROLE")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :documents_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :project_todo_lists_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:list_order_rank, as: "LIST_ORDER_RANK")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :project_todos_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:due_date, as: "DUE_DATE")
+    value(:list_order_rank, as: "LIST_ORDER_RANK")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :sub_lists_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:list_order_rank, as: "LIST_ORDER_RANK")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :sub_list_items_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:due_date, as: "DUE_DATE")
+    value(:list_order_rank, as: "LIST_ORDER_RANK")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :sub_list_item_comments_order_by do
+    value(:id, as: "ID")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :kanban_lanes_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:list_order_rank, as: "LIST_ORDER_RANK")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :kanban_labels_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:color, as: "COLOR")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :kanban_cards_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:due_date, as: "DUE_DATE")
+    value(:list_order_rank, as: "LIST_ORDER_RANK")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :kanban_card_comments_order_by do
+    value(:id, as: "ID")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :kanban_card_todo_lists_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:list_order_rank, as: "LIST_ORDER_RANK")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :kanban_card_todos_order_by do
+    value(:id, as: "ID")
+    value(:title, as: "TITLE")
+    value(:due_date, as: "DUE_DATE")
+    value(:list_order_rank, as: "LIST_ORDER_RANK")
+    value(:created_at, as: "CREATED_AT")
+  end
+
+  enum :order_by_direction do
+    value(:asc, as: "ASC")
+    value(:desc, as: "DESC")
+  end
+
   ####################
   # Unions #
   ####################
