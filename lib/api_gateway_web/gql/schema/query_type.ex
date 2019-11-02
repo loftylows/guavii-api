@@ -49,7 +49,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
 
     @desc "Search workspace users by name or email"
     connection field :search_workspace_users, node_type: :user do
-      arg(:where, :search_workspace_users_input)
+      arg(:where, non_null(:search_workspace_users_input))
 
       middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
       resolve(&Resolvers.User.search_workspace_users/2)

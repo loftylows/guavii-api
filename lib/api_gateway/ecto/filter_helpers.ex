@@ -19,6 +19,14 @@ defmodule ApiGateway.Ecto.CommonFilterHelpers do
     query |> Ecto.Query.where([p], p.id in ^UUID.cast_vals_to_uuid!(list))
   end
 
+  def maybe_id_not_in_filter(query, nil) do
+    query
+  end
+
+  def maybe_id_not_in_filter(query, list) when is_list(list) do
+    query |> Ecto.Query.where([p], p.id not in ^UUID.cast_vals_to_uuid!(list))
+  end
+
   def maybe_completed_filter(query, bool) when is_boolean(bool) do
     query |> Ecto.Query.where([p], p.completed == ^bool)
   end

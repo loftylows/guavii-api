@@ -199,8 +199,8 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationInputTypes do
   end
 
   input_object :kanban_label_update_input do
-    field :title, :string
-    field :color, :string
+    field :title, non_null(:string)
+    field :color, non_null(:string)
   end
 
   input_object :kanban_lane_create_input do

@@ -59,6 +59,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
     field :last_login, :iso_date_time
     field :last_login_gte, :iso_date_time
     field :last_login_lte, :iso_date_time
+    field :is_online, :boolean
     field :distinct, :boolean
     field :order_by, :users_order_by_input
   end
@@ -449,8 +450,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
   end
 
   input_object :search_workspace_users_input do
-    field :workspace_id, non_null(:uuid)
     field :search_string, non_null(:string)
-    field :order_by, :users_order_by_input
+    field :filters, non_null(:user_where_input)
   end
 end

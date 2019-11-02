@@ -15,14 +15,45 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   end
 
   def workspace_users(
-        %{where: data} = pagination_args,
+        %{where: %{workspace_id: workspace_id} = data} = pagination_args,
         _
       ) do
-    ApiGateway.Models.Account.User.get_workspace_users_query(data)
-    |> Absinthe.Relay.Connection.from_query(
-      &ApiGateway.Repo.all/1,
-      Map.drop(pagination_args, [:where])
-    )
+    case data do
+      %{is_online: is_online} ->
+        online_user_ids =
+          Presence.list("workspace:#{workspace_id}")
+          |> Map.keys()
+
+        case is_online do
+          true ->
+            ids =
+              Map.get(data, :id_in, [])
+              |> Enum.filter(fn id -> id in online_user_ids end)
+              |> (fn id_list -> id_list ++ online_user_ids end).()
+
+            Map.put(data, :id_in, ids)
+            |> ApiGateway.Models.Account.User.get_workspace_users_query()
+            |> Absinthe.Relay.Connection.from_query(
+              &ApiGateway.Repo.all/1,
+              Map.drop(pagination_args, [:where])
+            )
+
+          false ->
+            Map.put(data, :id_not_in, online_user_ids)
+            |> ApiGateway.Models.Account.User.get_workspace_users_query()
+            |> Absinthe.Relay.Connection.from_query(
+              &ApiGateway.Repo.all/1,
+              Map.drop(pagination_args, [:where])
+            )
+        end
+
+      _ ->
+        ApiGateway.Models.Account.User.get_workspace_users_query(data)
+        |> Absinthe.Relay.Connection.from_query(
+          &ApiGateway.Repo.all/1,
+          Map.drop(pagination_args, [:where])
+        )
+    end
   end
 
   def workspace_users(_, _) do
@@ -30,18 +61,53 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   end
 
   def search_workspace_users(
-        %{where: %{workspace_id: workspace_id, search_string: search_string}} = pagination_args,
+        %{where: %{search_string: search_string, filters: %{workspace_id: workspace_id} = data}} =
+          pagination_args,
         _
       ) do
-    ApiGateway.Models.Account.User.search_workspace_users_query(
-      workspace_id,
-      search_string,
-      pagination_args[:order_by]
-    )
-    |> Absinthe.Relay.Connection.from_query(
-      &ApiGateway.Repo.all/1,
-      Map.drop(pagination_args, [:where])
-    )
+    case data do
+      %{is_online: is_online} ->
+        online_user_ids =
+          Presence.list("workspace:#{workspace_id}")
+          |> Map.keys()
+
+        case is_online do
+          true ->
+            ids =
+              Map.get(data, :id_in, [])
+              |> Enum.filter(fn id -> id in online_user_ids end)
+              |> (fn id_list -> id_list ++ online_user_ids end).()
+
+            ApiGateway.Models.Account.User.search_workspace_users_query(
+              search_string,
+              Map.put(data, :id_in, ids)
+            )
+            |> Absinthe.Relay.Connection.from_query(
+              &ApiGateway.Repo.all/1,
+              Map.drop(pagination_args, [:where])
+            )
+
+          false ->
+            ApiGateway.Models.Account.User.search_workspace_users_query(
+              search_string,
+              Map.put(data, :id_not_in, online_user_ids)
+            )
+            |> Absinthe.Relay.Connection.from_query(
+              &ApiGateway.Repo.all/1,
+              Map.drop(pagination_args, [:where])
+            )
+        end
+
+      _ ->
+        ApiGateway.Models.Account.User.search_workspace_users_query(
+          search_string,
+          data
+        )
+        |> Absinthe.Relay.Connection.from_query(
+          &ApiGateway.Repo.all/1,
+          Map.drop(pagination_args, [:where])
+        )
+    end
   end
 
   def search_workspace_users(_, _) do
