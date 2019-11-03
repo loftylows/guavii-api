@@ -7,5 +7,6 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeQueryPayloadTypes do
     field :caller, non_null(:user)
     field :invitees, non_null_list(:user)
     field :chat_user_limit, non_null(:integer)
+    field :active_user_count, non_null(:integer)
   end
 end

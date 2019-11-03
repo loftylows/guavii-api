@@ -1,6 +1,7 @@
 defmodule ApiGateway.Models.MediaChat do
   alias ApiGateway.Models.Account.User
   alias RedixPool, as: Redis
+  alias ApiGatewayWeb.Presence
 
   # seconds
   @redis_key_expiration 60
@@ -11,6 +12,7 @@ defmodule ApiGateway.Models.MediaChat do
   @redis_chat_caller_key "caller_id"
   @redis_chat_invitee_key_prefix "invitee"
   @chat_invitee_limit 1
+  @chat_user_limit @chat_invitee_limit + 1
 
   @spec create_new_chat(%{required(:invitee_ids) => [Ecto.UUID.t()]}, current_user :: User.t()) ::
           {:ok, chat_id :: Ecto.UUID.t(), redis_key :: String.t()}
@@ -67,20 +69,22 @@ defmodule ApiGateway.Models.MediaChat do
   end
 
   @spec add_user_to_chat(
-          user_id :: Ecto.UUID.t(),
           chat_id :: Ecto.UUID.t(),
+          user_id :: Ecto.UUID.t(),
           current_user :: User.t()
         ) ::
-          1 | 0 | :invitee_limit_surpassed
+          1 | 0 | :invitee_limit_surpassed | :chat_does_not_exist
   def add_user_to_chat(user_id, chat_id, current_user) do
-    chat_id
-    |> get_chat_member_ids()
-    |> length()
+    [
+      "EXISTS",
+      chat_id_to_redis_key(chat_id)
+    ]
+    |> Redis.command!()
     |> case do
-      amount when amount + 1 > @chat_invitee_limit ->
-        :invitee_limit_surpassed
+      0 ->
+        :chat_does_not_exist
 
-      _ ->
+      1 ->
         res =
           [
             "HSET",
@@ -101,20 +105,31 @@ defmodule ApiGateway.Models.MediaChat do
   end
 
   @spec add_users_to_chat(
-          user_ids :: [Ecto.UUID.t()],
           chat_id :: Ecto.UUID.t(),
+          user_ids :: [Ecto.UUID.t()],
           current_user :: User.t()
         ) ::
-          :ok | :invitee_limit_surpassed
-  def add_users_to_chat(user_ids, chat_id, current_user) do
-    chat_id
-    |> get_chat_member_ids()
-    |> length()
+          :ok | :invitee_limit_surpassed | :chat_does_not_exist
+  def add_users_to_chat(chat_id, user_ids, current_user) do
+    [
+      "EXISTS",
+      chat_id_to_redis_key(chat_id)
+    ]
+    |> Redis.command!()
     |> case do
-      amount when amount + length(user_ids) > @chat_invitee_limit ->
-        :invitee_limit_surpassed
+      0 ->
+        :chat_does_not_exist
 
-      _ ->
+      1 ->
+        active_user_ids =
+          Presence.list(ApiGatewayWeb.Channels.MediaChat.get_channel_topic_prefix() <> chat_id)
+          |> Map.keys()
+
+        # filter out users which are already actively in the call
+        user_ids =
+          user_ids
+          |> Enum.filter(fn user_id -> user_id not in active_user_ids end)
+
         ([
            "HMSET",
            chat_id_to_redis_key(chat_id)
@@ -267,7 +282,8 @@ defmodule ApiGateway.Models.MediaChat do
   @type get_media_chat_info_reply :: %{
           required(:caller) => User.t(),
           required(:invitees) => [User.t()],
-          required(:chat_user_limit) => integer
+          required(:chat_user_limit) => integer,
+          required(:active_user_count) => integer
         }
   @spec get_media_chat_info(chat_id :: Ecto.UUID.t(), current_user :: User.t()) ::
           {:ok, get_media_chat_info_reply}
@@ -285,13 +301,19 @@ defmodule ApiGateway.Models.MediaChat do
         caller = User.get_user(caller_id)
         invitees = if invitee_ids === [], do: [], else: User.get_users(%{id_in: invitee_ids})
 
+        active_user_count =
+          Presence.list(ApiGatewayWeb.Channels.MediaChat.get_channel_topic_prefix() <> chat_id)
+          |> Map.keys()
+          |> length()
+
         if is_nil(caller) do
           {:error, :caller_or_recipient_is_nil}
         else
           res = %{
             caller: caller,
             invitees: invitees,
-            chat_user_limit: @chat_invitee_limit + 1
+            chat_user_limit: @chat_user_limit,
+            active_user_count: active_user_count
           }
 
           {:ok, res}
@@ -307,6 +329,11 @@ defmodule ApiGateway.Models.MediaChat do
     redis_key = chat_id_to_redis_key(chat_id)
 
     {chat_id, redis_key}
+  end
+
+  @spec get_chat_user_limit :: integer
+  def get_chat_user_limit do
+    @chat_user_limit
   end
 
   @spec chat_id_to_redis_key(chat_id :: Ecto.UUID.t()) :: String.t()

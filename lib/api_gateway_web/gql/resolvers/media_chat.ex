@@ -57,4 +57,24 @@ defmodule ApiGatewayWeb.Gql.Resolvers.MediaChat do
         {:ok, reply}
     end
   end
+
+  def invite_users_to_media_chat(
+        _,
+        %{data: %{chat_id: chat_id, invitee_ids: invitee_ids}},
+        %{context: %{current_user: current_user}}
+      ) do
+    Models.MediaChat.add_users_to_chat(chat_id, invitee_ids, current_user)
+    |> case do
+      :invitee_limit_surpassed ->
+        ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+
+      :chat_does_not_exist ->
+        ApiGatewayWeb.Gql.Utils.Errors.user_input_error(
+          "Chat you are inviting users to does not exist"
+        )
+
+      :ok ->
+        {:ok, %{ok: true}}
+    end
+  end
 end

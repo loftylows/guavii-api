@@ -16,9 +16,15 @@ defmodule ApiGatewayWeb.Channels.MediaChat do
   def join(@channel_topic_prefix <> chat_id, _params, socket) do
     user_id = socket.assigns.user.id
 
+    active_user_count =
+      Presence.list(@channel_topic_prefix <> chat_id)
+      |> Map.keys()
+      |> length()
+
     can_join? =
       MediaChat.user_is_chat_member?(chat_id, user_id) and
-        is_nil(Map.get(socket.assigns, :media_chat_id))
+        is_nil(Map.get(socket.assigns, :media_chat_id)) and
+        active_user_count < MediaChat.get_chat_user_limit()
 
     can_join?
     |> case do

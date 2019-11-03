@@ -49,6 +49,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryInputTypes do
 
   input_object :user_where_input do
     field :id_in, list_of(:uuid)
+    field :id_not_in, list_of(:uuid)
     field :email_in, list_of(:email)
     field :full_name_contains, :string
     field :billing_status, :user_billing_status

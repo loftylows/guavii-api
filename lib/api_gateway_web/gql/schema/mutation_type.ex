@@ -664,5 +664,12 @@ defmodule ApiGatewayWeb.Gql.Schema.MutationType do
 
       resolve(&Resolvers.MediaChat.create_new_media_chat/3)
     end
+
+    @desc "Invite users to chat room with provided data"
+    field :invite_users_to_media_chat, non_null(:invite_users_to_media_chat_payload) do
+      arg(:data, non_null(:invite_users_to_media_chat_input))
+
+      resolve(&Resolvers.MediaChat.invite_users_to_media_chat/3)
+    end
   end
 end
