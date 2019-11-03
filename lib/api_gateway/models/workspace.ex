@@ -161,6 +161,8 @@ defmodule ApiGateway.Models.Workspace do
   @spec get_workspace_by_subdomain(String.t(), get_workspace_by_subdomain_opts) ::
           Workspace.t() | nil
   def get_workspace_by_subdomain(subdomain, opts \\ []) do
+    subdomain = String.downcase(subdomain)
+
     Keyword.get(opts, :include_archived_matches, false)
     |> case do
       bool when not is_boolean(bool) ->
@@ -199,6 +201,8 @@ defmodule ApiGateway.Models.Workspace do
   end
 
   def create_workspace(%{subdomain: subdomain} = data) when is_binary(subdomain) do
+    subdomain = String.downcase(subdomain)
+
     internal_subdomain = InternalSubdomain.get_internal_subdomain_by_subdomain(subdomain)
 
     archived_subdomain =
@@ -230,10 +234,12 @@ defmodule ApiGateway.Models.Workspace do
             Repo.update(changeset)
 
           subdomain ->
+            subdomain = String.downcase(subdomain)
+
             case check_subdomain_taken(subdomain) do
               false ->
                 ArchivedWorkspaceSubdomain.create_archived_workspace_subdomain(%{
-                  subdomain: workspace.workspace_subdomain,
+                  subdomain: String.downcase(workspace.workspace_subdomain),
                   workspace_id: workspace.id
                 })
 
@@ -247,6 +253,8 @@ defmodule ApiGateway.Models.Workspace do
   end
 
   def update_workspace(%{workspace_subdomain: subdomain, data: data}) do
+    subdomain = String.downcase(subdomain)
+
     case get_workspace_by_subdomain(subdomain) do
       nil ->
         {:error, "Not found"}
@@ -254,7 +262,7 @@ defmodule ApiGateway.Models.Workspace do
       workspace ->
         changeset =
           workspace
-          |> changeset_update(data)
+          |> changeset_update(Map.put(data, :workspace_subdomain, subdomain))
 
         case Ecto.Changeset.get_change(changeset, :workspace_subdomain) do
           nil ->
@@ -264,7 +272,7 @@ defmodule ApiGateway.Models.Workspace do
             case check_subdomain_taken(subdomain) do
               false ->
                 ArchivedWorkspaceSubdomain.create_archived_workspace_subdomain(%{
-                  subdomain: workspace.workspace_subdomain,
+                  subdomain: String.downcase(workspace.workspace_subdomain),
                   workspace_id: workspace.id
                 })
 
@@ -289,6 +297,8 @@ defmodule ApiGateway.Models.Workspace do
   end
 
   def delete_workspace_by_subdomain(subdomain) do
+    subdomain = String.downcase(subdomain)
+
     case Repo.get_by(Workspace, workspace_subdomain: subdomain) do
       nil ->
         {:error, "Not found"}
@@ -299,6 +309,8 @@ defmodule ApiGateway.Models.Workspace do
   end
 
   def check_subdomain_taken(subdomain) do
+    subdomain = String.downcase(subdomain)
+
     internal = InternalSubdomain.get_internal_subdomain_by_subdomain(subdomain)
 
     archived = ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
@@ -309,6 +321,8 @@ defmodule ApiGateway.Models.Workspace do
   end
 
   def check_subdomain_available(subdomain) do
+    subdomain = String.downcase(subdomain)
+
     internal = InternalSubdomain.get_internal_subdomain_by_subdomain(subdomain)
 
     archived = ArchivedWorkspaceSubdomain.get_archived_workspace_subdomain_by_subdomain(subdomain)
@@ -325,6 +339,7 @@ defmodule ApiGateway.Models.Workspace do
   end
 
   def check_workspace_exists_by_subdomain(subdomain) do
+    subdomain = String.downcase(subdomain)
     if get_workspace_by_subdomain(subdomain), do: true, else: false
   end
 

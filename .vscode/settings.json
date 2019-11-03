@@ -4,6 +4,7 @@
     "cast",
     "dataloader",
     "datetime",
+    "downcase",
     "ecto",
     "funcs",
     "graphiql",

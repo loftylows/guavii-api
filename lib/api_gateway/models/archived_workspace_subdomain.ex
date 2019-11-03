@@ -89,7 +89,8 @@ defmodule ApiGateway.Models.ArchivedWorkspaceSubdomain do
   end
 
   def get_archived_workspace_subdomain_by_subdomain(subdomain) do
-    Repo.get_by(ArchivedWorkspaceSubdomain, subdomain: subdomain)
+    subdomain = String.downcase(subdomain)
+    Repo.get_by(ArchivedWorkspaceSubdomain, subdomain)
   end
 
   def get_archived_workspace_subdomains(filters \\ %{}) do
