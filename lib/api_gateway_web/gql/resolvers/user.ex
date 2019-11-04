@@ -267,8 +267,13 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
 
       {:ok, payload} ->
         token = ApiGatewayWeb.Session.create_token(payload.user.id)
+        csrf_token = Plug.CSRFProtection.get_csrf_token()
 
-        {:ok, Map.put(payload, :token, token)}
+        data =
+          Map.put(payload, :token, token)
+          |> Map.put(:csrf_token, csrf_token)
+
+        {:ok, data}
     end
   end
 
@@ -300,7 +305,13 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
 
       {:ok, payload} ->
         token = ApiGatewayWeb.Session.create_token(payload.user.id)
-        {:ok, Map.put(payload, :token, token)}
+        csrf_token = Plug.CSRFProtection.get_csrf_token()
+
+        data =
+          Map.put(payload, :token, token)
+          |> Map.put(:csrf_token, csrf_token)
+
+        {:ok, data}
     end
   end
 
@@ -335,8 +346,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
 
       {:ok, user} ->
         token = ApiGatewayWeb.Session.create_token(user.id)
+        csrf_token = Plug.CSRFProtection.get_csrf_token()
 
-        {:ok, %{user: user, token: token}}
+        {:ok, %{user: user, token: token, csrf_token: csrf_token}}
     end
   end
 
@@ -346,18 +358,6 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   end
 
   def logout_user(_, _, _) do
-    {:ok, %{ok: true}}
-  end
-
-  def check_socket_token_valid(
-        _,
-        %{
-          data: %{
-            token: token
-          }
-        },
-        _
-      ) do
     {:ok, %{ok: true}}
   end
 end

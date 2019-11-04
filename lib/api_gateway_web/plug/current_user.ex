@@ -8,7 +8,6 @@ defmodule ApiGatewayWeb.Plug.CurrentUser do
 
   def call(conn, _) do
     conn
-    |> fetch_session()
     |> maybe_put_current_user()
   end
 

@@ -5,6 +5,7 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
   object :login_user_with_email_and_password do
     field :user, non_null(:user)
     field :token, non_null(:string)
+    field :csrf_token, non_null(:string)
   end
 
   object :account_invitation_send_payload do
@@ -29,12 +30,14 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
     field :user, non_null(:user)
     field :workspace, non_null(:workspace)
     field :token, non_null(:string)
+    field :csrf_token, non_null(:string)
   end
 
   object :register_user_and_workspace_payload do
     field :user, non_null(:user)
     field :workspace, non_null(:workspace)
     field :token, non_null(:string)
+    field :csrf_token, non_null(:string)
   end
 
   object :logout_user_payload do
@@ -112,6 +115,7 @@ defmodule ApiGatewayWeb.Gql.Schema.NonNodeMutationPayloadTypes do
   object :reset_password_from_forgot_password_payload do
     field :user, non_null(:user)
     field :token, non_null(:string)
+    field :csrf_token, non_null(:string)
   end
 
   object :create_new_media_chat_payload do

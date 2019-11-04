@@ -39,6 +39,11 @@ defmodule ApiGatewayWeb.Endpoint do
     # 7 days
     max_age: 604_800
 
+  plug :fetch_session
+
+  # TODO: Add this line back in before shipping to production
+  # plug Plug.CSRFProtection
+
   plug ApiGatewayWeb.Plug.CurrentSubdomain
 
   plug ApiGatewayWeb.Plug.CurrentUser

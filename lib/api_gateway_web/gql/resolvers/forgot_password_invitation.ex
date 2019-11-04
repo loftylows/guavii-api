@@ -62,8 +62,9 @@ defmodule ApiGatewayWeb.Gql.Resolvers.ForgotPasswordInvitation do
 
       {:ok, user} ->
         token = ApiGatewayWeb.Session.create_token(user.id)
+        csrf_token = Plug.CSRFProtection.get_csrf_token()
 
-        {:ok, %{user: user, token: token}}
+        {:ok, %{user: user, token: token, csrf_token: csrf_token}}
     end
   end
 end
