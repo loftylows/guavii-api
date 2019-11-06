@@ -176,6 +176,13 @@ defmodule ApiGateway.Models.KanbanCardTodo do
     |> Repo.all()
   end
 
+  @spec get_kanban_card_todos_query(filters :: %{optional(atom) => any}) ::
+          Ecto.Queryable.t()
+  def get_kanban_card_todos_query(filters \\ %{}) do
+    KanbanCardTodo
+    |> add_query_filters(filters)
+  end
+
   def create_kanban_card_todo(data) when is_map(data) do
     rank =
       OrderedListHelpers.DB.get_new_item_insert_rank(

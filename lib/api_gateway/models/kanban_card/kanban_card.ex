@@ -185,6 +185,15 @@ defmodule ApiGateway.Models.KanbanCard do
     |> Repo.all()
   end
 
+  @spec get_kanban_cards_query(filters :: %{optional(atom) => any}, opts :: [key: any]) ::
+          Ecto.Queryable.t()
+  def get_kanban_cards_query(filters \\ %{}, opts \\ []) do
+    KanbanCard
+    |> maybe_preload_active_labels(Keyword.get(opts, :preload_active_labels, false))
+    |> Ecto.Query.preload(:last_update)
+    |> add_query_filters(filters)
+  end
+
   def create_kanban_card(data, user_id) when is_map(data) and is_binary(user_id) do
     rank =
       OrderedListHelpers.DB.get_new_item_insert_rank(

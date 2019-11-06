@@ -30,15 +30,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.User.get_user/3)
     end
 
-    # TODO: Remove this! No customer user should be able to search get all users
-    @desc "Get all users, optionally filtering"
-    field :users, non_null_list(:user) do
-      arg(:where, :user_where_input)
-
-      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      resolve(&Resolvers.User.get_users/3)
-    end
-
     @desc "Get workspace users, optionally filtering"
     connection field :workspace_users, node_type: :user do
       arg(:where, :user_where_input)
@@ -63,14 +54,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.Team.get_team/3)
     end
 
-    @desc "Get all teams, optionally filtering"
-    field :teams, non_null_list(:team) do
-      arg(:where, :team_where_input)
-
-      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      resolve(&Resolvers.Team.get_teams/3)
-    end
-
     @desc "Get a project using criteria"
     field :project, :project do
       arg(:where, non_null(:project_where_unique_input))
@@ -87,14 +70,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.Document.get_document/3)
     end
 
-    @desc "Get all documents, optionally filtering"
-    field :documents, non_null_list(:document) do
-      arg(:where, :document_where_input)
-
-      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      resolve(&Resolvers.Document.get_documents/3)
-    end
-
     @desc "Get a kanban card using criteria"
     field :kanban_card, :kanban_card do
       arg(:where, non_null(:kanban_card_where_unique_input))
@@ -103,20 +78,20 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.KanbanCard.get_kanban_card/3)
     end
 
-    @desc "Get a kanban cards using criteria"
-    field :kanban_cards, non_null_list(:kanban_card) do
-      arg(:where, non_null(:kanban_card_where_input))
+    @desc "Get a kanban cards using criteria, optionally filtering"
+    connection field :kanban_cards, node_type: :kanban_card do
+      arg(:where, :kanban_card_where_input)
 
       middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      resolve(&Resolvers.KanbanCard.get_kanban_cards/3)
+      resolve(&Resolvers.KanbanCard.get_kanban_cards/2)
     end
 
-    @desc "Get a kanban card todos using criteria"
-    field :kanban_card_todos, non_null_list(:kanban_card_todo) do
-      arg(:where, non_null(:kanban_card_todo_where_input))
+    @desc "Get a kanban card todos using criteria, optionally filtering"
+    connection field :kanban_card_todos, node_type: :kanban_card_todo do
+      arg(:where, :kanban_card_todo_where_input)
 
       middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      resolve(&Resolvers.KanbanCardTodo.get_kanban_card_todos/3)
+      resolve(&Resolvers.KanbanCardTodo.get_kanban_card_todos/2)
     end
 
     ####################

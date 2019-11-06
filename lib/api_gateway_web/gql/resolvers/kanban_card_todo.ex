@@ -6,12 +6,19 @@ defmodule ApiGatewayWeb.Gql.Resolvers.KanbanCardTodo do
     {:ok, KanbanCardTodo.get_kanban_card_todo(kanban_card_todo_id)}
   end
 
-  def get_kanban_card_todos(_, %{where: filters}, _) do
-    {:ok, KanbanCardTodo.get_kanban_card_todos(filters)}
+  def get_kanban_card_todos(
+        %{where: filters} = pagination_args,
+        _
+      ) do
+    ApiGateway.Models.KanbanCardTodo.get_kanban_card_todos_query(filters)
+    |> Absinthe.Relay.Connection.from_query(
+      &ApiGateway.Repo.all/1,
+      Map.drop(pagination_args, [:where])
+    )
   end
 
-  def get_kanban_card_todos(_, _, _) do
-    {:ok, KanbanCardTodo.get_kanban_card_todos(%{})}
+  def get_kanban_card_todos(_, _) do
+    {:ok, ApiGateway.Models.KanbanCard.get_kanban_cards()}
   end
 
   def create_kanban_card_todo(_, %{data: data}, _) do
