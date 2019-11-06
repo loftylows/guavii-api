@@ -14,14 +14,6 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
       resolve(&Resolvers.Workspace.get_workspace/3)
     end
 
-    @desc "Get all workspaces, optionally filtering"
-    field :workspaces, non_null_list(:workspace) do
-      arg(:where, :workspace_where_input)
-
-      middleware(ApiGatewayWeb.Gql.CommonMiddleware.Authenticated)
-      resolve(&Resolvers.Workspace.get_workspaces/3)
-    end
-
     @desc "Get a user using criteria"
     field :user, :user do
       arg(:where, non_null(:user_where_unique_input))
