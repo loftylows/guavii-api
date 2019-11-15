@@ -83,3 +83,11 @@ config :redix_pool,
   redis_url: System.get_env("REDIS_URL"),
   pool_size: 10,
   pool_max_overflow: 10
+
+config :hammer,
+  backend:
+    {Hammer.Backend.Redis,
+     [
+       expiry_ms: 60_000 * 2,
+       redix_config: System.get_env("REDIS_URL")
+     ]}

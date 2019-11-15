@@ -52,7 +52,10 @@ defmodule ApiGateway.MixProject do
       {:bamboo_postmark, "~> 0.6"},
       {:redbird, "~> 0.4.0"},
       {:quantum, "~> 2.3"},
-      {:redix_pool, "~> 0.1.0"}
+      {:redix_pool, "~> 0.1.0"},
+      {:hammer, "~> 6.0"},
+      {:hammer_backend_redis, "~> 6.1"},
+      {:hammer_plug, "~> 2.1"}
     ]
   end
 
