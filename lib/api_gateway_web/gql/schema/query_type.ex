@@ -100,22 +100,7 @@ defmodule ApiGatewayWeb.Gql.Schema.QueryType do
     field :check_logged_into_workspace, non_null(:boolean) do
       arg(:data, non_null(:check_logged_into_workspace_input))
 
-      resolve(fn _, _, %{context: %{current_user: current_user}} ->
-        possible_statuses = ApiGateway.Models.Account.User.get_user_billing_status_options_map()
-        active_status = possible_statuses.active
-
-        current_user
-        |> case do
-          nil ->
-            {:ok, false}
-
-          %ApiGateway.Models.Account.User{billing_status: ^active_status} ->
-            {:ok, true}
-
-          _ ->
-            {:ok, false}
-        end
-      end)
+      resolve(&Resolvers.User.check_logged_into_workspace/3)
     end
 
     @desc "Check workspace subdomain available"

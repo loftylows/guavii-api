@@ -1,5 +1,6 @@
 defmodule ApiGatewayWeb.Gql.Resolvers.User do
   alias ApiGateway.Models.Account.User
+  alias ApiGateway.Models.Workspace
   alias ApiGatewayWeb.Presence
 
   def get_user(_, %{where: %{id: user_id}}, _) do
@@ -183,6 +184,38 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
   ####################
   # Other resolvers #
   ####################
+  def check_logged_into_workspace(_, _, %{context: %{current_subdomain: nil}}) do
+    ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+  end
+
+  def check_logged_into_workspace(_, _, %{
+        context: %{current_user: current_user, current_subdomain: current_subdomain}
+      }) do
+    possible_statuses = User.get_user_billing_status_options_map()
+    active_status = possible_statuses.active
+
+    current_user
+    |> case do
+      %User{billing_status: ^active_status} ->
+        {:ok, true}
+
+      nil ->
+        case Workspace.get_workspace_by_subdomain(
+               current_subdomain,
+               include_archived_matches: true
+             ) do
+          nil ->
+            ApiGatewayWeb.Gql.Utils.Errors.forbidden_error()
+
+          _ ->
+            {:ok, false}
+        end
+
+      _ ->
+        {:ok, false}
+    end
+  end
+
   def is_online?(%User{} = user) do
     Presence.get_by_key("workspace:#{user.workspace_id}", user.id)
     |> case do
@@ -333,7 +366,6 @@ defmodule ApiGatewayWeb.Gql.Resolvers.User do
     ApiGateway.Models.Account.User.authenticate_by_email_password(email, password, subdomain)
     |> case do
       {:error, "Cannot find workspace"} ->
-        # TODO: maybe change the error message to the default forbidden message
         ApiGatewayWeb.Gql.Utils.Errors.forbidden_error("Workspace unavailable")
 
       {:error, :deactivated} ->
