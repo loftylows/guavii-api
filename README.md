@@ -22,6 +22,5 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 - Voice Chat, Video Chat, Sceeen Sharing (Via WebRTC)
 
 
-
-https://user-images.githubusercontent.com/45730699/196387265-ac82dfe5-7e9a-43d5-ac26-c9022b24cd66.mp4
+https://user-images.githubusercontent.com/45730699/196388346-c0c3430c-943f-426f-89e0-d2aec13b280e.mp4
 
