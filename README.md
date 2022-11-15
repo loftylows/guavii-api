@@ -17,7 +17,7 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
     - Kanban Board
     - Calendar
     - Colaborative document editing
-- Voice Chat, Video Chat, Sceeen Sharing (Via WebRTC)
+- Voice Chat, Video Chat, Screen Sharing (Via WebRTC)
 
 
 https://user-images.githubusercontent.com/45730699/196388346-c0c3430c-943f-426f-89e0-d2aec13b280e.mp4
